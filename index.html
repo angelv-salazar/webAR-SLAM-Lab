@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10251e">
+  <title>WebAR · SLAM Lab</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,sans-serif;color:#173025;background:#f5f7f4}
+    *{box-sizing:border-box}body{margin:0}
+    header{padding:24px max(24px,calc((100vw - 1100px)/2));background:#10251e;color:#e6f5eb;display:flex;justify-content:space-between;align-items:center;gap:20px}
+    header small{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#86d9b5}
+    header strong{font-size:17px}a{color:inherit}
+    main{max-width:1100px;margin:0 auto;padding:clamp(28px,6vw,70px) 24px}
+    h1{font-size:clamp(40px,6.5vw,75px);letter-spacing:-.065em;line-height:1.04;margin:0 0 20px;max-width:850px}
+    .lead{max-width:720px;font-size:18px;line-height:1.7;color:#52665b;margin:0 0 46px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    article{background:white;border:1px solid #dbe5df;padding:29px;border-radius:22px;min-height:275px;display:flex;flex-direction:column}
+    .eyebrow{font-size:11px;font-weight:750;letter-spacing:.15em;color:#327c5b;text-transform:uppercase;margin-bottom:25px}
+    h2{font-size:25px;letter-spacing:-.045em;margin:0 0 10px}
+    p{line-height:1.65}article p{font-size:14px;color:#62776a;margin:0 0 27px}
+    .button{display:inline-flex;justify-content:center;align-items:center;text-decoration:none;border-radius:11px;background:#175c43;color:white;padding:13px 17px;font-size:14px;font-weight:700;margin-top:auto;width:fit-content}
+    .button.secondary{background:#e8f4ec;color:#174b39}
+    aside{margin-top:35px;border-left:3px solid #74aa89;padding:4px 0 4px 19px;color:#516b5b;font-size:14px;max-width:750px}
+    footer{font-size:12px;color:#6b7c72;margin-top:60px}
+    @media(max-width:670px){.grid{grid-template-columns:1fr}header{padding:20px 24px}}
+  </style>
+</head>
+<body>
+  <header><div><small>Laboratorio experimental</small><br><strong>WebAR · SLAM</strong></div><span style="font-size:12px;color:#b0d0bc">8th Wall · seguimiento espacial</span></header>
+  <main>
+    <h1>Una obra virtual que permanece en el espacio.</h1>
+    <p class="lead">Prototipo independiente para investigar seguimiento espacial en navegadores móviles. Colocá una escultura en el piso, caminá a su alrededor y observá qué tan estable resulta en tu teléfono.</p>
+    <div class="grid">
+      <article>
+        <div class="eyebrow">01 / Crear</div>
+        <h2>Estudio SLAM</h2>
+        <p>Cargá un GLB, elegí su tamaño en centímetros, ajustá la orientación, agregá texto y exportá un paquete de publicación. Los borradores se guardan en este navegador.</p>
+        <a class="button" href="estudio.html">Abrir editor</a>
+      </article>
+      <article>
+        <div class="eyebrow">02 / Experimentar</div>
+        <h2>Prueba de cámara</h2>
+        <p>Probá la colocación sin preparar ningún archivo: aparece una escultura geométrica de referencia. Tocá el suelo y alejate sin necesidad de mantener un marcador en la imagen.</p>
+        <a class="button secondary" href="visor.html">Abrir visor SLAM</a>
+      </article>
+    </div>
+    <aside><strong>Importante:</strong> el visor usa el motor SLAM binario de 8th Wall. La compatibilidad en Android y iPhone debe comprobarse en dispositivos reales. El seguimiento puede variar según iluminación, textura del suelo, navegador y sensores. Este laboratorio no modifica el proyecto WebAR-QR.</aside>
+    <footer><a href="https://github.com/angelv-salazar/webAR-SLAM-Lab">Código del laboratorio en GitHub</a> · Proyecto experimental</footer>
+  </main>
+</body>
+</html>
