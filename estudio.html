@@ -169,7 +169,7 @@ $('save').onclick=async()=>{
  }catch(e){notice('No se pudo guardar (¿cuota de almacenamiento?): '+e.message,true);}
 };
 $('test').onclick=()=>{
- if(dirty){notice('Primero guardá los cambios para probar el proyecto.',true);return;}
+ if(dirty||!project.updatedAt){notice('Primero guardá el proyecto para probarlo desde este navegador.',true);return;}
  window.open('visor.html?local='+encodeURIComponent(project.id),'_blank','noopener');
 };
 $('publish').onclick=async()=>{
