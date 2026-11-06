@@ -6,7 +6,10 @@
   <meta name="theme-color" content="#132b20">
   <title>WebAR SLAM · Visor</title>
   <!-- Integración basada en los ejemplos y la documentación oficiales de 8th Wall.
-       El seguimiento espacial requiere el motor binario @8thwall/engine-binary. -->
+       El seguimiento espacial requiere el motor binario @8thwall/engine-binary.
+       This product includes the XR Engine software developed by Niantic Spatial, Inc.
+       Copyright © 2026 Niantic Spatial, Inc. All rights reserved.
+       License: https://github.com/8thwall/engine/blob/main/LICENSE -->
   <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
   <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
   <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js"></script>
@@ -97,7 +100,7 @@
     title:'Espécimen de referencia',description:'Prueba de seguimiento espacial. Mové el celular alrededor del espécimen sin mantener un marcador dentro de la cámara.',
     sizeCm:100,rotationDeg:0,xCm:0,yCm:0,zCm:0,model:null
   };
-  let modelURL=null,anchor=null,modelStatus='Geometría de referencia',places=0;
+  let modelURL=null,anchor=null,modelStatus='Geometría de referencia',places=0,configReady=false;
   const search=new URLSearchParams(location.search);
   const id=search.get('exp'),local=search.get('local');
 
@@ -221,7 +224,7 @@
       const size=new THREE.Vector3(),center=new THREE.Vector3();
       bounds.getSize(size);bounds.getCenter(center);
       const length=Math.max(size.x,size.y,size.z);
-      if(!(length>0)&&Number.isFinite(length)){tell('El GLB no tiene geometría reconocible');return;}
+      if(!(length>0)||!Number.isFinite(length)){tell('El GLB no tiene geometría reconocible');return;}
       const factor=(settings.sizeCm/100)/length;
       item.setAttribute('scale',{x:factor,y:factor,z:factor});
       item.setAttribute('position',{x:-center.x*factor,y:-bounds.min.y*factor,z:-center.z*factor});
@@ -252,6 +255,7 @@
     updateDiagnostic();
   }
   ground.addEventListener('click',event=>{
+    if(!configReady){tell('Esperá a que termine de cargarse el proyecto.');return;}
     const point=event.detail?.intersection?.point;
     if(!point||!Number.isFinite(point.x))return;
     placeAt(point);
@@ -262,7 +266,7 @@
     error('El motor SLAM no pudo arrancar: '+String(detail.message||detail.error||'revisá el acceso a la cámara y la compatibilidad.'));
   });
   // Los dos formatos (publicado y local) usan exactamente la misma escena.
-  loadConfig().catch(e=>error(e.message));
+  loadConfig().then(()=>{configReady=true;updateDiagnostic();}).catch(e=>error(e.message));
   if(typeof window.AFRAME==='undefined')error('No pudo cargarse 8-Frame. Revisá la conexión a Internet.');
   window.addEventListener('pagehide',()=>{if(modelURL&&modelURL.startsWith('blob:'))URL.revokeObjectURL(modelURL);});
   window.addEventListener('visibilitychange',()=>{if(!document.hidden)updateDiagnostic();});
