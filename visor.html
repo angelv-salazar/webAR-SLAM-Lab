@@ -56,6 +56,7 @@
     <h2 style="margin-top:0">No se pudo iniciar el seguimiento espacial</h2>
     <p id="fallbackMessage"></p>
     <button id="retry">Reintentar</button>
+    <p><a href="diagnostico.html?v=3">Abrir diagnóstico SLAM</a></p>
     <p style="font-size:12px">Probá con Chrome en Android o Safari en un iPhone compatible. Activá la cámara y utilizá HTTPS.</p>
     <a href="./">Volver al laboratorio</a>
   </div>
@@ -66,10 +67,6 @@
      calcula la pose mediante SLAM, sin requerir un marcador impreso. -->
 <a-scene
   id="arScene"
-  xrconfig
-  xrweb="allowedDevices: any"
-  xrextras-loading
-  xrextras-runtime-error
   renderer="colorManagement: true; antialias: true"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false">
@@ -101,6 +98,8 @@
     sizeCm:100,rotationDeg:0,xCm:0,yCm:0,zCm:0,model:null
   };
   let modelURL=null,anchor=null,modelStatus='Geometría de referencia',places=0,configReady=false;
+  let xrActivation='Esperando bibliotecas',xrStarted=false,xrReady=false;
+  const initTimestamp=performance.now();
   const search=new URLSearchParams(location.search);
   const id=search.get('exp'),local=search.get('local');
 
@@ -114,6 +113,8 @@
     if(debug.hidden)return;
     debug.textContent=[
       'Motor: '+(typeof window.XR8!=='undefined'?'XR8 presente':'esperando XR8'),
+      'Estado XR: '+xrActivation,
+      'Seguimiento: '+(xrReady?'REALITY READY':'sin iniciar'),
       'A-Frame: '+(typeof window.AFRAME!=='undefined'?'cargado':'no disponible'),
       'Cámara: '+(scene.hasLoaded?'escena cargada':'preparando escena'),
       'Anclaje: '+(anchor?'colocado':'sin colocar'),
@@ -129,7 +130,11 @@
     if(!scene?.hasLoaded||!window.XR8)error('No se pudo iniciar el motor o alguna de las bibliotecas: '+e.message);
     else {modelStatus='Error: '+e.message;updateDiagnostic();}
   });
-  window.addEventListener('unhandledrejection',e=>{modelStatus='Error: '+String(e.reason?.message||e.reason);updateDiagnostic();});
+  window.addEventListener('unhandledrejection',e=>{
+    modelStatus='Error: '+String(e.reason?.message||e.reason);
+    debug.hidden=false;
+    updateDiagnostic();
+  });
   function validConfig(c){
     if(!c||typeof c!=='object'||c.format!=='webar-slam-lab-v1')throw Error('Configuración de experiencia incorrecta');
     return {
@@ -260,11 +265,54 @@
     if(!point||!Number.isFinite(point.x))return;
     placeAt(point);
   });
-  scene.addEventListener('realityready',()=>{tell('Cámara lista. Apuntá al suelo y tocá donde quieras colocar el objeto.');});
+  scene.addEventListener('realityready',()=>{
+    xrReady=true;
+    xrActivation='Seguimiento espacial activo';
+    tell('Cámara lista. Apuntá al suelo y tocá donde quieras colocar el objeto.');
+  });
   scene.addEventListener('realityerror',event=>{
     const detail=event.detail||{};
     error('El motor SLAM no pudo arrancar: '+String(detail.message||detail.error||'revisá el acceso a la cámara y la compatibilidad.'));
   });
+  // El error "XR8 is not defined" provenía de activar xrconfig/xrweb
+  // antes de terminar la carga asíncrona. Aplicar ambos componentes solo
+  // cuando 8th Wall y la escena A-Frame estén realmente disponibles.
+  function activateSpatialXR(){
+    if(xrStarted||!window.XR8||!window.AFRAME||!scene.hasLoaded)return;
+    try{
+      const apis=window.XR8.AFrame||{};
+      if(!AFRAME.components.xrconfig&&apis.xrconfigComponent)
+        AFRAME.registerComponent('xrconfig',apis.xrconfigComponent());
+      if(!AFRAME.components.xrweb&&apis.xrwebComponent)
+        AFRAME.registerComponent('xrweb',apis.xrwebComponent());
+      if(!AFRAME.components.xrconfig||!AFRAME.components.xrweb){
+        xrActivation='Esperando componentes XR8.AFrame';
+        updateDiagnostic();
+        return;
+      }
+      xrStarted=true;
+      xrActivation='Activando XRConfig y XRWeb';
+      tell('Activando seguimiento espacial y solicitando cámara…');
+      scene.setAttribute('xrconfig','');
+      scene.setAttribute('xrweb','allowedDevices: any');
+    }catch(e){
+      xrActivation='Error al activar XR8: '+e.message;
+      error(xrActivation);
+    }
+  }
+  window.addEventListener('xrloaded',()=>setTimeout(activateSpatialXR,0));
+  scene.addEventListener('loaded',activateSpatialXR);
+  const startPoll=setInterval(()=>{
+    activateSpatialXR();
+    if(xrStarted||performance.now()-initTimestamp>45000)clearInterval(startPoll);
+  },500);
+  // No ocultar indefinidamente el error detrás del cargador de 8th Wall.
+  setTimeout(()=>{
+    if(xrReady||fallback.classList.contains('show'))return;
+    debug.hidden=false;
+    updateDiagnostic();
+    tell('El seguimiento todavía no arrancó. Revisá «Detalles»; si persiste, abrí el diagnóstico.');
+  },12000);
   // Los dos formatos (publicado y local) usan exactamente la misma escena.
   loadConfig().then(()=>{configReady=true;updateDiagnostic();}).catch(e=>error(e.message));
   if(typeof window.AFRAME==='undefined')error('No pudo cargarse 8-Frame. Revisá la conexión a Internet.');
