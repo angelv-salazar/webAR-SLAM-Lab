@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" preserveAspectRatio="xMidYMin slice">
+<defs>
+  <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#edf5e9" stop-opacity=".65"/>
+    <stop offset=".24" stop-color="#52665f" stop-opacity=".45"/>
+    <stop offset=".48" stop-color="#c6d1c8" stop-opacity=".64"/>
+    <stop offset=".7" stop-color="#263c37" stop-opacity=".55"/>
+    <stop offset="1" stop-color="#e7f3ed" stop-opacity=".6"/>
+  </linearGradient>
+  <linearGradient id="bone" x1="0" y1="0" x2=".8" y2="1">
+    <stop stop-color="#dae5da" stop-opacity=".67"/>
+    <stop offset=".55" stop-color="#718780" stop-opacity=".26"/>
+    <stop offset="1" stop-color="#ccf6cc" stop-opacity=".10"/>
+  </linearGradient>
+  <radialGradient id="acid"><stop stop-color="#c1ff4d" stop-opacity=".44"/><stop offset="1" stop-color="#a8fa66" stop-opacity="0"/></radialGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="12"/></filter>
+  <filter id="shine"><feGaussianBlur stdDeviation="1.7"/></filter>
+</defs>
+<!-- Anatomical metallic interconnections, away from form controls -->
+<g fill="none" stroke="url(#chrome)" stroke-linecap="round" opacity=".84">
+  <path d="M-60 20 C180 66 206 12 374 28 S651 112 822 28 S1146 -27 1347 47 S1567 81 1676 -9" stroke-width="17"/>
+  <path d="M-65 22 C145 91 264 34 413 69 S705 129 847 40 S1157 35 1352 98 S1560 66 1664 83" stroke-width="4"/>
+  <path d="M1110 -80 C1177 48 1197 76 1315 89 S1447 40 1535 -20" stroke-width="11"/>
+  <path d="M1198 76 C1260 119 1304 162 1390 176 S1549 131 1650 197" stroke-width="8"/>
+  <path d="M1322 89 C1348 144 1325 220 1372 278 S1515 341 1626 382" stroke-width="10"/>
+  <path d="M1451 140 C1479 194 1518 206 1598 208" stroke-width="7"/>
+  <path d="M-65 692 C99 713 146 799 244 838 S395 862 507 936 S749 1003 931 952 S1233 946 1448 1043 S1674 1049" stroke-width="13"/>
+  <path d="M88 723 C107 796 143 857 246 887 S374 940 402 1100" stroke-width="8"/>
+  <path d="M240 838 C268 784 290 745 365 746 S481 829 554 854" stroke-width="11"/>
+  <path d="M482 932 C553 871 612 849 728 871 S891 975 1021 949" stroke-width="8"/>
+  <path d="M972 954 C1053 894 1117 871 1207 910 S1316 1006 1354 1130" stroke-width="11"/>
+</g>
+<!-- Hollow tensile membranes -->
+<g fill="url(#bone)" fill-rule="evenodd" stroke="url(#chrome)" stroke-width="2" opacity=".76">
+ <path d="M1048 -32 C1175 21 1215 58 1336 64 C1417 68 1494 19 1631 -33 L1655 137 C1550 103 1452 104 1366 145 C1272 186 1221 160 1189 101 C1144 54 1084 35 1048 -32 Z M1192 41 C1264 73 1303 87 1357 91 C1406 98 1434 63 1472 46 C1395 43 1324 33 1192 41 Z M1403 109 C1475 106 1542 94 1594 110 C1543 147 1463 155 1403 109 Z"/>
+ <path d="M-25 723 C94 745 142 805 210 839 C296 876 334 836 412 871 C497 908 531 953 650 967 L745 1080 L520 1130 C430 1005 322 1059 227 971 C156 906 69 887 -25 894 Z M73 802 C126 814 169 867 241 882 C175 893 95 866 73 802 Z M292 910 C382 883 446 925 481 973 C421 953 361 947 292 910 Z"/>
+ <path d="M1593 721 C1509 746 1483 827 1364 835 C1295 841 1232 803 1178 843 C1116 886 1138 1001 1143 1110 L1622 1130 Z M1504 786 C1458 832 1410 845 1355 856 C1418 878 1504 839 1504 786 Z M1241 868 C1204 890 1188 948 1221 980 C1242 929 1255 902 1241 868 Z"/>
+</g>
+<!-- Scattered alien spurs and filament branches -->
+<g stroke="url(#chrome)" fill="none" stroke-linecap="round">
+ <path d="M225 44 C243 109 222 137 192 156 M225 44 C279 94 314 117 351 120 M225 44 C186 10 148 -14 116 -52" stroke-width="7"/>
+ <path d="M807 38 C769 115 694 152 611 171 M807 38 C865 121 922 147 1016 162" stroke-width="8"/>
+ <path d="M1391 172 C1368 239 1327 243 1287 273 M1391 172 C1465 225 1486 273 1499 323" stroke-width="5"/>
+ <path d="M367 746 C332 682 264 644 222 639 M367 746 C447 738 484 704 518 671" stroke-width="5"/>
+ <path d="M717 871 C704 807 642 759 578 750 M717 871 C771 830 814 793 884 787" stroke-width="6"/>
+ <path d="M1207 910 C1275 887 1333 858 1397 802 M1207 910 C1162 840 1094 812 1054 802" stroke-width="5"/>
+</g>
+<g fill="url(#acid)" filter="url(#blur)">
+  <circle cx="215" cy="80" r="66"/><circle cx="1356" cy="96" r="88"/>
+  <circle cx="359" cy="764" r="75"/><circle cx="1216" cy="896" r="94"/>
+</g>
+<g fill="#d5ff99" opacity=".55"><circle cx="225" cy="44" r="3"/><circle cx="807" cy="38" r="2.5"/><circle cx="1391" cy="172" r="3"/><circle cx="367" cy="746" r="2.5"/><circle cx="1207" cy="910" r="3.5"/></g>
+</svg>
