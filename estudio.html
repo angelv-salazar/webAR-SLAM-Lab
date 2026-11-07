@@ -742,7 +742,7 @@ a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);
 for(const name of ['sessionName','sessionDesc']){
 $(name).addEventListener('input',()=>{
 if(!session)return;
-session.name=$('sessionName').value.trim()||'Recorrido sin nombre';
+session.name=$('sessionName').value.trim();
 session.description=$('sessionDesc').value;
 markDirty();
 });
@@ -962,7 +962,7 @@ $('printMarker').onclick=async()=>{
 window.addEventListener('afterprint',()=>{if(printURL){URL.revokeObjectURL(printURL);printURL=null;printer.removeAttribute('src');}});
 $('saveSession').onclick=async()=>{
 try{
-  if(isNewSession&&!session.name.trim()){
+  if(isNewSession&&!$('sessionName').value.trim()){
     inform('Escribe un nombre para el nuevo recorrido antes de guardarlo.',true);
     $('sessionName').focus();
     return;
