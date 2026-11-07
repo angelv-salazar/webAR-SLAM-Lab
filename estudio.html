@@ -993,7 +993,7 @@ $('preparePublish').onclick=async()=>{
    inform('Generando Image Targets 8th Wall, GLB, marcadores imprimibles y manifiesto SLAM…');
    const result=await preparePublication();
    inform('ZIP de publicación listo para '+result.count+' marcador(es).\nURL definitiva: '+result.url+
-   '\nTodavía NO está publicado. Adjuntá este ZIP en nuestra conversación para que pueda subirlo a webAR-SLAM-Lab y activar el recorrido.');
+   '\nTodavía NO está publicado. Subí este único ZIP en la carpeta importar/ de webAR-SLAM-Lab (GitHub → Add file → Upload files). La automatización lo publicará.');
  }catch(error){inform('No se pudo preparar la publicación:\n'+error.message,true);}
  finally{button.disabled=false;button.textContent='Preparar publicación';}
 };
