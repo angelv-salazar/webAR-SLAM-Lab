@@ -19,7 +19,8 @@ const THREE=window.AFRAME?.THREE;
 let manifestName='',configReady=false,engineStarted=false,xrReady=false;
 let currentId=null,showAll=false,lastError='',lastFrame=0,typingFrame=0,typingState=null;
 let descriptionId=null,descriptionCollapsed=false;
-let scanStarted=false,markerFoundCount=0,lastStatusUpdate=0;
+let scanStarted=false,markerFoundCount=0,lastStatusUpdate=0,calibrationVisible=false;
+const PHYSICAL_PRINT_CM=15;
 let source='sin cargar';
 const log=[];
 function say(m){message.textContent=m;}
@@ -49,6 +50,11 @@ function refreshDiagnostic(){
     'Activos en imagen: '+(rows.filter(r=>r.targetVisible).map(r=>r.title).join(', ')||'ninguno'),
     'En pantalla: '+(rows.filter(r=>r.root?.object3D.visible).map(r=>r.title).join(', ')||'ninguno'),
     'Visualización: '+(showAll?'Todos los reconocidos':'Último reconocido'),
+    ...rows.filter(r=>r.seen).map(r=>{
+      const physical=Number.isFinite(r.printSideWorld)?(r.printSideWorld*100).toFixed(1):'?';
+      const targetWidth=Number.isFinite(r.detectedWidth)?r.detectedWidth.toFixed(4):'?';
+      return r.title+': solicitado '+r.sizeCm+' cm; lado virtual '+physical+' cm; escala XR '+r.engineScale.toFixed(3)+'; ancho target '+targetWidth;
+    }),
     lastError?'Error: '+lastError:'',
     '--- Eventos ---',
     ...log
@@ -89,7 +95,9 @@ function addRow(item,modelURL,targetData){
     rotationDeg:cleanTransform(item.rotationDeg),
     animation:['spin','float','pulse','embedded','none'].includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
-    root:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0
+    root:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
+    markerLocalSide:.15,engineScale:1,detectedWidth:null,printSideWorld:null,
+    baseBounds:null,baseMaxAxis:0,calibrationSquare:null,calibrationMaterial:null
   };
   rowByTarget.set(targetName,row);rows.push(row);
   return row;
@@ -141,30 +149,59 @@ async function readLocal(){
 }
 function makeEntities(){
   for(const row of rows){
+    // XR8 entrega la orientación completa del plano XY del marcador.
+    // La rotación de 90° en X convierte nuestros ejes del Estudio
+    // (X a la derecha, Y encima del papel, Z a lo largo del suelo)
+    // en ejes locales del image target (X, Y en el papel, Z normal).
     const root=document.createElement('a-entity');
     root.id='anclaje-'+row.id;root.object3D.visible=false;
+    const axis=document.createElement('a-entity');
+    axis.object3D.rotation.x=Math.PI/2;
     const pivot=document.createElement('a-entity');
     const asset=document.createElement('a-entity');
-    pivot.appendChild(asset);root.appendChild(pivot);scene.appendChild(root);
-    row.root=root;row.pivot=pivot;row.model=asset;
+    pivot.appendChild(asset);axis.appendChild(pivot);root.appendChild(axis);
+    scene.appendChild(root);
+    row.root=root;row.axis=axis;row.pivot=pivot;row.model=asset;
+
+    // Un cuadrado de 1×1 en coordenadas del papel, escalado al tamaño
+    // físico del marcador (15 × 15 cm). Es una guía opcional de prueba.
+    const geo=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-.5,-.5,.003),
+      new THREE.Vector3(.5,-.5,.003),
+      new THREE.Vector3(.5,.5,.003),
+      new THREE.Vector3(-.5,.5,.003)
+    ]);
+    const mat=new THREE.LineBasicMaterial({color:0xffff00,depthTest:false,depthWrite:false});
+    const square=new THREE.LineLoop(geo,mat);
+    square.visible=false;square.renderOrder=1000;
+    root.object3D.add(square);row.calibrationSquare=square;row.calibrationMaterial=mat;
+
     asset.addEventListener('model-loaded',event=>{
       try{
         const mesh=event.detail?.model||asset.getObject3D('mesh');
         if(!mesh)throw Error('GLB sin geometría');
-        const bounds=new THREE.Box3().setFromObject(mesh);
-        const dim=new THREE.Vector3(),center=new THREE.Vector3();
-        bounds.getSize(dim);bounds.getCenter(center);
+        // ¡No medir el GLB con la rotación y la escala de la cámara
+        // ni del marcador! THREE.Box3.setFromObject(mesh) incorporaba
+        // los ancestros y podía devolver dimensiones/centro erróneos.
+        // La copia con padre identidad preserva las transformaciones
+        // internas del GLB, como hace la vista previa del Estudio.
+        const copyRoot=new THREE.Group();
+        const measure=mesh.clone(true);
+        copyRoot.add(measure);copyRoot.updateMatrixWorld(true);
+        const bounds=new THREE.Box3().setFromObject(measure);
+        const dim=new THREE.Vector3();
+        bounds.getSize(dim);
         const maxAxis=Math.max(dim.x,dim.y,dim.z);
         if(!(maxAxis>0)||!Number.isFinite(maxAxis))throw Error('GLB sin tamaño válido');
-        const f=(row.sizeCm/100)/maxAxis;
-        asset.object3D.scale.setScalar(f);
-        asset.object3D.position.set(-center.x*f,-bounds.min.y*f,-center.z*f);
+        row.baseBounds=bounds;row.baseMaxAxis=maxAxis;
         row.loaded=true;row.loadError='';
+        updateModelScale(row);
         const clips=mesh.animations||[];
         if(row.animation==='embedded'&&clips.length){
           row.mixer=new THREE.AnimationMixer(mesh);
           for(const clip of clips)row.mixer.clipAction(clip).play();
         }
+        note('GLB listo: '+row.title+' · tamaño '+row.sizeCm+' cm respecto al marcador de 15 cm');
         syncVisibility();refreshDiagnostic();
       }catch(e){row.loadError=e.message;note('Modelo '+row.title+': '+e.message);}
     });
@@ -175,33 +212,66 @@ function makeEntities(){
     asset.setAttribute('gltf-model',row.modelURL);
   }
 }
+function markerSideUnits(row,detail){
+  // 8th Wall comunica el ancho del recorte 3:4 (no el del PNG cuadrado).
+  // Reconstruimos el ancho del PNG de 15 cm a partir de la fracción recortada.
+  // El ancho reportado está en unidades LOCALES del plano; el target event
+  // comunica su escala mundial en detail.scale, por separado.
+  const props=row.targetData?.properties||{};
+  const ratio=Number(props.width)/Number(props.originalWidth);
+  const measured=Number(detail.scaledWidth);
+  if(Number.isFinite(measured)&&measured>0&&Number.isFinite(ratio)&&ratio>.01&&ratio<=1){
+    row.detectedWidth=measured;
+    return measured/ratio;
+  }
+  // Con scale:absolute, usar los 15 cm conocidos si una versión del motor
+  // omite scaledWidth. El diagnóstico muestra esta situación.
+  const scale=Number(detail.scale);
+  const fallbackScale=Number.isFinite(scale)&&scale>0?scale:1;
+  return row.markerLocalSide>0&&row.seen?row.markerLocalSide:(PHYSICAL_PRINT_CM/100)/fallbackScale;
+}
+function updateModelScale(row){
+  if(!row.loaded||!row.baseBounds||!(row.baseMaxAxis>0)||!row.model)return;
+  // Longitud en coordenadas del image target (ANTES de aplicar detail.scale).
+  // Ejemplo: modelo 9,5 cm / impresión 15 cm = 63,3% del lado del papel.
+  const targetSize=row.markerLocalSide*(row.sizeCm/PHYSICAL_PRINT_CM);
+  const f=targetSize/row.baseMaxAxis;
+  const bounds=row.baseBounds;
+  row.model.object3D.scale.setScalar(f);
+  row.model.object3D.position.set(
+    -((bounds.min.x+bounds.max.x)/2)*f,
+    -bounds.min.y*f,
+    -((bounds.min.z+bounds.max.z)/2)*f
+  );
+}
 function syncVisibility(){
   for(const row of rows){
     if(row.root)row.root.object3D.visible=Boolean(
-      row.seen&&row.loaded&&(showAll||row.id===currentId)
+      row.seen&&(row.loaded||calibrationVisible)&&(showAll||row.id===currentId)
     );
+    if(row.calibrationSquare)row.calibrationSquare.visible=calibrationVisible;
   }
   $('framing').hidden=rows.filter(r=>r.seen).length<2;
   $('framing').textContent=showAll?'Ver último':'Ver todo';
 }
-function yawFromTarget(rotation,fallback){
-  if(!rotation)return fallback;
-  const quat=new THREE.Quaternion(
-    cleanTransform(rotation.x),cleanTransform(rotation.y),cleanTransform(rotation.z),
-    Number.isFinite(Number(rotation.w))?Number(rotation.w):1
-  );
-  const dir=new THREE.Vector3(0,1,0).applyQuaternion(quat);dir.y=0;
-  if(dir.lengthSq()<.001)return fallback;
-  dir.normalize();
-  return Math.atan2(dir.x,dir.z);
-}
 function poseFromEvent(d,row){
   if(!d?.position||!d?.rotation)return null;
-  const xyz=d.position;
-  if(![xyz.x,xyz.y,xyz.z].every(v=>Number.isFinite(Number(v))))return null;
+  const xyz=d.position,quat=d.rotation;
+  if(![xyz.x,xyz.y,xyz.z,quat.x,quat.y,quat.z,quat.w].every(v=>Number.isFinite(Number(v))))return null;
+  const rotation=new THREE.Quaternion(
+    Number(quat.x),Number(quat.y),Number(quat.z),Number(quat.w)
+  );
+  if(rotation.lengthSq()<.0001)return null;
+  rotation.normalize();
+  const scale=Number(d.scale);
+  const targetScale=Number.isFinite(scale)&&scale>0?scale:1;
+  const side=markerSideUnits(row,d);
+  if(!(side>0)||!Number.isFinite(side))return null;
   return {
     position:new THREE.Vector3(Number(xyz.x),Number(xyz.y),Number(xyz.z)),
-    yaw:yawFromTarget(d.rotation,row.root?.object3D.rotation.y||0)
+    rotation,
+    scale:targetScale,
+    markerLocalSide:side
   };
 }
 function receiveTarget(event,first){
@@ -210,10 +280,19 @@ function receiveTarget(event,first){
   const pose=poseFromEvent(d,row);if(!pose)return;
   const fresh=!row.targetVisible||!row.seen;
   row.targetVisible=true;row.lastTargetAt=performance.now();row.pose=pose;
+  // Todas las transformaciones y el tamaño se basan en esta misma
+  // referencia física, no en una posición arbitraria del celular.
+  const previousSide=row.markerLocalSide;
+  row.markerLocalSide=pose.markerLocalSide;
+  row.engineScale=pose.scale;
+  row.printSideWorld=pose.markerLocalSide*pose.scale;
+  if(row.calibrationSquare)row.calibrationSquare.scale.setScalar(row.markerLocalSide);
+  if(Math.abs(previousSide-row.markerLocalSide)>1e-5)updateModelScale(row);
   if(!row.seen){
     row.seen=true;
     row.root.object3D.position.copy(pose.position);
-    row.root.object3D.rotation.y=pose.yaw;
+    row.root.object3D.quaternion.copy(pose.rotation);
+    row.root.object3D.scale.setScalar(pose.scale);
     row.recognitions++;
     markerFoundCount++;
     note('Primera detección: '+row.title);
@@ -286,20 +365,31 @@ function updateFrame(now){
   for(const row of rows){
     if(!row.root||!row.pivot)continue;
     if(row.targetVisible&&row.pose){
-      // En la prueba híbrida esta corrección se comportó mejor que dejar
-      // la pose totalmente libre. Se aplica por marcador, nunca globalmente.
+      // Suavizar la pose completa (posición + quaternion 3D + escala).
+      // La información se congela al perder el marcador para que SLAM
+      // mantenga cada anclaje hasta un nuevo reconocimiento.
       const alpha=1-Math.exp(-dt*8);
       row.root.object3D.position.lerp(row.pose.position,alpha);
-      let delta=row.pose.yaw-row.root.object3D.rotation.y;
-      delta=Math.atan2(Math.sin(delta),Math.cos(delta));
-      row.root.object3D.rotation.y+=delta*alpha;
+      row.root.object3D.quaternion.slerp(row.pose.rotation,alpha);
+      const oldScale=row.root.object3D.scale.x;
+      const next=oldScale+(row.pose.scale-oldScale)*alpha;
+      row.root.object3D.scale.setScalar(next);
     }
     if(row.targetVisible&&now-row.lastTargetAt>1600){
       row.targetVisible=false;row.pose=null;
     }
     const t=now/1000,rot=(row.rotationDeg*Math.PI)/180;
     const pivot=row.pivot.object3D;
-    pivot.position.set(row.xCm/100,row.yCm/100+(row.animation==='float'?.045*Math.sin(t*1.8):0),row.zCm/100);
+    // Los ejes de la vista previa son los mismos del modelo:
+    // X = derecha del papel; Y = arriba/normal al papel;
+    // Z = profundidad en el plano. axis.rotation.x convierte
+    // esos ejes al plano XY y normal +Z del image target.
+    const unitsPerCm=row.markerLocalSide/PHYSICAL_PRINT_CM;
+    pivot.position.set(
+      row.xCm*unitsPerCm,
+      (row.yCm+(row.animation==='float'?4.5*Math.sin(t*1.8):0))*unitsPerCm,
+      row.zCm*unitsPerCm
+    );
     pivot.rotation.y=rot+(row.animation==='spin'?t*.6:0);
     pivot.scale.setScalar(row.animation==='pulse'?1+.12*Math.sin(t*2):1);
     if(row.mixer)row.mixer.update(dt);
@@ -321,7 +411,9 @@ function initEngine(){
     });
     note('Activando '+rows.length+' image targets 8th Wall con SLAM');
     scene.setAttribute('xrconfig','');
-    scene.setAttribute('xrweb','allowedDevices: any');
+    // Especificar también la escala en xrweb evita que su inicialización
+    // restablezca la opción global predeterminada "responsive".
+    scene.setAttribute('xrweb','allowedDevices: any; scale: absolute');
     say('Autorizá la cámara. Apuntá a uno de los marcadores impresos.');
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
@@ -337,6 +429,13 @@ $('fullscreen').onclick=async()=>{
   }catch(e){note('Pantalla completa no disponible: '+e.message);}
 };
 $('details').onclick=()=>{diag.hidden=!diag.hidden;refreshDiagnostic();};
+$('calibrate').onclick=()=>{
+  calibrationVisible=!calibrationVisible;
+  $('calibrate').setAttribute('aria-pressed',calibrationVisible?'true':'false');
+  $('calibrate').textContent=calibrationVisible?'Ocultar contorno':'Contorno 15 cm';
+  syncVisibility();
+  note(calibrationVisible?'Mostrando contorno físico 15×15 cm':'Contorno de calibración oculto');
+};
 $('retry').onclick=()=>location.reload();
 infoToggle.onclick=()=>{
   descriptionCollapsed=!descriptionCollapsed;
