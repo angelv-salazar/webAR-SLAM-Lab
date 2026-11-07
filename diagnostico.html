@@ -38,17 +38,17 @@
 <body>
   <div id="debugPanel">
     <h1>SLAM · Diagnóstico de inicio</h1>
-    <p>Esta página utiliza el mismo motor, pero elimina el cargador que quedó bloqueado. Podés dejar visible este panel mientras probás la cámara.</p>
+    <p>Si aparece <strong>REALITY READY</strong> y se ve el vídeo detrás del panel, ¡la cámara y SLAM ya funcionan! No hace falta pedir el permiso de nuevo. Abrí ahora la prueba de colocación.</p>
     <div id="status">Iniciando pruebas…</div>
     <div id="events"></div>
     <div class="buttons">
-      <button type="button" id="cameraTest">Comprobar permiso de cámara</button>
+      <button type="button" id="cameraTest">Consultar cámara activa</button>
       <button type="button" id="copy">Copiar diagnóstico</button>
       <button type="button" id="reload">Recargar</button>
-      <a class="action" href="visor.html">Visor original</a>
+      <a class="action" href="visor.html?v=4">Probar colocar espécimen</a>
     </div>
   </div>
-  <div id="groundhint">Si aparece el vídeo, mové la cámara lentamente. Si no aparece, consultá el panel superior.</div>
+  <div id="groundhint">Si el vídeo aparece y dice REALITY READY, abrí «Probar colocar espécimen». No vuelvas a solicitar la cámara.</div>
   <a-scene
     id="testScene"
     renderer="colorManagement: true; antialias: true"
@@ -102,7 +102,11 @@
         if(spatialStarted||performance.now()-began>45000)clearInterval(activationPoll);
       },500);
       scene.addEventListener('loaded',()=>{flags.sceneLoaded=true;log('A-Frame: escena lista');activateXR();});
-      scene.addEventListener('realityready',()=>{flags.realityReady=true;log('REALITY READY: seguimiento activo');});
+      scene.addEventListener('realityready',()=>{
+        flags.realityReady=true;
+        flags.cameraCheck='Cámara controlada por XR8 (no se solicita por separado)';
+        log('REALITY READY: seguimiento activo. No hace falta reabrir cámara.');
+      });
       scene.addEventListener('realityerror',e=>{flags.realityError=String(e.detail?.message||e.detail?.error||'error sin detalle');log('REALITY ERROR: '+flags.realityError);});
       scene.addEventListener('camera-error',e=>log('CAMERA ERROR: '+String(e.detail?.message||e.detail||e)));
       window.addEventListener('xrloaded',()=>log('XR loaded capturado en visor'));
@@ -117,20 +121,21 @@
         update();
       }
       async function testCamera(){
-        $('cameraTest').disabled=true;
-        flags.cameraCheck='solicitando acceso';update();
-        try{
-          if(!navigator.mediaDevices?.getUserMedia)throw Error('getUserMedia no disponible');
-          const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-          const track=stream.getVideoTracks()[0];
-          flags.cameraCheck='OK · '+(track?.label||'cámara accesible');
-          stream.getTracks().forEach(t=>t.stop());
-          await checkPermission();
-          log('Acceso a cámara independiente: correcto');
-        }catch(e){
-          flags.cameraCheck='ERROR '+String(e.name||'')+': '+String(e.message||e);
-          log('Error de cámara: '+flags.cameraCheck);
-        }finally{$('cameraTest').disabled=false;update();}
+        // XR8 ya es el dueño de la cámara. No llamar getUserMedia otra vez:
+        // otra petición puede bloquear la sesión de seguimiento activa.
+        const video=[...document.querySelectorAll('video')].find(v=>v.videoWidth>0)||document.querySelector('video');
+        if(flags.realityReady&&video?.readyState>=2){
+          flags.cameraCheck='OK · vídeo SLAM '+video.videoWidth+'×'+video.videoHeight;
+          log('Cámara SLAM verificada sin solicitar otro stream');
+        }else if(video?.readyState>=2){
+          flags.cameraCheck='Vídeo activo '+video.videoWidth+'×'+video.videoHeight;
+          log('Vídeo existente detectado, sin abrir nueva cámara');
+        }else{
+          flags.cameraCheck='Sin vídeo activo; verificar permiso sin activar otra cámara';
+          log('Sin vídeo de XR8 todavía; no se solicitó una segunda cámara');
+        }
+        await checkPermission();
+        update();
       }
       function checkScripts(){
         const scripts=[...document.scripts].filter(x=>x.src);
@@ -153,7 +158,7 @@
           'XR components: '+(window.AFRAME?['xrconfig','xrweb'].map(x=>x+'='+(AFRAME.components[x]?'OK':'NO')).join(', '):'no disponibles'),
           'Vídeo: '+(video?(video.videoWidth+' × '+video.videoHeight+' · listo='+video.readyState):'sin elemento'),
           'Cámara/permiso: '+flags.permission,
-          'Prueba manual cámara: '+flags.cameraCheck,
+          'Comprobación sin reabrir: '+flags.cameraCheck,
           'HTTPS: '+(window.isSecureContext?'sí':'NO'),
           '--- Recursos ---',
           checkScripts(),
