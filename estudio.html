@@ -1,275 +1,956 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Estudio SLAM · WebAR Lab</title>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <style>
-    :root{font-family:Inter,system-ui,-apple-system,sans-serif;color:#1a3025;background:#f3f6f3}
-    *{box-sizing:border-box}body{margin:0}
-    header{background:#10251e;color:#ecfff1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 28px}
-    header a{font-size:13px;text-decoration:none;color:#a6dabb}header strong{font-size:17px}
-    main{max-width:1350px;margin:auto;padding:25px;display:grid;grid-template-columns:minmax(300px,430px) minmax(340px,1fr);align-items:start;gap:20px}
-    section{background:#fff;border:1px solid #dce5de;border-radius:17px;padding:23px;box-shadow:0 3px 17px #123a200b}
-    h1{font-size:24px;letter-spacing:-.04em;margin:0 0 5px}h2{font-size:17px;margin:0 0 16px;letter-spacing:-.02em}
-    p{font-size:13px;line-height:1.55;color:#6a7b6f}
-    .muted{color:#697d6f;font-size:12px;line-height:1.55}
-    .kicker{color:#43825f;font-size:11px;letter-spacing:.15em;text-transform:uppercase;font-weight:750}
-    label{display:block;margin:14px 0 6px;font-size:12px;font-weight:680}
-    input,textarea,select{display:block;width:100%;padding:11px 12px;border:1px solid #cedcd3;border-radius:10px;background:#fafcfb;color:#182c20;font:13px system-ui}
-    input[type="range"]{padding:8px 0;accent-color:#247e57;border:none;background:transparent}
-    input[type="file"]{background:#f4f9f5;cursor:pointer}
-    input:focus,textarea:focus,select:focus{outline:2px solid #a7dac1;outline-offset:1px}
-    textarea{min-height:92px;resize:vertical;line-height:1.5}
-    .columns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    .toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:15px 0}
-    button,.linkbutton{border:0;border-radius:10px;background:#176143;color:#fff;padding:11px 13px;font:650 13px system-ui;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center;gap:7px}
-    button.secondary,.linkbutton.secondary{background:#e8f4ec;color:#174b38}
-    button:disabled{opacity:.45;cursor:not-allowed}
-    button:focus-visible,.linkbutton:focus-visible{outline:3px solid #a3d6b5;outline-offset:2px}
-    .grow{flex:1}.divider{height:1px;background:#e4eae5;margin:23px 0}
-    #preview{height:min(61vh,580px);min-height:360px;border-radius:13px;overflow:hidden;background:#e9f1ea;position:relative}
-    #previewStatus{position:absolute;bottom:12px;left:12px;right:12px;padding:9px 12px;background:#fffdf4e8;border-radius:8px;font-size:12px;pointer-events:none}
-    .stagehead{display:flex;justify-content:space-between;align-items:start;gap:12px}
-    #notice{white-space:pre-wrap;font-size:12px;line-height:1.5;color:#20573e;background:#e9f5ed;padding:12px;border-radius:11px;margin-top:15px}
-    #notice.error{color:#84352c;background:#fff0ec}
-    .pill{font-size:11px;background:#e1f2e6;color:#206045;padding:5px 9px;border-radius:20px;white-space:nowrap}
-    @media(max-width:850px){main{grid-template-columns:1fr}#preview{height:54vh;min-height:300px}header{padding:16px 19px}main{padding:16px}}
-  </style>
-  <script type="importmap">
-  {"imports":{
-    "three":"https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js",
-    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/"
-  }}
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estudio SLAM — Editor de recorridos</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ar-js-org/marker-creator@0.1.0/dist/marker-creator.umd.js"></script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/"}}
+</script>
+<style>
+:root{color-scheme:light;--bg:#f3f5f4;--ink:#172526;--muted:#647272;--line:#d9e1dd;--green:#236c57}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{background:#fff;border-bottom:1px solid var(--line);padding:17px max(18px,calc((100vw - 1450px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}
+header h1{margin:0;font-size:20px;letter-spacing:-.4px}header p{font-size:12px;color:var(--muted);margin:5px 0 0}
+.tag{font-size:11px;color:var(--green);background:#e4f3eb;border:1px solid #cee7db;padding:6px 10px;border-radius:40px;white-space:nowrap}
+main{max-width:1490px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(250px,310px) minmax(270px,1fr) minmax(350px,1.2fr);gap:15px;align-items:start}
+.card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px;min-width:0}
+h2{font-size:15px;margin:0 0 14px}h3{font-size:13px;margin:0 0 9px}
+label{display:block;font-size:12px;color:#536564;font-weight:650;margin:12px 0 5px}
+input:not([type=file]):not([type=range]),select,textarea{width:100%;padding:10px;border:1px solid #bdccc6;background:white;color:var(--ink);border-radius:8px;min-width:0}
+input[type=file]{width:100%;font-size:12px;max-width:100%}
+input[type=range]{width:100%;accent-color:var(--green)}
+small,.muted{font-size:12px;line-height:1.5;color:var(--muted)}.divider{border-top:1px solid var(--line);margin:17px 0}
+.btn{padding:10px 12px;border-radius:8px;border:1px solid var(--green);background:var(--green);color:#fff;font-weight:650;font-size:12px}
+.btn.secondary{background:white;color:var(--ink);border-color:#b9ccc4}.btn.warn{background:white;color:#9b3333;border-color:#e7c4c4}
+.btn:disabled{cursor:default;opacity:.48}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}
+.row.stretch>*{flex:1}.row button{flex:1}
+#entryList{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.entry{width:100%;text-align:left;border:1px solid var(--line);border-radius:9px;background:#fafcfb;padding:11px;color:var(--ink)}
+.entry.active{background:#eaf5f0;border-color:#7abb9e}
+.entry strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.entry span{display:block;margin-top:5px;font-size:11px;color:#60736c}
+#preview{position:relative;height:min(56vh,500px);min-height:320px;background:radial-gradient(circle at 50% 40%,#e0e8e7,#b6c6c1);border-radius:10px;overflow:hidden}
+#preview canvas{display:block;width:100%;height:100%}
+#previewStatus{position:absolute;bottom:12px;left:12px;right:12px;background:#14231eec;color:#fff;padding:8px 11px;border-radius:7px;font-size:12px;pointer-events:none}
+#previewTools{margin-top:12px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+#previewTools .btn{flex:1}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.metrics label{margin-top:8px}.metrics input{width:100%}
+.note{background:#edf4f0;border-radius:9px;padding:11px;color:#31564a;font-size:12px;line-height:1.5}
+#status{padding:10px 12px;background:#172c28;color:#e0f7e9;border-radius:9px;font-size:12px;line-height:1.5;margin-top:12px;white-space:pre-wrap}
+#status.error{background:#663333;color:#fff1f1}
+#sizeValue{font-variant-numeric:tabular-nums}
+.pill{color:#63796c;background:#f1f7f3;font-size:11px;padding:4px 7px;border-radius:5px}
+.sessionQRBox{display:flex;gap:12px;align-items:center;border:1px solid #d6e3dc;background:#f2f9f5;border-radius:9px;padding:10px;margin-top:13px}
+#sessionQR{width:100px;height:100px;flex:none;image-rendering:pixelated;border:5px solid #fff}
+.sessionQRInfo{min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+.sessionQRInfo strong{font-size:13px}
+#sessionQRText{font:11px/1.45 ui-monospace,monospace;overflow-wrap:anywhere;margin:4px 0}
+.descriptionEditor{margin-top:18px;padding-top:12px;border-top:1px solid var(--line)}
+.descriptionEditor label{margin-top:2px;font-size:13px;color:var(--ink)}
+.descriptionEditor textarea{resize:vertical;min-height:104px;line-height:1.5}
+.descriptionMeta{display:flex;justify-content:space-between;align-items:start;gap:8px;margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45}
+.descriptionMeta output{flex:none;font-variant-numeric:tabular-nums;font-weight:650;color:var(--green)}
+.publishPanel{margin-top:15px;padding:12px;background:#eef7f2;border:1px solid #cfe1d6;border-radius:9px}
+.publishPanel h3{margin:0 0 5px}
+.publishPanel .row{margin-top:9px}
+.markerMaker{margin-top:14px;border:1px solid #cfe0d7;background:#f5faf7;padding:12px;border-radius:10px}
+#finalCanvas{display:block;width:100%;max-width:380px;height:auto;margin:13px auto;border:1px solid #d9e3dd;background:#fff}
+#markerBuildResult[hidden]{display:none!important}
+#printSheet{display:none}
+@media print{
+ @page{size:A4 portrait;margin:15mm}
+ body>header,body>main,body>footer{display:none!important}
+ #printSheet{display:block!important;margin:0;padding:0}
+ #printSheet img{display:block;width:150mm;height:150mm;max-width:none}
+}
+.qualityBox{font-size:12px;line-height:1.5;margin:10px 0 0;padding:10px;border:1px solid #d1dbd6;background:#f7faf9;color:#325044;border-radius:8px;white-space:pre-line}
+.qualityBox.invalid{border-color:#e5b0a9;background:#fff2f0;color:#8c2922}
+.qualityBox.warning{border-color:#e7ce8e;background:#fff9e6;color:#74520c}
+.qualityBox.valid{border-color:#acd9bc;background:#eef8f0;color:#285c3b}
+#selectedHint{margin:0 0 8px}
+#fileName{margin-top:5px;overflow-wrap:anywhere}
+footer{max-width:1490px;margin:4px auto 30px;padding:0 19px;font-size:12px;color:#72817b}
+@media(max-width:1170px){main{grid-template-columns:300px minmax(0,1fr)}#viewerCard{grid-column:2;grid-row:1/span 2}#markerCard{grid-column:1}}
+@media(max-width:800px){header{padding:14px 15px}main{grid-template-columns:1fr;padding:12px}#viewerCard{grid-column:auto;grid-row:auto}#preview{height:400px;min-height:270px}.card{padding:13px}}
+/* Etapa de diseño: siempre mostrar los controles junto al modelo 3D */
+main{
+  grid-template-columns:minmax(240px,285px) minmax(300px,345px) minmax(520px,1fr);
+  gap:15px;
+}
+#viewerCard{
+  position:sticky;
+  top:12px;
+  align-self:start;
+  max-height:calc(100dvh - 24px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-shadow:0 5px 24px rgba(19,53,41,.065);
+}
+.viewerHeading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex:none;margin-bottom:13px}
+.viewerHeading h2{margin:0 0 4px}
+.viewerHeading p{margin:0}
+.viewerHeading .pill{flex:none}
+.viewerWorkspace{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(240px,.8fr);
+  gap:14px;
+  min-height:0;
+  align-items:start;
+}
+.viewerStage{min-width:0}
+.stageLabel{font-size:11px;color:#5a6b63;margin:0 0 8px}
+#preview{
+  height:clamp(285px,49dvh,475px);
+  min-height:0;
+  touch-action:none;
+}
+#previewTools{margin-top:10px}
+.viewerFootnote{color:#677a72;font-size:11px;line-height:1.45;margin:9px 0 0}
+.transformDock{
+  display:flex;flex-direction:column;min-width:0;min-height:0;
+  max-height:calc(100dvh - 142px);
+  padding:12px;border:1px solid #d2e2d9;border-radius:10px;background:#f8fbf9;
+}
+.dockHeading{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;flex:none;margin-bottom:4px}
+.transformScroll{min-height:0;overflow:auto;overscroll-behavior:contain;padding-right:3px;scrollbar-width:thin;scrollbar-color:#9dbbb0 transparent}
+.transformScroll h3{font-size:12px;margin:12px 0 3px}
+.transformScroll label{font-size:11px;margin:9px 0 4px}
+.transformScroll input:not([type=range]),.transformScroll select{padding:8px 6px}
+.transformScroll input[type=range]{margin:4px 0}
+.transformScroll .metrics{gap:6px}
+.dockFootnote{font-size:11px;color:#65766e;line-height:1.35;padding-top:9px;border-top:1px solid #dae6de;margin:12px 0 0;flex:none}
+@media(max-width:1230px){
+  main{grid-template-columns:minmax(250px,300px) minmax(0,1fr)}
+  #markerCard{grid-column:1;grid-row:1}
+  #settingsCard{grid-column:1;grid-row:2}
+  #viewerCard{grid-column:2;grid-row:1 / span 3}
+}
+@media(max-width:900px){
+  main{grid-template-columns:minmax(220px,255px) minmax(0,1fr)}
+  .viewerWorkspace{grid-template-columns:minmax(0,1fr) minmax(205px,.8fr);gap:10px}
+  .transformDock{padding:9px}
+  #preview{height:clamp(230px,43dvh,390px)}
+}
+@media(max-width:780px){
+  main{display:flex;flex-direction:column;padding:12px}
+  #markerCard,#settingsCard,#viewerCard{width:100%}
+  #viewerCard{position:relative;top:auto;max-height:none;overflow:visible;order:1}
+  #markerCard{order:0}
+  #settingsCard{order:2}
+  .viewerWorkspace{grid-template-columns:minmax(0,1fr);gap:10px}
+  .transformDock{max-height:none}
+  .transformScroll{overflow:visible}
+  #preview{height:clamp(280px,45dvh,410px)}
+}
+@media(max-height:690px) and (min-width:781px){
+  #preview{height:clamp(210px,38dvh,310px)}
+  .transformDock{max-height:calc(100dvh - 125px)}
+}
+
+</style>
 </head>
 <body>
-<header><strong>Estudio SLAM <span style="color:#8ad7ae">/ laboratorio</span></strong><a href="./">← Inicio</a></header>
+<header>
+<div><h1>Estudio SLAM</h1><p>Recorridos · imagen y QR · modelos GLB · vista previa 3D · 8th Wall</p></div>
+<div class="tag">8th Wall + SLAM · múltiples marcadores</div>
+</header>
 <main>
-  <section>
-    <div class="kicker">Experimento independiente · v0.1</div>
-    <h1>Configurar espécimen</h1>
-    <p>El modelo se colocará sobre el piso y permanecerá allí mientras el seguimiento espacial funcione. No necesitás imprimir marcador.</p>
-    <label for="saved">Abrir proyecto guardado</label>
-    <div class="toolbar">
-      <select id="saved" class="grow"><option value="">— Nuevo proyecto —</option></select>
-      <button id="new" class="secondary">Nuevo</button>
+<section class="card" id="markerCard">
+<h2>1. Recorridos</h2>
+<label for="sessionSelect">Elegir recorrido</label><select id="sessionSelect"><option value="">Nuevo recorrido sin guardar</option></select>
+<label for="sessionName">Nombre del recorrido</label><input id="sessionName" value="Mi primer recorrido SLAM" maxlength="75">
+<label for="sessionDesc">Descripción (opcional)</label><textarea id="sessionDesc" rows="2" placeholder="Ej.: Recorrido de entidades digitales en el espacio expositivo"></textarea>
+<div id="sessionQRBox" class="sessionQRBox">
+  <canvas id="sessionQR" width="132" height="132" aria-label="QR del recorrido, reservado hasta publicar"></canvas>
+  <div class="sessionQRInfo">
+    <strong>QR de este recorrido</strong>
+    <div id="sessionQRText" class="muted">Preparando enlace…</div>
+    <div class="muted">Se asigna automáticamente al crear el recorrido. Será el mismo en todos sus marcadores.</div>
+    <div class="pill" style="margin-top:8px;display:inline-block">Borrador · falta publicar</div>
+  </div>
+</div>
+<div class="row stretch" style="margin-top:12px">
+<button class="btn secondary" id="newSession">+ Nuevo</button>
+<button class="btn" id="saveSession">Guardar recorrido</button>
+</div>
+<div class="row stretch" style="margin-top:8px">
+<button class="btn secondary" id="exportSession">Respaldo ZIP</button>
+<button class="btn warn" id="deleteSession">Eliminar</button>
+</div>
+<div class="publishPanel">
+<h3>Pruebas y publicación</h3>
+<p class="muted">Generá cada imagen y su QR, cargá un GLB y guardá. Después prepará el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
+<div class="row stretch">
+<button class="btn secondary" id="testSession">Probar con mi cámara</button>
+<button class="btn" id="preparePublish">Preparar publicación</button>
+</div>
+<button class="btn secondary" id="exportTexts" type="button" style="width:100%;margin-top:8px">Exportar solo descripciones (JSON)</button>
+<p class="muted" style="margin-top:8px">El modo de prueba local usa los archivos guardados en este mismo navegador. Para probar desde otro teléfono, publicá el ZIP en GitHub Pages; los QR abrirán la nueva experiencia SLAM.</p>
+</div>
+<div class="divider"></div>
+<h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
+<p class="muted">Cada imagen activa un objeto independiente con 8th Wall. SLAM intenta mantenerlo anclado al alejarte del marcador; al volver a reconocerlo corrige su posición. Todos los QR comparten la URL del recorrido.</p>
+<div id="entryList"></div>
+<button class="btn secondary" id="addEntry" style="width:100%">+ Agregar marcador</button>
+<div class="note" style="margin-top:14px">El recorrido se guarda en este navegador mediante IndexedDB. Aún no se publica en GitHub. Exportá un ZIP para conservar una copia de seguridad.</div>
+<div id="status">Preparando editor…</div>
+</section>
+<section class="card" id="settingsCard">
+<h2>3. Imagen, QR y modelo GLB · 8th Wall</h2>
+<p id="selectedHint" class="muted">Seleccioná un marcador.</p>
+<div id="entryEditor">
+<label for="entryName">Nombre del marcador / objeto</label><input id="entryName" placeholder="Ej.: Micelio 01" maxlength="75">
+<label for="entryPattern">Patrón de reconocimiento</label>
+<select id="entryPattern"><option value="custom">Imagen personalizada · 8th Wall Image Target</option></select>
+<div id="customPattern" hidden>
+<details id="manualPattern" hidden><summary class="muted">Importar un .patt de AR.js (archivo heredado)</summary>
+<label for="pattFile">Archivo .patt del marcador</label><input id="pattFile" type="file" accept=".patt,text/plain">
+</details>
+<label for="markerImage">Imagen del marcador (PNG, JPG o WebP)</label><input id="markerImage" type="file" accept="image/png,image/jpeg,image/webp">
+<p class="muted">Formato cuadrado 1:1 · mínimo 512 × 512 px · recomendado 1024 × 1024 px · máximo 10 MB.</p>
+<div id="markerQuality" class="qualityBox" aria-live="polite">Cargá una imagen para analizar su calidad.</div>
+<button class="btn secondary" id="revalidateImage" type="button" style="margin-top:7px">Analizar imagen guardada</button>
+<div class="markerMaker">
+<button class="btn" id="buildMarker" type="button" style="width:100%">Generar marcador final</button>
+<div id="markerBuildInfo" class="muted" role="status" style="margin-top:9px">Primero cargá una imagen válida. El QR quedará en la esquina inferior derecha sin opciones adicionales.</div>
+<div id="markerBuildResult" hidden>
+<canvas id="finalCanvas" width="1800" height="1800" aria-label="Marcador imprimible con QR incluido"></canvas>
+<div class="row stretch" style="margin-top:10px">
+<button class="btn secondary" id="downloadMarkerFiles" type="button">Descargar PNG + .patt</button>
+<button class="btn secondary" id="printMarker" type="button">Imprimir 15 × 15 cm</button>
+</div>
+</div>
+</div>
+<p class="muted">El visor 3D muestra el marcador final con QR después de generarlo. Si modificás la imagen, tendrás que regenerar el marcador y su .patt.</p>
+</div>
+<label for="modelFile">Modelo 3D (.glb)</label>
+<input type="file" id="modelFile" accept=".glb,model/gltf-binary,application/octet-stream">
+<p id="fileName" class="muted">Sin archivo GLB. El visor muestra una figura de referencia.</p>
+<div class="descriptionEditor">
+  <label for="entryDescription">Texto descriptivo (opcional)</label>
+  <textarea id="entryDescription" rows="5" maxlength="500" placeholder="Contá brevemente qué está viendo el visitante, su contexto o el concepto de la obra."></textarea>
+  <div class="descriptionMeta">
+    <span>Se mostrará al reconocer el marcador, después de publicar los cambios. No modifica el QR.</span>
+    <output id="descCount" for="entryDescription">0 / 500</output>
+  </div>
+</div>
+<div class="row stretch" style="margin-top:14px">
+<button id="duplicateEntry" class="btn secondary">Duplicar configuración</button>
+<button id="removeEntry" class="btn warn">Quitar marcador</button>
+</div>
+</div>
+</section>
+<section class="card" id="viewerCard">
+  <div class="viewerHeading">
+    <div>
+      <h2>4. Vista previa y transformación</h2>
+      <p class="muted">Los cambios se aplican al instante. El cuadrado del visor representa un marcador de <strong>15 × 15 cm</strong>.</p>
     </div>
-    <label for="name">Nombre de la obra</label><input id="name" maxlength="80" placeholder="Ej.: Espécimen 01">
-    <label for="description">Texto descriptivo (opcional · 500 caracteres)</label>
-    <textarea id="description" maxlength="500" placeholder="Descripción del espécimen…"></textarea>
-    <div class="muted" style="text-align:right" id="counter">0 / 500</div>
-    <label for="model">Modelo tridimensional (.glb)</label>
-    <input id="model" type="file" accept=".glb,model/gltf-binary">
-    <p id="modelInfo" class="muted">Sin archivo: se usará una figura geométrica de demostración.</p>
-    <div class="divider"></div>
-    <label for="size">Tamaño máximo: <strong id="sizeValue">100 cm</strong></label>
-    <input id="size" type="range" min="10" max="300" step="5" value="100">
-    <label for="rotation">Rotación en el piso: <strong id="rotationValue">0°</strong></label>
-    <input id="rotation" type="range" min="-180" max="180" step="5" value="0">
-    <div class="columns">
-      <div><label for="x">Pos. X (cm)</label><input id="x" type="number" step="5" min="-300" max="300" value="0"></div>
-      <div><label for="y">Altura (cm)</label><input id="y" type="number" step="5" min="-50" max="300" value="0"></div>
-      <div><label for="z">Pos. Z (cm)</label><input id="z" type="number" step="5" min="-300" max="300" value="0"></div>
+    <span class="pill" aria-label="Visualización interactiva">En vivo</span>
+  </div>
+  <div class="viewerWorkspace">
+    <div class="viewerStage">
+      <div class="stageLabel">Vista 3D · Arrastrá para girar y usá la rueda para acercarte</div>
+      <div id="preview"><div id="previewStatus">Cargando Three.js…</div></div>
+      <div id="previewTools">
+        <button id="resetView" class="btn secondary">Recentrar vista</button>
+        <button id="playToggle" class="btn secondary">Pausar animación</button>
+      </div>
+      <p class="viewerFootnote">El tamaño se calcula sobre la dimensión máxima del GLB. X y Z desplazan el objeto sobre el marcador; Y modifica la altura.</p>
     </div>
-    <p class="muted">Los centímetros se interpretan respecto de la posición donde el visitante toque el piso. SLAM puede variar ligeramente su escala efectiva según el dispositivo.</p>
-    <div class="divider"></div>
-    <div class="toolbar">
-      <button id="save" class="grow">Guardar proyecto</button>
-      <button id="resetCamera" class="secondary">Recentrar 3D</button>
-    </div>
-    <div class="toolbar">
-      <button id="test" class="secondary grow">Probar en este navegador</button>
-      <button id="publish" class="grow">Preparar publicación ZIP</button>
-    </div>
-    <p class="muted">Para probar en otro celular, habrá que publicar el ZIP en GitHub. Los archivos GLB y los cambios se guardan únicamente en este navegador hasta exportarlos.</p>
-    <div id="notice" role="status">Proyecto listo para configurar.</div>
-  </section>
-  <section>
-    <div class="stagehead"><div><h2>Vista previa 3D</h2><p class="muted">Arrastrá para girar · rueda para acercar. La cuadrícula representa metros.</p></div><span class="pill">Vista local</span></div>
-    <div id="preview"><div id="previewStatus">Inicializando vista previa…</div></div>
-    <p class="muted">La vista previa solo verifica geometría y escala. El seguimiento espacial real se prueba desde el visor móvil.</p>
-  </section>
+    <aside class="transformDock" aria-label="Controles de transformación">
+      <div class="dockHeading">
+        <strong>Transformar objeto</strong>
+        <span class="pill">cm · grados</span>
+      </div>
+      <div class="transformScroll">
+        <h3>Posición · marcador 15 × 15 cm</h3>
+<div class="metrics">
+<div><label for="posX">X · cm</label><input id="posX" type="number" step=".5" min="-60" max="60" value="0"></div>
+<div><label for="posY">Altura · cm</label><input id="posY" type="number" step=".5" min="-20" max="60" value="0"></div>
+<div><label for="posZ">Z · cm</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
+</div>
+<label for="modelSize">Tamaño del objeto · dimensión máxima: <strong id="sizeValue">12 cm</strong></label>
+<input id="modelSize" type="range" min="1" max="60" step=".5" value="12">
+<label for="rotationY">Rotación vertical · grados</label>
+<input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
+<div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotValue" class="pill">0°</span><span class="muted">180°</span></div>
+<label for="animation">Animación</label>
+<select id="animation"><option value="none">Ninguna</option><option value="spin">Rotación continua</option><option value="float">Flotar suavemente</option><option value="pulse">Pulsación de escala</option><option value="embedded">Animación incluida en el GLB (si existe)</option></select>
+
+      </div>
+      <p class="dockFootnote">Los cambios se guardan cuando presionás «Guardar recorrido».</p>
+    </aside>
+  </div>
+</section>
 </main>
+<footer>Estudio WebAR · los recorridos y modelos se guardan localmente. El QR se reserva al crear el recorrido, pero el enlace solo funcionará como experiencia AR cuando publiques sus archivos.</footer>
+<div id="printSheet"><img id="printImage" alt="Marcador a imprimir con tamaño físico de 15 × 15 cm"></div>
 <script type="module">
+import {inspectMarkerImage,compareFingerprints,checkPatt} from './marker-validation.js';
+import {routeURL,makeQR,composeMarker,MARKER_RATIO} from './marker-composer.js?v=7';
+import {buildTarget} from './image-targets.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+
 const $=id=>document.getElementById(id);
-const database='webar-slam-lab';
-let project=null,dirty=false,token=0,renderObject=null,mixer=null,loadedUrl=null;
-function uid(){return 'exp-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);}
-function fresh(){return {id:uid(),name:'Espécimen experimental',description:'',sizeCm:100,rotationDeg:0,xCm:0,yCm:0,zCm:0,modelBlob:null,modelName:'',updatedAt:null};}
-function openDatabase(){return new Promise((resolve,reject)=>{
- const request=indexedDB.open(database,1);
- request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('projects'))request.result.createObjectStore('projects',{keyPath:'id'});};
- request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
-});}
-async function dbAction(mode,fn){
- const db=await openDatabase();
- try{return await new Promise((resolve,reject)=>{
- const tx=db.transaction('projects',mode),store=tx.objectStore('projects');
- const req=fn(store);
- req.onsuccess=()=>resolve(req.result);
- req.onerror=()=>reject(req.error);
- });}finally{db.close();}
-}
-function notice(message,error=false){$('notice').textContent=message;$('notice').classList.toggle('error',error);}
-function markDirty(){dirty=true;$('save').textContent='Guardar cambios ●';}
-function updateUI(){
- $('name').value=project.name||'';$('description').value=project.description||'';
- $('counter').textContent=$('description').value.length+' / 500';
- $('size').value=project.sizeCm;$('sizeValue').textContent=project.sizeCm+' cm';
- $('rotation').value=project.rotationDeg;$('rotationValue').textContent=project.rotationDeg+'°';
- for(const p of ['x','y','z'])$(p).value=Number(project[p+'Cm'])||0;
- $('model').value='';
- $('modelInfo').textContent=project.modelName?'Cargado: '+project.modelName+' ('+(project.modelBlob.size/1048576).toFixed(1)+' MB)':'Sin archivo GLB. Se utilizará una figura geométrica.';
- dirty=false;$('save').textContent='Guardar proyecto';
- void refreshPreview();
-}
-async function refreshProjects(selectCurrent=true){
- const all=await dbAction('readonly',store=>store.getAll());
- const select=$('saved');select.replaceChildren(new Option('— Nuevo proyecto —',''));
- all.sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
- for(const p of all)select.add(new Option(p.name+' · '+p.id,p.id));
- select.value=selectCurrent&&all.some(p=>p.id===project?.id)?project.id:'';
-}
-$('new').onclick=()=>{
- if(dirty&&!confirm('Se perderán los cambios no guardados. ¿Continuar?'))return;
- project=fresh();updateUI();$('saved').value='';notice('Nuevo proyecto creado. Cargá un GLB o probá la escultura de referencia.');
-};
-$('saved').onchange=async e=>{
- const id=e.target.value;
- if(dirty&&!confirm('Se perderán los cambios no guardados. ¿Continuar?')){e.target.value=project.id;return;}
- try{project=id?await dbAction('readonly',store=>store.get(id)):fresh();updateUI();notice('Proyecto cargado.');}
- catch(err){notice('No se pudo cargar: '+err.message,true);}
-};
-$('name').oninput=e=>{project.name=e.target.value;markDirty();};
-$('description').oninput=e=>{project.description=e.target.value.slice(0,500);$('counter').textContent=project.description.length+' / 500';markDirty();};
-$('size').oninput=e=>{project.sizeCm=Number(e.target.value);$('sizeValue').textContent=project.sizeCm+' cm';markDirty();applyPreviewTransform();};
-$('rotation').oninput=e=>{project.rotationDeg=Number(e.target.value);$('rotationValue').textContent=project.rotationDeg+'°';markDirty();applyPreviewTransform();};
-for(const key of ['x','y','z'])$(key).oninput=e=>{project[key+'Cm']=Number(e.target.value)||0;markDirty();applyPreviewTransform();};
-$('model').onchange=async e=>{
- const file=e.target.files?.[0];if(!file)return;
- if(!file.name.toLowerCase().endsWith('.glb')){notice('Seleccioná un archivo .glb válido.',true);return;}
- if(file.size>80*1024*1024){notice('Para estas primeras pruebas utilizá un GLB menor a 80 MB.',true);return;}
- project.modelBlob=file;project.modelName=file.name;markDirty();
- $('modelInfo').textContent='Cargado: '+file.name+' ('+(file.size/1048576).toFixed(1)+' MB)';
- await refreshPreview();
-};
-$('save').onclick=async()=>{
- try{
- project.name=project.name.trim()||'Espécimen sin título';
- project.updatedAt=new Date().toISOString();
- await dbAction('readwrite',store=>store.put(project));
- dirty=false;$('save').textContent='Guardar proyecto';
- await refreshProjects();
- notice('Proyecto guardado en este navegador. Para conservar una copia fuera del navegador, exportá el ZIP.');
- }catch(e){notice('No se pudo guardar (¿cuota de almacenamiento?): '+e.message,true);}
-};
-$('test').onclick=()=>{
- if(dirty||!project.updatedAt){notice('Primero guardá el proyecto para probarlo desde este navegador.',true);return;}
- window.open('visor.html?local='+encodeURIComponent(project.id),'_blank','noopener');
-};
-$('publish').onclick=async()=>{
- try{
- if(dirty)throw Error('Guardá los cambios antes de exportar.');
- if(!project.updatedAt)throw Error('Primero guardá el proyecto.');
- if(typeof JSZip==='undefined')throw Error('No se pudo cargar JSZip.');
- const zip=new JSZip(),root='experiencias/'+project.id+'/';
- const config={
-  format:'webar-slam-lab-v1',id:project.id,title:project.name,
-  description:(project.description||'').slice(0,500),
-  sizeCm:project.sizeCm,rotationDeg:project.rotationDeg,
-  xCm:project.xCm,yCm:project.yCm,zCm:project.zCm,
-  model:project.modelBlob?'modelo.glb':null
- };
- zip.file(root+'config.json',JSON.stringify(config,null,2));
- if(project.modelBlob)zip.file(root+'modelo.glb',project.modelBlob);
- const url=new URL('visor.html?exp='+encodeURIComponent(project.id),location.href).href;
- zip.file('LEEME-PUBLICACION.txt','WEBAR SLAM LAB\n\n1) Descomprimir el ZIP.\n2) Subir la carpeta experiencias/ al repositorio webAR-SLAM-Lab, respetando los nombres y rutas.\n3) Activar GitHub Pages desde main / (root).\n4) Abrir en el telefono:\n'+url+'\n\nEl proyecto original webAR-QR no se modifica.\n');
- const file=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}});
- const href=URL.createObjectURL(file),a=document.createElement('a');
- a.href=href;a.download='slam-'+project.id+'.zip';document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(href),6000);
- notice('ZIP descargado. Incluye la configuración y el GLB. Subilo a GitHub para probarlo desde otros teléfonos.');
- }catch(e){notice('No se pudo preparar la publicación: '+e.message,true);}
-};
-const stage=$('preview'),scene=new THREE.Scene();
-scene.background=new THREE.Color('#e9f0e9');
-const camera=new THREE.PerspectiveCamera(46,1,.01,200);
-camera.position.set(2.5,1.8,3.3);
+const dbName='estudio-slam-recorridos', storeName='sessions';
+let db=null,session=null,activeId=null,dirty=false,previewObject=null,currentGroup=null,previewToken=0,markerMaterial=null,markerTexture=null,mixer=null,play=true,loadError='';
+let markerPlane=null;
+const loader=new GLTFLoader();
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xdce5e2);
+const cam=new THREE.PerspectiveCamera(45,1,.01,100);
+cam.position.set(1.35,1.2,1.55);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-stage.insertBefore(renderer.domElement,$('previewStatus'));
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;controls.target.set(0,.55,0);
-scene.add(new THREE.HemisphereLight(0xffffff,0x829787,2.2));
-const sunlight=new THREE.DirectionalLight(0xffffff,2.5);
-sunlight.position.set(4,8,5);scene.add(sunlight);
-const grid=new THREE.GridHelper(10,20,0x77a78f,0xc3d7c9);scene.add(grid);
-const world=new THREE.Group();scene.add(world);
-const pivot=new THREE.Group();world.add(pivot);
-const loader=new GLTFLoader();const clock=new THREE.Clock();
-function disposeObject(){
- if(renderObject){pivot.remove(renderObject);renderObject.traverse(o=>{
- if(o.geometry)o.geometry.dispose();
- if(o.material)for(const m of (Array.isArray(o.material)?o.material:[o.material]))m.dispose();
- });renderObject=null;}
- if(loadedUrl){URL.revokeObjectURL(loadedUrl);loadedUrl=null;}
- mixer=null;
-}
-function defaultGeometry(){
- const group=new THREE.Group();
- const stone=new THREE.Mesh(new THREE.IcosahedronGeometry(.6,3),new THREE.MeshStandardMaterial({color:0x439974,roughness:.31,metalness:.18,flatShading:true}));
- stone.position.y=.7;group.add(stone);
- const ring=new THREE.Mesh(new THREE.TorusGeometry(.52,.038,10,70),new THREE.MeshStandardMaterial({color:0x104936,metalness:.5,roughness:.33}));
- ring.rotation.x=Math.PI/3;ring.position.y=.7;group.add(ring);
- return group;
-}
-async function refreshPreview(){
- const i=++token;disposeObject();$('previewStatus').textContent='Cargando modelo…';
- try{
- let object;
- if(project.modelBlob){
-  const u=URL.createObjectURL(project.modelBlob);
-  const gltf=await loader.loadAsync(u);
-  if(i!==token){URL.revokeObjectURL(u);return;}
-  loadedUrl=u;object=gltf.scene;
-  if(gltf.animations?.length){
-   mixer=new THREE.AnimationMixer(object);
-   for(const clip of gltf.animations)mixer.clipAction(clip).play();
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.25;
+$('preview').prepend(renderer.domElement);
+const controls=new OrbitControls(cam,renderer.domElement);
+controls.enableDamping=true;controls.target.set(0,.16,0);
+controls.minDistance=.35;controls.maxDistance=6;
+scene.add(new THREE.HemisphereLight(0xffffff,0x637a6d,2.6));
+const light=new THREE.DirectionalLight(0xffffff,2.4);light.position.set(1.5,3,2);scene.add(light);
+scene.add(new THREE.GridHelper(2,20,0x7b9a90,0xaac2ba));
+markerMaterial=new THREE.MeshStandardMaterial({color:0xffffff,side:THREE.DoubleSide,roughness:1});
+markerPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1),markerMaterial);
+markerPlane.rotation.x=-Math.PI/2;markerPlane.position.y=.003;scene.add(markerPlane);
+const border=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,.006,1)),new THREE.LineBasicMaterial({color:0x20453a}));
+scene.add(border);
+const fallback=new THREE.IcosahedronGeometry(.4,1);
+const clock=new THREE.Clock();
+let renderW=0,renderH=0;
+const resizeObserver=new ResizeObserver(()=>{
+const host=$('preview'),w=host.clientWidth,h=host.clientHeight;
+if(w===renderW&&h===renderH)return;
+renderW=w;renderH=h;cam.aspect=w/h;cam.updateProjectionMatrix();renderer.setSize(w,h,false);
+});resizeObserver.observe($('preview'));
+function renderLoop(){
+requestAnimationFrame(renderLoop);
+const dt=Math.min(clock.getDelta(),.05);
+if(currentGroup&&session){
+  const entry=selectedEntry();
+  if(entry&&play){
+    const t=performance.now()/1000;
+    if(entry.animation==='spin') currentGroup.rotation.y=THREE.MathUtils.degToRad(entry.rotation)+(t*.6);
+    else currentGroup.rotation.y=THREE.MathUtils.degToRad(entry.rotation);
+    currentGroup.position.y=entry.y/15+(entry.animation==='float'?.045*Math.sin(t*1.8):0);
+    const s=entry.animation==='pulse'?1+.12*Math.sin(t*2):1;
+    currentGroup.scale.setScalar(s);
+    if(entry.animation==='embedded'&&mixer)mixer.update(dt);
   }
- }else object=defaultGeometry();
- const bounds=new THREE.Box3().setFromObject(object),dim=new THREE.Vector3(),center=new THREE.Vector3();
- bounds.getSize(dim);bounds.getCenter(center);
- const max=Math.max(dim.x,dim.y,dim.z);
- if(max<=0||!Number.isFinite(max))throw Error('GLB sin geometría visible');
- object.userData.normalizedLength=max;object.userData.center=center;object.userData.groundY=bounds.min.y;
- renderObject=object;pivot.add(object);
- applyPreviewTransform();
- $('previewStatus').textContent=project.modelBlob?'Modelo GLB cargado · vista 3D':'Figura de referencia · subí tu GLB para reemplazarla';
- }catch(e){$('previewStatus').textContent='Error al cargar GLB: '+e.message;notice('Vista 3D: '+e.message,true);}
 }
-function applyPreviewTransform(){
- if(!project)return;
- pivot.rotation.y=THREE.MathUtils.degToRad(project.rotationDeg||0);
- world.position.set((project.xCm||0)/100,(project.yCm||0)/100,(project.zCm||0)/100);
- if(renderObject){
-  const factor=(project.sizeCm/100)/renderObject.userData.normalizedLength;
-  renderObject.scale.setScalar(factor);
-  const c=renderObject.userData.center;
-  renderObject.position.set(-c.x*factor,-renderObject.userData.groundY*factor,-c.z*factor);
+controls.update();renderer.render(scene,cam);
+}renderLoop();
+function uid(){return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
+function newEntry(index){
+return {id:uid(),name:'Marcador '+String(index+1).padStart(2,'0'),kind:'custom',
+modelBlob:null,modelName:'',pattText:'',markerImageBlob:null,description:'',x:0,y:0,z:0,size:12,rotation:0,animation:'none'};
+}
+function newSession(){
+return {id:uid(),name:'Mi primer recorrido SLAM',description:'',createdAt:new Date().toISOString(),updatedAt:null,entries:[newEntry(0)]};
+}
+function selectedEntry(){return session?.entries.find(x=>x.id===activeId)||null}
+function inform(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error)}
+function markDirty(){dirty=true;$('saveSession').textContent='Guardar cambios ●';}
+function clean(){dirty=false;$('saveSession').textContent='Guardar recorrido'}
+function dbOpen(){
+return new Promise((resolve,reject)=>{
+const r=indexedDB.open(dbName,1);
+r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(storeName))r.result.createObjectStore(storeName,{keyPath:'id'})};
+r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error||Error('No se pudo abrir el almacenamiento local'));
+});
+}
+function txn(mode,fn){
+return new Promise((resolve,reject)=>{
+const tx=db.transaction(storeName,mode),store=tx.objectStore(storeName),request=fn(store);
+request.onsuccess=()=>resolve(request.result);
+request.onerror=()=>reject(request.error||Error('Error de IndexedDB'));
+});
+}
+async function listSessions(){return await txn('readonly',s=>s.getAll())}
+async function sessionSave(){return await txn('readwrite',s=>s.put(session))}
+async function sessionRemove(id){return await txn('readwrite',s=>s.delete(id))}
+async function refreshSessions(){
+const items=(await listSessions()).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+const sel=$('sessionSelect');sel.replaceChildren();
+const opt=document.createElement('option');opt.value='';opt.textContent='Elegí un recorrido…';sel.appendChild(opt);
+for(const item of items){const o=document.createElement('option');o.value=item.id;o.textContent=item.name;sel.appendChild(o)}
+sel.value=items.some(it=>it.id===session?.id)?session.id:'';
+}
+let qrSessionRender=0;
+async function showSessionQR(){
+ const token=++qrSessionRender,id=session?.id;
+ if(!id)return;
+ $('sessionQRText').textContent=routeURL(id);
+ try{
+   const canvas=await makeQR(routeURL(id),256);
+   if(token!==qrSessionRender)return;
+   const preview=$('sessionQR'),ctx=preview.getContext('2d');
+   ctx.clearRect(0,0,preview.width,preview.height);ctx.drawImage(canvas,0,0,preview.width,preview.height);
+ }catch(error){
+   if(token===qrSessionRender)$('sessionQRText').textContent='QR no disponible: '+error.message;
  }
 }
-function resize(){const w=stage.clientWidth,h=stage.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);}
-new ResizeObserver(resize).observe(stage);resize();
-$('resetCamera').onclick=()=>{camera.position.set(2.5,1.8,3.3);controls.target.set(0,.55,0);controls.update();};
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.06);mixer?.update(dt);controls.update();renderer.render(scene,camera);}
-animate();
-project=fresh();updateUI();refreshProjects().catch(e=>notice('No se pudo abrir la base local: '+e.message,true));
+function setSession(data){
+session=data;activeId=session.entries[0]?.id||null;
+$('sessionName').value=session.name;$('sessionDesc').value=session.description||'';
+void showSessionQR();
+clean();drawList();populate();void showPreview();refreshSessions().catch(()=>{});
+}
+function drawList(){
+const root=$('entryList');root.replaceChildren();
+if(!session)return;
+session.entries.forEach((entry,i)=>{
+const button=document.createElement('button');button.type='button';
+button.className='entry'+(entry.id===activeId?' active':'');
+const title=document.createElement('strong');title.textContent=(i+1)+'. '+entry.name;
+const sub=document.createElement('span');sub.textContent=(entry.kind==='custom'?'Patrón propio':entry.kind==='hiro'?'Hiro':'Kanji')+' · '+(entry.modelName||'GLB pendiente')+(entry.finalMarkerBlob?' · diseño generado':'');
+button.append(title,sub);
+button.onclick=()=>{activeId=entry.id;drawList();populate();void showPreview()};
+root.appendChild(button);
+});
+$('count').textContent=session.entries.length+' marcador(es)';
+}
+function setMarkerQuality(message,kind=''){
+ const box=$('markerQuality');
+ box.className='qualityBox'+(kind?' '+kind:'');
+ box.textContent=message;
+}
+function describeMarkerQuality(e){
+ const report=e?.markerValidation;
+ $('revalidateImage').disabled=!e?.markerImageBlob;
+ if(!e?.markerImageBlob){setMarkerQuality('Aún no se cargó una imagen. El análisis comprobará dimensiones, contraste, asimetría y diferenciación entre marcadores.');return;}
+ if(!report){setMarkerQuality('Imagen guardada antes de incorporar el validador. Presioná «Analizar imagen guardada».','warning');return;}
+ const meta=report.info||{};
+ const other=session?.entries.filter(it=>it.id!==e.id&&it.kind==='custom'&&it.markerValidation?.info?.fingerprint)||[];
+ const identical=[];
+ const similar=[];
+ for(const item of other){
+   const dist=compareFingerprints(meta.fingerprint,item.markerValidation.info.fingerprint);
+   if(dist!==null && dist<.055)identical.push(item.name);
+   else if(dist!==null && dist<.12)similar.push(item.name);
+ }
+ const warnings=[...(report.warnings||[])];
+ if(identical.length)warnings.unshift('PATRÓN MUY SIMILAR a '+identical.join(', ')+': elegí una imagen distinta para evitar confusiones.');
+ if(similar.length)warnings.push('Se parece a '+similar.join(', ')+'. Probá patrones más distintos.');
+ const text=[
+    report.ok?'Archivo admitido para generar el patrón (validación preliminar).':'Imagen no válida para esta versión.',
+    meta.width&&meta.height?'Imagen: '+meta.width+' × '+meta.height+' px · '+Math.round((meta.bytes||0)/1024)+' KB':'',
+    ...report.errors||[],
+    ...warnings.map(w=>'⚠ '+w),
+    report.ok?'El reconocimiento real y el .patt todavía deben probarse con el QR y la impresión final.':'Corregí la imagen antes de continuar.'
+ ].filter(Boolean).join('\n');
+ setMarkerQuality(text,!report.ok||identical.length?'invalid':warnings.length?'warning':'valid');
+}
+function populate(){
+const e=selectedEntry();
+$('entryEditor').hidden=!e;
+if(!e)return;
+$('selectedHint').textContent='Configurando: '+e.name;
+$('entryName').value=e.name;$('entryPattern').value=e.kind;
+$('entryDescription').value=String(e.description||'').slice(0,500);
+$('descCount').textContent=$('entryDescription').value.length+' / 500';
+$('customPattern').hidden=e.kind!=='custom';
+$('modelFile').value='';$('pattFile').value='';$('markerImage').value='';
+$('fileName').textContent=e.modelName?('Cargado: '+e.modelName):'Sin archivo GLB. El visor muestra una figura de referencia.';
+describeMarkerQuality(e);
+void showMarkerResult(e);
+$('posX').value=e.x;$('posY').value=e.y;$('posZ').value=e.z;$('modelSize').value=e.size;
+$('rotationY').value=e.rotation;$('animation').value=e.animation;
+$('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
+}
+function changeFromControls(){
+const e=selectedEntry();if(!e)return;
+e.name=$('entryName').value.trim()||'Sin nombre';
+e.kind=$('entryPattern').value;
+e.x=Number($('posX').value)||0;e.y=Number($('posY').value)||0;e.z=Number($('posZ').value)||0;
+e.size=Number($('modelSize').value)||12;e.rotation=Number($('rotationY').value)||0;e.animation=$('animation').value;
+$('customPattern').hidden=e.kind!=='custom';
+$('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
+$('selectedHint').textContent='Configurando: '+e.name;
+markDirty();drawList();describeMarkerQuality(e);applyTransform();void setMarkerTexture(e);
+}
+function clearModel(){
+if(previewObject){previewObject.parent?.remove(previewObject);previewObject.traverse(node=>{
+if(node.isMesh){node.geometry?.dispose();for(const material of (Array.isArray(node.material)?node.material:[node.material]))material?.dispose();}
+});}
+previewObject=null;mixer=null;
+}
+// Material del suelo 3D: mostrar exactamente el PNG final cuando exista.
+let markerPreviewId='',markerPreviewSource=null,markerTextureRequest=0;
+async function setMarkerTexture(entry){
+ if(!entry)return;
+ const source=entry.kind==='hiro'?'./assets/hiro.svg':
+              entry.kind==='kanji'?'./assets/kanji-from-pattern.svg':
+              entry.finalMarkerBlob||entry.markerImageBlob||null;
+ if(entry.id===markerPreviewId && source===markerPreviewSource)return;
+ markerPreviewId=entry.id;
+ markerPreviewSource=source;
+ const token=++markerTextureRequest;
+ if(!source){
+   if(markerTexture){markerTexture.dispose();markerTexture=null;}
+   markerMaterial.map=null;markerMaterial.color.set('#f6faf7');markerMaterial.needsUpdate=true;
+   return;
+ }
+ const url=typeof source==='string'?source:URL.createObjectURL(source);
+ try{
+   const texture=await new THREE.TextureLoader().loadAsync(url);
+   if(token!==markerTextureRequest||selectedEntry()?.id!==entry.id){
+     texture.dispose();return;
+   }
+   texture.colorSpace=THREE.SRGBColorSpace;
+   texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+   const previous=markerTexture;
+   markerTexture=texture;markerMaterial.map=texture;
+   markerMaterial.color.set('#ffffff');markerMaterial.needsUpdate=true;
+   if(previous)previous.dispose();
+ }catch(error){
+   if(token===markerTextureRequest){
+     markerPreviewSource=null;
+     $('previewStatus').textContent='No se pudo cargar la imagen del marcador: '+error.message;
+   }
+ }finally{
+   if(typeof source!=='string')URL.revokeObjectURL(url);
+ }
+}
+function applyTransform(){
+const e=selectedEntry();if(!e||!currentGroup)return;
+currentGroup.position.set(e.x/15,e.y/15,e.z/15);
+currentGroup.rotation.set(0,THREE.MathUtils.degToRad(e.rotation),0);
+if(previewObject){
+const length=Number(previewObject.userData.normalizedLength)||1;
+previewObject.scale.setScalar((e.size/15)/length);
+}
+}
+async function showPreview(){
+const token=++previewToken,e=selectedEntry();
+clearModel();
+if(currentGroup)scene.remove(currentGroup);
+currentGroup=new THREE.Group();scene.add(currentGroup);
+if(!e){$('previewStatus').textContent='Sin marcador seleccionado';return;}
+await setMarkerTexture(e);
+if(token!==previewToken)return;
+$('previewStatus').textContent='Cargando vista previa…';
+try{
+let mesh;
+if(e.modelBlob){
+const blobUrl=URL.createObjectURL(e.modelBlob);
+try{const gltf=await loader.loadAsync(blobUrl);mesh=gltf.scene;
+if(token!==previewToken)return;
+if(gltf.animations?.length){
+mixer=new THREE.AnimationMixer(mesh);
+for(const clip of gltf.animations)mixer.clipAction(clip).play();
+}
+}finally{URL.revokeObjectURL(blobUrl)}
+}else{
+mesh=new THREE.Mesh(fallback,new THREE.MeshStandardMaterial({color:0x54b792,roughness:.35,metalness:.15}));
+}
+if(token!==previewToken)return;
+const bounds=new THREE.Box3().setFromObject(mesh),center=new THREE.Vector3(),dims=new THREE.Vector3();
+bounds.getCenter(center);bounds.getSize(dims);
+const longest=Math.max(dims.x,dims.y,dims.z);
+if(!longest||!Number.isFinite(longest))throw Error('El modelo no tiene geometría visible.');
+mesh.position.sub(new THREE.Vector3(center.x,bounds.min.y,center.z));
+const wrap=new THREE.Group();wrap.userData.normalizedLength=longest;wrap.add(mesh);
+previewObject=wrap;currentGroup.add(wrap);
+applyTransform();
+$('previewStatus').textContent=(e.modelBlob?'Vista previa: '+e.modelName:'Figura de referencia · cargá un GLB para reemplazarla')+(e.kind==='custom'&&e.finalMarkerBlob?' · marcador final con QR':'');
+}catch(error){$('previewStatus').textContent='No se pudo abrir el GLB: '+error.message;inform(error.message,true)}
+}
+
+function publicationErrors(){
+ const errors=[];
+ if(!session?.entries?.length)errors.push('El recorrido no tiene marcadores.');
+ if(session?.entries?.length>20)errors.push('Máximo 20 marcadores en esta versión.');
+ const patterns=new Set();
+ for(const [i,e] of (session?.entries||[]).entries()){
+   const prefix='Marcador '+(i+1)+' («'+e.name+'»): ';
+   if(e.kind!=='custom')errors.push(prefix+'solo se admiten patrones personalizados generados por el editor.');
+   if(!e.modelBlob)errors.push(prefix+'falta cargar un modelo GLB.');
+   if(!e.pattText||!e.finalMarkerBlob)errors.push(prefix+'falta generar el marcador final.');
+   if(Math.abs(Number(e.markerRatio)-.88)>.001)errors.push(prefix+'el patrón debe regenerarse con el borde compacto de ratio 0.88.');
+   if(e.pattText){
+     const fingerprint=e.pattText.trim().replace(/\s+/g,' ');
+     if(patterns.has(fingerprint))errors.push(prefix+'patrón espacial duplicado.');
+     patterns.add(fingerprint);
+   }
+ }
+ return errors;
+}
+async function preparePublication(){
+ if(typeof JSZip==='undefined')throw Error('No se cargó el generador ZIP.');
+ if(dirty)throw Error('Guardá los cambios del recorrido antes de preparar su publicación.');
+ const errors=publicationErrors();
+ if(errors.length)throw Error(errors.join('\n'));
+ const zip=new JSZip();
+ const root='recorridos/'+session.id+'/';
+ const items=[];
+ for(const [i,e] of session.entries.entries()){
+   const stem='marcador-'+String(i+1).padStart(2,'0');
+   const model='modelos/'+stem+'.glb';
+   const print='imprimir/'+stem+'-15cm.png';
+   const legacyPatt='patrones/'+stem+'.patt';
+   const imagePath='targets/'+stem+'-luminance.jpg';
+   const targetPath='targets/'+stem+'.json';
+   const targetName='slam-'+String(i+1).padStart(2,'0')+'-'+e.id;
+   const target=await buildTarget(e.finalMarkerBlob,targetName);
+   const targetJSON={...target.data,imagePath};
+   zip.file(root+imagePath,target.blob);
+   zip.file(root+targetPath,JSON.stringify(targetJSON,null,2));
+   zip.file(root+model,e.modelBlob);
+   zip.file(root+print,e.finalMarkerBlob);
+   // .patt se conserva como archivo adicional de interoperabilidad;
+   // el nuevo visor NO necesita AR.js ni utiliza estos patrones.
+   if(e.pattText)zip.file(root+legacyPatt,e.pattText);
+   items.push({
+     id:e.id,title:e.name,description:String(e.description||'').slice(0,500),
+     imageTargetName:targetName,
+     target:{name:targetName,type:'PLANAR',properties:target.data.properties,image:imagePath,json:targetPath},
+     model,print,legacyPatt:e.pattText?legacyPatt:null,
+     xCm:e.x,yCm:e.y,zCm:e.z,sizeCm:e.size,
+     rotationDeg:e.rotation,animation:e.animation||'none'
+   });
+ }
+ const manifest={
+   format:'estudio-slam-public-v1',id:session.id,name:session.name,
+   description:session.description||'',physicalSizeCm:15,
+   engine:'8thwall-slam',items
+ };
+ zip.file(root+'manifest.json',JSON.stringify(manifest,null,2));
+ zip.file('INSTRUCCIONES-PUBLICAR.txt',
+  'PAQUETE DE PUBLICACION · ESTUDIO SLAM / 8TH WALL\n\n'+
+  '1. Descomprimí este ZIP conservando la carpeta recorridos/.\n'+
+  '2. Subí la carpeta al repositorio angelv-salazar/webAR-SLAM-Lab, rama main, sin modificar rutas.\n'+
+  '3. Esperá GitHub Pages y abrí: '+routeURL(session.id)+'\n'+
+  '4. Imprimí cada PNG de la carpeta imprimir/ a 15x15 cm y escala 100%.\n'+
+  '5. Probá todos los marcadores con la cámara. Usá una buena iluminación.\n\n'+
+  'El archivo .patt se conserva solo como copia heredada; 8th Wall usa targets/*.jpg + *.json.\n'+
+  'El mismo QR abre el recorrido completo. No cambia la URL después de la publicación.\n'+
+  'Importante: aunque SLAM conserve la obra cuando no ve el marcador, puede tener deriva.\n'+
+  'Si el recorrido no se publica, el enlace del QR no encontrará su manifiesto.\n');
+ const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}});
+ const href=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=href;
+ a.download='publicar-slam-'+session.id+'.zip';a.click();
+ setTimeout(()=>URL.revokeObjectURL(href),8000);
+ return {count:items.length,url:routeURL(session.id)};
+}
+async function downloadExport(){
+if(!session)return;
+if(typeof JSZip==='undefined')throw Error('No se pudo cargar JSZip.');
+const zip=new JSZip(),manifest={format:'estudio-webar-v2',id:session.id,name:session.name,description:session.description,createdAt:session.createdAt,publicUrl:routeURL(session.id),published:false,entries:[]};
+for(const [i,e] of session.entries.entries()){
+const id='marcador-'+String(i+1).padStart(2,'0');
+const entry={id:e.id,name:e.name,description:String(e.description||'').slice(0,500),kind:e.kind,x:e.x,y:e.y,z:e.z,size:e.size,rotation:e.rotation,animation:e.animation,model:'',patt:'',image:'',
+  validation:e.markerValidation?{ok:e.markerValidation.ok,width:e.markerValidation.info?.width,height:e.markerValidation.info?.height,
+  warnings:e.markerValidation.warnings,errors:e.markerValidation.errors}:null};
+if(e.modelBlob){entry.model='modelos/'+id+'.glb';zip.file(entry.model,e.modelBlob);}
+if(e.kind==='custom'&&e.pattText){entry.patt='patrones/'+id+'.patt';zip.file(entry.patt,e.pattText);}
+if(e.kind==='custom'&&e.finalMarkerBlob){entry.print='marcadores/'+id+'-15cm.png';entry.patternRatio=e.markerRatio||MARKER_RATIO;zip.file(entry.print,e.finalMarkerBlob);}
+if(e.kind==='custom'&&e.markerImageBlob){entry.image='patrones/'+id+'-imagen.'+(e.markerImageBlob.type==='image/svg+xml'?'svg':e.markerImageBlob.type==='image/jpeg'?'jpg':'png');zip.file(entry.image,e.markerImageBlob);}
+manifest.entries.push(entry);
+}
+zip.file('recorrido.json',JSON.stringify(manifest,null,2));
+zip.file('LEEME.txt','Respaldo de Estudio WebAR.\nContiene modelos, configuraciones y los marcadores finales disponibles.\nLos QR enlazan al identificador reservado del recorrido: '+routeURL(session.id)+'\nATENCION: el recorrido NO ESTÁ PUBLICADO todavía. El QR mostrará una página de aviso hasta completar la publicación.\n');
+const output=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+const url=URL.createObjectURL(output),a=document.createElement('a');
+a.href=url;a.download=(session.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase()||'recorrido')+'.zip';
+a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+for(const name of ['sessionName','sessionDesc']){
+$(name).addEventListener('input',()=>{
+if(!session)return;
+session.name=$('sessionName').value.trim()||'Recorrido sin nombre';
+session.description=$('sessionDesc').value;
+markDirty();
+});
+}
+for(const id of ['entryName','entryPattern','posX','posY','posZ','modelSize','rotationY','animation'])$(id).addEventListener('input',changeFromControls);
+$('entryDescription').addEventListener('input',()=>{
+  const e=selectedEntry();if(!e)return;
+  const text=$('entryDescription').value.slice(0,500);
+  if(text!==e.description){
+    e.description=text;
+    markDirty();
+  }
+  $('descCount').textContent=text.length+' / 500';
+});
+$('entryPattern').addEventListener('change',()=>{void showMarkerResult(selectedEntry());void showPreview();});
+$('addEntry').onclick=()=>{
+if(session.entries.length>=20){inform('Para esta primera versión admitimos hasta 20 marcadores por recorrido.',true);return;}
+const e=newEntry(session.entries.length);
+session.entries.push(e);activeId=e.id;markDirty();drawList();populate();void showPreview();
+inform('Marcador agregado. Cargá una imagen propia, comprobá su validez y presioná «Generar marcador final». Todos los marcadores compartirán el QR del recorrido.');
+};
+$('duplicateEntry').onclick=()=>{
+const e=selectedEntry();if(!e)return;
+const copy={...e,id:uid(),name:e.name+' (copia)',kind:'custom',pattText:'',markerImageBlob:null,markerValidation:null,finalMarkerBlob:null,markerRatio:null};
+session.entries.push(copy);activeId=copy.id;markDirty();drawList();populate();void showPreview();
+inform('Configuración duplicada. Debés asignar un patrón espacial único al nuevo marcador.');
+};
+$('removeEntry').onclick=()=>{
+if(session.entries.length===1){inform('El recorrido debe tener al menos un marcador.',true);return;}
+if(!confirm('¿Quitar este marcador del recorrido?'))return;
+session.entries=session.entries.filter(e=>e.id!==activeId);
+activeId=session.entries[0].id;markDirty();drawList();populate();void showPreview();
+};
+$('modelFile').onchange=async e=>{
+const f=e.target.files?.[0];if(!f)return;
+if(!f.name.toLowerCase().endsWith('.glb')){inform('Elegí un archivo GLB (.glb).',true);return;}
+const entry=selectedEntry();if(!entry)return;
+entry.modelBlob=f;entry.modelName=f.name;markDirty();drawList();populate();await showPreview();
+};
+$('pattFile').onchange=async e=>{
+ const f=e.target.files?.[0],entry=selectedEntry();if(!f||!entry)return;
+ try{
+   if(!f.name.toLowerCase().endsWith('.patt')||f.size>250000)throw Error('Elegí un archivo .patt válido, de menos de 250 KB.');
+   const txt=await f.text();checkPatt(txt);
+   const duplicate=session.entries.find(it=>it.id!==entry.id&&it.kind==='custom'&&it.pattText?.trim()===txt.trim());
+   if(duplicate)throw Error('Este mismo .patt ya está asignado a '+duplicate.name+'. Cada marcador requiere un patrón diferente.');
+   entry.pattText=txt;markDirty();
+   inform('Patrón .patt válido en formato. Debe coincidir exactamente con el diseño que vayas a imprimir.');
+ }catch(error){$('pattFile').value='';inform('Patrón rechazado: '+error.message,true)}
+};
+async function validateMarkerUpload(file,entry,replace=true){
+ setMarkerQuality('Analizando imagen…');
+ const report=await inspectMarkerImage(file);
+ if(!report.ok){
+   if(selectedEntry()?.id===entry.id){
+     setMarkerQuality(['No se admitió esta imagen.',...(report.errors||[])].join('\n'),'invalid');
+     inform('Imagen rechazada. Corregí el formato, tamaño o proporciones antes de seguir.',true);
+   }
+   return false;
+ }
+ const other=session.entries.filter(it=>it.id!==entry.id&&it.kind==='custom'&&it.markerValidation?.info?.fingerprint);
+ for(const row of other){
+   const similarity=compareFingerprints(report.info.fingerprint,row.markerValidation.info.fingerprint);
+   if(similarity!==null&&similarity<.055){
+     if(selectedEntry()?.id===entry.id){
+       setMarkerQuality('Imagen rechazada: su patrón es demasiado similar al de «'+row.name+'». Necesitamos marcadores diferenciables.','invalid');
+       inform('Imagen demasiado similar a otro marcador del recorrido.',true);
+     }
+     return false;
+   }
+ }
+ if(replace){
+   entry.markerImageBlob=file;
+   entry.markerValidation=report;
+   // El .patt anterior ya no corresponde necesariamente a la nueva imagen.
+   entry.pattText='';
+   entry.finalMarkerBlob=null;
+   entry.markerRatio=null;
+   markDirty();drawList();
+ }else{entry.markerValidation=report;markDirty();}
+ if(selectedEntry()?.id===entry.id){
+   describeMarkerQuality(entry);
+   await showMarkerResult(entry);
+   if(replace)await showPreview();
+   inform('Imagen admitida. Ahora podés presionar «Generar marcador final» para incorporar el QR y crear el .patt.');
+ }
+ return true;
+}
+$('markerImage').onchange=async event=>{
+ const file=event.target.files?.[0],entry=selectedEntry();
+ if(!file||!entry)return;
+ try{await validateMarkerUpload(file,entry)}
+ catch(error){setMarkerQuality('Error: '+error.message,'invalid');inform('Error analizando la imagen: '+error.message,true)}
+ finally{$('markerImage').value=''}
+};
+$('revalidateImage').onclick=async()=>{
+ const entry=selectedEntry();
+ if(!entry?.markerImageBlob)return;
+ try{await validateMarkerUpload(entry.markerImageBlob,entry,false)}
+ catch(error){inform('No se pudo analizar la imagen guardada: '+error.message,true)}
+};
+
+const printer=$('printImage');
+let printURL=null,displayToken=0;
+async function showMarkerResult(entry){
+ const token=++displayToken;
+ const wrap=$('markerBuildResult');
+ const note=$('markerBuildInfo');
+ wrap.hidden=true;
+ $('buildMarker').disabled=!entry||entry.kind!=='custom'||!entry.markerImageBlob||entry.markerValidation?.ok!==true;
+ if(!entry||entry.kind!=='custom'){
+   note.textContent='Seleccioná «Personalizado (.patt)» y cargá tu imagen para generar un marcador con QR.';
+   return;
+ }
+ if(!entry.markerImageBlob){
+   note.textContent='Cargá una imagen cuadrada. Si supera la validación podrás generar el marcador con un clic.';
+   return;
+ }
+ if(entry.markerValidation?.ok!==true){
+   note.textContent='La imagen no está validada. Revisá el informe o presioná «Analizar imagen guardada».';
+   return;
+ }
+ if(!entry.finalMarkerBlob){
+   note.textContent='Imagen validada. Presioná «Generar marcador final» para incorporar el QR y obtener el .patt.';
+   return;
+ }
+ note.textContent=(entry.markerRatio!==MARKER_RATIO
+   ?'Este diseño fue generado con un borde anterior (ratio '+(entry.markerRatio||'desconocido')+'). Presioná «Generar marcador final» para actualizar el marco y el QR. '
+   :'Diseño generado: 15 × 15 cm, borde compacto y QR junto a la esquina. ')
+   +'El enlace está reservado, pendiente de publicación.';
+ try{
+   const bitmap=await createImageBitmap(entry.finalMarkerBlob);
+   if(token!==displayToken){bitmap.close();return;}
+   const canvas=$('finalCanvas'),ctx=canvas.getContext('2d');
+   ctx.clearRect(0,0,canvas.width,canvas.height);
+   ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+   bitmap.close();
+   wrap.hidden=false;
+ }catch(err){note.textContent='No se pudo mostrar el marcador: '+err.message;}
+}
+$('buildMarker').onclick=async()=>{
+ const entry=selectedEntry(),sessionId=session?.id;
+ if(!entry||entry.kind!=='custom'||!entry.markerImageBlob||entry.markerValidation?.ok!==true){
+   inform('Primero cargá y validá una imagen personalizada para este marcador.',true);return;
+ }
+ const button=$('buildMarker');button.disabled=true;
+ $('markerBuildInfo').textContent='Preparando QR, composición 15 × 15 cm y archivo de reconocimiento .patt…';
+ try{
+   const result=await composeMarker({imageBlob:entry.markerImageBlob,sessionId});
+   if(session?.id!==sessionId||!session.entries.includes(entry)){
+      inform('Cambiaste de recorrido durante la generación. No se aplicaron los archivos.');return;
+   }
+   entry.pattText=result.pattern;
+   entry.markerRatio=result.ratio;
+   entry.finalMarkerBlob=result.finalBlob;
+   entry.finalForURL=result.url;
+   markDirty();drawList();
+   if(selectedEntry()?.id===entry.id){
+     await showMarkerResult(entry);
+     // Actualiza únicamente el suelo 3D: no reinicia el GLB ni la cámara.
+     await setMarkerTexture(entry);
+     $('previewStatus').textContent=(entry.modelName?'Vista previa: '+entry.modelName:'Figura de referencia')+' · marcador final con QR';
+   }
+   inform('Marcador generado: imagen de impresión y patrón .patt. Guardá el recorrido para conservar ambos archivos. El QR todavía no abre una experiencia publicada.');
+ }catch(error){
+   $('markerBuildInfo').textContent='No se pudo generar el marcador: '+error.message;
+   inform('Generación fallida: '+error.message,true);
+ }finally{
+   const now=selectedEntry();
+   button.disabled=!now||now.kind!=='custom'||!now.markerImageBlob||now.markerValidation?.ok!==true;
+ }
+};
+$('downloadMarkerFiles').onclick=async()=>{
+ const entry=selectedEntry();
+ if(!entry?.finalMarkerBlob||!entry?.pattText){
+   inform('Primero generá el marcador final.',true);return;
+ }
+ try{
+   if(!window.JSZip)throw Error('No se pudo cargar el generador ZIP.');
+   const zip=new JSZip(),base=(entry.name||'marcador').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').slice(0,60)||'marcador';
+   zip.file(base+'-15x15cm.png',entry.finalMarkerBlob);
+   zip.file(base+'.patt',entry.pattText);
+   zip.file('LEEME.txt','Marcador '+entry.name+'\nTamaño de impresión: 150 × 150 mm, escala 100%.\nPattern ratio AR.js: '+(entry.markerRatio||MARKER_RATIO)+'\nURL del QR: '+routeURL(session.id)+'\nAVISO: URL reservada, recorrido no publicado. No colocar en sala hasta publicar y probar el seguimiento.\n');
+   const blob=await zip.generateAsync({type:'blob'});
+   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=base+'-marcador.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),3500);
+   inform('ZIP descargado: PNG 15 × 15 cm + patrón .patt. El QR se activará cuando publiquemos el recorrido.');
+ }catch(error){inform('No se pudo descargar: '+error.message,true);}
+};
+$('printMarker').onclick=async()=>{
+ const entry=selectedEntry();
+ if(!entry?.finalMarkerBlob)return;
+ if(printURL)URL.revokeObjectURL(printURL);
+ printURL=URL.createObjectURL(entry.finalMarkerBlob);
+ printer.src=printURL;
+ try{
+   await new Promise((resolve,reject)=>{
+     if(printer.complete&&printer.naturalWidth)return resolve();
+     printer.onload=resolve;printer.onerror=()=>reject(Error('No se cargó la imagen'));
+   });
+   window.print();
+ }catch(error){inform('No se pudo imprimir: '+error.message,true);}
+};
+window.addEventListener('afterprint',()=>{if(printURL){URL.revokeObjectURL(printURL);printURL=null;printer.removeAttribute('src');}});
+$('saveSession').onclick=async()=>{
+try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Podés volver a abrirlo desde la lista. Para respaldo usá Exportar ZIP.')}
+catch(error){inform('No se pudo guardar: '+error.message,true)}
+};
+$('newSession').onclick=()=>{
+if(dirty&&!confirm('Hay cambios sin guardar. ¿Crear otro recorrido de todos modos?'))return;
+setSession(newSession());inform('Nuevo recorrido creado con QR propio y URL reservada. Cargá una imagen por marcador y generá sus diseños. Publicaremos el enlace en una próxima etapa.');
+};
+$('sessionSelect').onchange=async e=>{
+const id=e.target.value;
+if(dirty&&!confirm('Hay cambios sin guardar. ¿Cambiar de recorrido?')){e.target.value=session.id;return;}
+if(!id){setSession(newSession());return;}
+const saved=await txn('readonly',s=>s.get(id));
+if(saved)setSession(saved);
+};
+$('testSession').onclick=async()=>{
+ try{
+   if(dirty)throw Error('Guardá el recorrido antes de probarlo con la cámara.');
+   const errors=publicationErrors();
+   if(errors.length)throw Error(errors.join('\n'));
+   const url=new URL(routeURL(session.id));
+   url.searchParams.set('preview','1');
+   window.open(url.href,'_blank','noopener');
+   inform('Prueba abierta en otra pestaña. Autorizá la cámara y apuntá a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
+ }catch(error){inform('No se pudo iniciar la prueba: '+error.message,true);}
+};
+$('exportTexts').onclick=()=>{
+  try{
+    if(dirty)throw Error('Guardá los cambios antes de exportar las descripciones.');
+    if(!session?.entries?.length)throw Error('El recorrido todavía no tiene marcadores.');
+    const data={
+      format:'estudio-slam-descriptions-v1',
+      id:session.id,
+      name:session.name,
+      entries:session.entries.map(e=>({
+        id:e.id,
+        title:e.name,
+        description:String(e.description||'').slice(0,500)
+      }))
+    };
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='descripciones-'+session.id+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3500);
+    inform('Descripciones exportadas. Este archivo pequeño permite actualizar los textos publicados sin volver a subir los GLB o imprimir otros QR.');
+  }catch(error){inform('No se pudieron exportar las descripciones: '+error.message,true);}
+};
+$('preparePublish').onclick=async()=>{
+ const button=$('preparePublish');
+ button.disabled=true;button.textContent='Preparando archivos…';
+ try{
+   inform('Generando Image Targets 8th Wall, GLB, marcadores imprimibles y manifiesto SLAM…');
+   const result=await preparePublication();
+   inform('ZIP de publicación listo para '+result.count+' marcador(es).\nURL definitiva: '+result.url+
+   '\nTodavía NO está publicado. Adjuntá este ZIP en nuestra conversación para que pueda subirlo a webAR-SLAM-Lab y activar el recorrido.');
+ }catch(error){inform('No se pudo preparar la publicación:\n'+error.message,true);}
+ finally{button.disabled=false;button.textContent='Preparar publicación';}
+};
+$('exportSession').onclick=async()=>{
+try{inform('Preparando ZIP de respaldo…');await downloadExport();inform('ZIP generado. Incluye los GLB cargados y la configuración del recorrido.')}
+catch(error){inform('No se pudo exportar: '+error.message,true)}
+};
+$('deleteSession').onclick=async()=>{
+if(!session)return;
+if(!confirm('¿Eliminar este recorrido guardado del navegador? No se puede deshacer.'))return;
+try{await sessionRemove(session.id);setSession(newSession());inform('Recorrido eliminado del almacenamiento local.')}
+catch(error){inform('No se pudo eliminar: '+error.message,true)}
+};
+$('resetView').onclick=()=>{cam.position.set(1.35,1.2,1.55);controls.target.set(0,.16,0);controls.update()};
+$('playToggle').onclick=()=>{play=!play;$('playToggle').textContent=play?'Pausar animación':'Reproducir animación';if(!play)applyTransform()};
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+(async()=>{
+try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession());inform('Editor listo. Creá tu recorrido y cargá un modelo GLB.');}
+catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();activeId=session.entries[0].id;drawList();populate();void showPreview();}
+})();
 </script>
 </body>
 </html>
