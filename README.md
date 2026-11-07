@@ -32,6 +32,20 @@ Este repositorio comenzó como un laboratorio de un único objeto colocado tocan
    También es posible descomprimirlo y subir manualmente sus archivos respetando las rutas originales.
 8. Esperar la publicación de GitHub Pages, abrir el enlace reservado y comprobar los marcadores impresos.
 
+## Probar tamaños grandes y actualizar un recorrido ya publicado
+
+En Estudio SLAM seleccioná Susi, Rosi o Ico y cambiá **Tamaño del objeto**: el rango actual es de **1 a 300 cm**, con un control numérico preciso para llegar hasta **3 metros**. Los modelos conservan sus proporciones y sus desplazamientos X/Y/Z respecto del marcador físico de 15 cm. Para volver a encuadrar un objeto grande en la vista previa, utilizá **Encuadrar modelo 3D**.
+
+Para aplicar cambios al recorrido publicado:
+
+1. Cambiá los tamaños deseados y pulsá **Guardar recorrido**.
+2. Pulsá **Preparar publicación** para generar un ZIP nuevo con un sufijo temporal; no es necesario regenerar los marcadores ni cambiar los GLB.
+3. En GitHub abrí [importar/](https://github.com/angelv-salazar/webAR-SLAM-Lab/tree/main/importar), elegí **Add file → Upload files**, subí ese **nuevo ZIP** y pulsá **Commit changes**.
+4. La automatización importará solo el ZIP nuevo o modificado, comprobará que el manifiesto tenga el mismo identificador y **actualizará el recorrido existente manteniendo la misma URL/QR**.
+5. Cuando GitHub Pages complete el despliegue, recargá el visor en el teléfono (o añadí un parámetro de versión como `&v=2`).
+
+**Atención:** cambiar solo los datos guardados en el navegador del Estudio no modifica la versión pública hasta que se suba el ZIP nuevo. La posibilidad de trabajar con esculturas de hasta 3 m no garantiza que permanezcan estables en todas las salas o celulares: hay que probar iluminación, distancia y deriva SLAM.
+
 **No hay publicación automática desde el navegador**: basta con subir **un solo ZIP** a importar/ en GitHub. La automatización lo extrae y solicita la reconstrucción de Pages. También podés pedir que se verifique el estado después de subirlo. No pongas tokens de GitHub en el código público.
 
 ### Importar proyectos del WebAR anterior
