@@ -27,7 +27,7 @@ def abort(message: str) -> None:
     raise ValueError(message)
 
 
-def import_zip(archive: Path) -> tuple[str, int, int]:
+def import_zip(archive: Path, *, allow_update: bool = False) -> tuple[str, int, int]:
     if not archive.is_file() or archive.suffix.lower() != ".zip":
         abort(f"No existe un archivo ZIP válido: {archive}")
     if archive.stat().st_size > MAX_TOTAL:
@@ -136,9 +136,17 @@ def import_zip(archive: Path) -> tuple[str, int, int]:
             abort("Faltan archivos: " + ", ".join(sorted(missing)))
 
         dest = Path("recorridos") / route_id
-        # Evitar reusar rutas publicadas por accidente.
+        # Se admite actualizar una ruta publicada SOLO si se pidió
+        # explícitamente --update y el ZIP ya fue validado por completo.
         if dest.exists() and any(dest.iterdir()):
-            abort("La carpeta del recorrido ya existe. No se sobrescribirá automáticamente.")
+            if not allow_update:
+                abort("Este recorrido ya existe. Para actualizarlo usá --update.")
+            existing_manifest = dest / "manifest.json"
+            if not existing_manifest.is_file():
+                abort("La carpeta ya existe pero no tiene manifiesto; no sobrescribir.")
+            old = json.loads(existing_manifest.read_text(encoding="utf-8"))
+            if old.get("id") != route_id or old.get("format") != "estudio-slam-public-v1":
+                abort("La carpeta existente no coincide con este recorrido SLAM.")
 
         extracted = 0
         for member in info:
@@ -154,11 +162,13 @@ def import_zip(archive: Path) -> tuple[str, int, int]:
 
 if __name__ == "__main__":
     try:
-        files = [Path(x) for x in sys.argv[1:]]
+        args = sys.argv[1:]
+        allow_update = "--update" in args
+        files = [Path(x) for x in args if x != "--update"]
         if not files:
             abort("Pasá el ZIP como argumento.")
         for path in files:
-            route_id, markers, created = import_zip(path)
+            route_id, markers, created = import_zip(path, allow_update=allow_update)
             print(f"PUBLICADO: {route_id} | marcadores: {markers} | archivos: {created}")
             print("URL: https://angelv-salazar.github.io/webAR-SLAM-Lab/recorrido.html?id=" + route_id)
     except Exception as exc:
