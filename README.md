@@ -14,6 +14,14 @@ Este repositorio comenzó como un laboratorio de un único objeto colocado tocan
 - **Prueba híbrida de un solo marcador:** https://angelv-salazar.github.io/webAR-SLAM-Lab/hibrido.html
 - **Marcador de esa prueba:** https://angelv-salazar.github.io/webAR-SLAM-Lab/imprimir-hibrido.html
 
+## Limpieza del Estudio y coordenadas (noviembre de 2026)
+
+Se conserva el encabezado **Estudio SLAM**, con una descripción clara de su función como espacio de creación de experiencias AR con objetos 3D. Se eliminan el distintivo redundante «8th Wall + SLAM», el botón de importar proyectos del editor WebAR anterior y la exportación separada de descripciones JSON. La prueba local de cámara permanece como **Vista previa AR (este dispositivo)** y necesita que los archivos estén guardados en el mismo navegador.
+
+Los controles de posición se muestran como **X (horizontal), Y (profundidad) y Z (altura)**. Para no romper recorridos históricos, el formato guardado todavía utiliza sus propiedades anteriores (`x` horizontal, `y` altura, `z` profundidad); el Estudio presenta las etiquetas y los campos en el orden artístico XYZ solicitado, y el visor interpreta correctamente el formato histórico. La vista previa 3D y la publicación permanecen sin otros cambios.
+
+El nuevo máximo de tamaño es **100 cm**, sin recortar automáticamente obras ya guardadas de mayor tamaño. Si se modifica expresamente el control de tamaño de una obra histórica de 144,5 cm, a partir de entonces su máximo será 100 cm. Ningún recorrido público cambia hasta que se exporta y sube un ZIP actualizado.
+
 ## Crear un recorrido
 
 1. Abrir **estudio.html** desde una computadora.
@@ -23,18 +31,18 @@ Este repositorio comenzó como un laboratorio de un único objeto colocado tocan
    - Cargar una **imagen cuadrada de alto contraste** (recomendado 1024 × 1024 px).
    - Validar su calidad y presionar **Generar marcador final**. El editor compone un PNG imprimible de **15 × 15 cm**, con un **QR que comparte la URL del recorrido**.
    - Cargar el modelo **.glb** de esa estación.
-   - Ajustar posición X/Y/Z en cm, tamaño entre 1 y 60 cm, rotación y animaciones disponibles.
+   - Ajustar X e Y sobre el plano y Z como altura vertical, tamaño de 1 a 100 cm, rotación y animaciones disponibles.
    - Escribir una descripción de hasta 500 caracteres (opcional).
    - Comprobar la vista previa con Three.js.
 5. Guardar el recorrido. Los datos se guardan en **IndexedDB** de ese navegador, no en GitHub.
-6. Para comprobar en **ese mismo navegador**, presionar **Probar con mi cámara**, que abre el visor con el parámetro preview=1.
+6. Para comprobar en **ese mismo navegador**, presionar **Vista previa AR (este dispositivo)**, que abre el visor con el parámetro `preview=1` y utiliza la cámara de ese dispositivo.
 7. Para utilizarlo en otros teléfonos, presionar **Preparar publicación** y guardar el ZIP. Entrar a la carpeta [importar/](https://github.com/angelv-salazar/webAR-SLAM-Lab/tree/main/importar), elegir **Add file → Upload files** y subir **únicamente ese ZIP**. GitHub Actions lo validará y descomprimirá automáticamente en recorridos/<id>/.
    También es posible descomprimirlo y subir manualmente sus archivos respetando las rutas originales.
 8. Esperar la publicación de GitHub Pages, abrir el enlace reservado y comprobar los marcadores impresos.
 
 ## Probar tamaños grandes y actualizar un recorrido ya publicado
 
-En Estudio SLAM seleccioná Susi, Rosi o Ico y cambiá **Tamaño del objeto**: el rango actual es de **1 a 300 cm**, con un control numérico preciso para llegar hasta **3 metros**. Los modelos conservan sus proporciones y sus desplazamientos X/Y/Z respecto del marcador físico de 15 cm. Para volver a encuadrar un objeto grande en la vista previa, utilizá **Encuadrar modelo 3D**.
+En Estudio SLAM seleccioná Susi, Rosi o Ico y cambiá **Tamaño del objeto**: los nuevos ajustes permiten **1 a 100 cm (1 metro)**, tanto con el deslizador como con el campo numérico. Los modelos conservan sus proporciones. Los controles visuales ahora son **X y Y sobre el suelo, Z para altura**; internamente se mantienen las coordenadas antiguas del manifiesto para que recorridos previamente publicados conserven su orientación. Para encuadrar un objeto grande utilizá **Encuadrar modelo 3D**. **Los tamaños históricos superiores a 100 cm se conservan al editar otras propiedades**; solo bajan si el usuario ajusta expresamente el tamaño.
 
 Para aplicar cambios al recorrido publicado:
 
@@ -44,17 +52,9 @@ Para aplicar cambios al recorrido publicado:
 4. La automatización importará solo el ZIP nuevo o modificado, comprobará que el manifiesto tenga el mismo identificador y **actualizará el recorrido existente manteniendo la misma URL/QR**.
 5. Cuando GitHub Pages complete el despliegue, recargá el visor en el teléfono (o añadí un parámetro de versión como `&v=2`).
 
-**Atención:** cambiar solo los datos guardados en el navegador del Estudio no modifica la versión pública hasta que se suba el ZIP nuevo. La posibilidad de trabajar con esculturas de hasta 3 m no garantiza que permanezcan estables en todas las salas o celulares: hay que probar iluminación, distancia y deriva SLAM.
+**Atención:** cambiar solo los datos guardados en el navegador del Estudio no modifica la versión pública hasta que se suba el ZIP nuevo. El límite de 1 m se aplica a los nuevos cambios de tamaño del Estudio y no garantiza estabilidad en todas las salas o celulares: hay que probar iluminación, distancia y deriva SLAM.
 
 **No hay publicación automática desde el navegador**: basta con subir **un solo ZIP** a importar/ en GitHub. La automatización lo extrae y solicita la reconstrucción de Pages. También podés pedir que se verifique el estado después de subirlo. No pongas tokens de GitHub en el código público.
-
-### Importar proyectos del WebAR anterior
-
-En Estudio SLAM está el botón **Importar recorridos del Estudio WebAR anterior**. Busca la base IndexedDB del antiguo editor **en ese mismo navegador y dispositivo**. Al elegir uno, copia sus modelos, imágenes, transformaciones y descripciones y **regenera los marcadores/QR** para la nueva ruta SLAM.
-
-Los PNG impresos con QR para la URL antigua **no se redirigen** a la nueva experiencia; hace falta volver a imprimir los marcadores nuevos.
-
-Los dos editores utilizan bases de datos diferentes para no sobrescribirse.
 
 ## ¿Qué hace el seguimiento híbrido?
 
