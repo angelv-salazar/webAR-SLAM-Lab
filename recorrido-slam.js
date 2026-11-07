@@ -5,6 +5,7 @@
  * del encuadre y se corrige suavemente al reenfocarlo.
  */
 import {buildTarget} from './image-targets.js?v=2';
+import {attachObjectGestures,applyTouchTransform} from './touch-objects.js';
 import {
   ANCHOR_SAFE_LIMITS_M,DEFAULT_ANCHOR_SAFE_LIMIT_M,
   cameraRangeFromMarkerM,isOutsideSafeRadius,nextSafeLimit,limitLabel
@@ -124,7 +125,9 @@ function addRow(item,modelURL,targetData){
     candidate:null,rejected:0,
     safetyHidden:false,lastTrustedRangeM:null,lastSafetyExcessM:0,
     lastRejectionAt:0,confirmationCount:0,
-    root:null,center:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
+    root:null,center:null,axis:null,pivot:null,touch:null,model:null,mixer:null,loadError:'',recognitions:0,
+    touchState:{yaw:0,pitch:0,scale:1},modelHalfHeightLocal:0,
+    isTouching:false,spinPauseUntil:0,spinAngle:0,
     markerLocalSide:.15,engineScale:1,detectedWidth:null,printSideWorld:null,
     baseBounds:null,baseMaxAxis:0,calibrationSquare:null,calibrationMaterial:null
   };
@@ -208,11 +211,16 @@ function makeEntities(){
     // declararlo como atributo evita que el montaje restablezca el +90°.
     axis.setAttribute('rotation','90 0 0');
     const pivot=document.createElement('a-entity');
+    const touch=document.createElement('a-entity');
     const asset=document.createElement('a-entity');
-    pivot.appendChild(asset);axis.appendChild(pivot);center.appendChild(axis);
-    root.appendChild(center);
+    // Jerarquía independiente: root/center/axis/pivot son el ANCLAJE;
+    // touch recibe únicamente la rotación y escala del visitante.
+    // Ni un solo gesto modifica la posición global de root.
+    touch.appendChild(asset);pivot.appendChild(touch);axis.appendChild(pivot);
+    center.appendChild(axis);root.appendChild(center);
     scene.appendChild(root);
-    row.root=root;row.center=center;row.axis=axis;row.pivot=pivot;row.model=asset;
+    row.root=root;row.center=center;row.axis=axis;row.pivot=pivot;
+    row.touch=touch;row.model=asset;
 
     // Un cuadrado de 1×1 en coordenadas del papel, escalado al tamaño
     // físico del marcador (15 × 15 cm). Es una guía opcional de prueba.
@@ -289,11 +297,16 @@ function updateModelScale(row){
   const f=targetSize/row.baseMaxAxis;
   const bounds=row.baseBounds;
   row.model.object3D.scale.setScalar(f);
+  // El modelo se centra en su propio volumen. El wrapper 'touch'
+  // lo coloca de nuevo sobre el mismo suelo cuando su escala es 100%.
+  // Al pellizcar, ajusta solo su altura local, NUNCA el marcador.
   row.model.object3D.position.set(
     -((bounds.min.x+bounds.max.x)/2)*f,
-    -bounds.min.y*f,
+    -((bounds.min.y+bounds.max.y)/2)*f,
     -((bounds.min.z+bounds.max.z)/2)*f
   );
+  row.modelHalfHeightLocal=(bounds.max.y-bounds.min.y)*f/2;
+  applyTouchTransform(row);
 }
 // La estimación de cámara y los anclajes están en el espacio de XR8.
 // Esta medida NO conoce la desviación real sobre el piso cuando no se
@@ -446,7 +459,7 @@ function acceptConfirmedTarget(row,pose,now){
   markerFoundCount++;
   if(isNew){
     note('Marcador confirmado: '+row.title+' · primer anclaje');
-    say(row.title+' colocado. Podés avanzar al siguiente marcador.');
+    say(row.title+' colocado. Arrastrá sobre el objeto para rotarlo; pellizcá con dos dedos para ajustar su escala.');
   }else{
     autoCorrections++;
     const cm=Math.round(oldPosition.distanceTo(pose.position)*100);
@@ -588,8 +601,17 @@ function updateFrame(now){
       (row.yCm+(row.animation==='float'?4.5*Math.sin(t*1.8):0))*unitsPerCm,
       row.zCm*unitsPerCm
     );
-    pivot.rotation.y=rot+(row.animation==='spin'?t*.6:0);
-    pivot.scale.setScalar(row.animation==='pulse'?1+.12*Math.sin(t*2):1);
+    // Una rotación automática no debe competir con un dedo que explora.
+    // Congelar durante el gesto y unos segundos después; luego continuar.
+    if(row.animation==='spin'&&!row.isTouching&&now>row.spinPauseUntil){
+      row.spinAngle+=dt*.6;
+    }
+    pivot.rotation.y=rot+row.spinAngle;
+    const gestureScale=row.touchState?.scale||1;
+    const pulse=row.animation==='pulse'?1+.12*Math.sin(t*2):1;
+    // Límite de escala TOTAL: ni la animación pulsante supera 50–150 %.
+    const totalScale=Math.max(.5,Math.min(1.5,gestureScale*pulse));
+    pivot.scale.setScalar(totalScale/gestureScale);
     if(row.mixer)row.mixer.update(dt);
   }
   if(now-lastStatusUpdate>900){lastStatusUpdate=now;refreshDiagnostic();}
@@ -702,6 +724,8 @@ requestAnimationFrame(updateFrame);
     configReady=true;document.title=manifestName+' · Recorrido SLAM';
     note('Recorrido cargado: '+rows.length+' marcadores');
     makeEntities();
+    // Disponible automáticamente al mostrar el GLB; sin botones ni modos.
+    attachObjectGestures({scene,THREE,rows,note});
     splash.hidden=true;
     instructions.textContent='Autorizá la cámara y buscá un marcador impreso.';
     initEngine();
