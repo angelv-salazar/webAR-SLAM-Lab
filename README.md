@@ -108,6 +108,20 @@ El recorte PLANAR se obtiene **del propio PNG imprimible**, con un área centrad
 
 La **URL de todos los QR del recorrido es la misma**, con un identificador reservado. Cada imagen impresa produce un reconocimiento diferente, que activa su GLB y sus propios datos.
 
+## Zona de confianza espacial para evitar arrastre entre estaciones
+
+En el visor de recorridos, cada imagen impresa sigue creando un anclaje independiente y se reancla automáticamente al volver a reconocerla.
+
+Sin el marcador visible, **SLAM no conoce el error de posición real respecto del papel**. Por eso el sistema incluye una protección aproximada: memoriza la **distancia de la cámara al centro del marcador** mientras está reconocido. Una vez que se pierde, conserva el modelo mientras la cámara no se aleje radialmente más de **1 metro adicional** respecto de esa última distancia confirmada.
+
+- **1 m (predeterminado):** si el teléfono se aleja más de 1 m adicional desde la última distancia de reconocimiento, la obra se oculta. No mueve otros anclajes.
+- **2 m:** mayor libertad de desplazamiento antes de ocultarse, pero permite más deriva.
+- **Sin límite:** desactiva la protección y permite comparar con el seguimiento anterior.
+
+La opción se cambia desde el botón **Zona +1 m** del visor; no hace falta generar ZIP ni reimprimir el marcador. Se usa distancia **radial**, no distancia total caminada, para permitir rodear la escultura a una distancia similar. Una escultura de 1,45 m se mide desde el centro de su marcador, **no desde el tamaño ni la geometría del GLB**.
+
+Cuando una estación sobrepasa la zona, **queda oculta hasta que se vuelve a reconocer su propio marcador**. Entonces reaparece y se reancla automáticamente, sin pulsar ningún botón. El sistema no conoce la ubicación absoluta real del papel cuando no lo ve; por tanto, el límite de 1 m es una regla preventiva basada en el desplazamiento estimado de la cámara, **no una medición exacta de un metro de deriva física**. Si la propia localización SLAM falla sin que cambie la distancia radial estimada, el límite no garantiza detectar ese fallo.
+
 ## Evitar confusión entre marcadores (modo recorrido protegido)
 
 El recorrido usa un guardián de anclajes independientes (marker-guard.js):
