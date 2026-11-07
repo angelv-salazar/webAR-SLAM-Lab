@@ -94,6 +94,27 @@ El recorte PLANAR se obtiene **del propio PNG imprimible**, con un área centrad
 
 La **URL de todos los QR del recorrido es la misma**, con un identificador reservado. Cada imagen impresa produce un reconocimiento diferente, que activa su GLB y sus propios datos.
 
+## Evitar confusión entre marcadores (modo recorrido protegido)
+
+El recorrido usa un guardián de anclajes independientes (marker-guard.js):
+
+1. **Identidad comprobada:** requiere al menos cuatro actualizaciones geométricas coherentes durante un mínimo de 400 ms antes de activar una estación. Una falsa detección muy breve no cambia de obra.
+2. **Cada estación tiene su propio anclaje:** el visor muestra por defecto **todos los marcadores ya reconocidos**; no mueve otros anclajes cuando aparece uno nuevo. El botón **Ver último** permite aislar solo el espécimen activo.
+3. **Protección frente a confusiones espaciales:** si el motor atribuye a otro marcador una pose a menos de unos 19 cm del anclaje de otra estación, se descarta esa lectura. Este umbral experimental supone que los marcadores se colocan físicamente separados, en distintas estaciones.
+4. **Saltos e incoherencias:** rechaza actualizaciones individuales con movimientos o giros exagerados.
+5. **Reanclaje manual:** si un marcador se recupera, pero su ubicación nueva queda a más de unos 30 cm del anclaje anterior (o cambia mucho de giro o escala), no se mueve automáticamente el modelo; aparece el botón **Reanclar [nombre]**. Usalo solo después de comprobar que la cámara está apuntando al marcador correcto.
+
+### Evitar que el QR compartido confunda al reconocimiento
+
+En Test_1 los tres marcadores imprimibles contienen el mismo QR para abrir la misma URL. El target original de 8th Wall incluía la mayor parte de ese QR en la zona de reconocimiento: era una región visual casi idéntica en todos ellos.
+
+El modo predeterminado genera en memoria, al abrir el recorrido, **una región de seguimiento exclusiva situada a la izquierda de la impresión, sin el QR**. El QR impreso y la imagen completa NO cambian; tampoco hace falta volver a publicar el ZIP. Se corrige automáticamente el desplazamiento del centro de ese recorte para mantener el contorno de calibración de 15 × 15 cm alineado con el papel y conservar los parámetros X/Y/Z del editor.
+
+- Modo nuevo: URL normal del recorrido (o \`?target=unique\`).
+- Prueba A/B del reconocimiento anterior: agregar \`&target=original\` a la URL del recorrido.
+
+**Límites:** los filtros reducen los falsos cambios, pero no demuestran certeza absoluta ni reconstruyen una cartografía global permanente. La calidad de las imágenes, la iluminación, la textura de la sala y el movimiento de la cámara siguen influyendo en SLAM. Si los marcadores van a estar a menos de 19 cm, habrá que ajustar el umbral de proximidad.
+
 ## Licencia y dependencia
 
 El motor utiliza el **8th Wall Engine Binary**, que proporciona SLAM. Es un componente distribuido de código cerrado y sujeto a su licencia, diferente de los componentes abiertos del ecosistema 8th Wall.
