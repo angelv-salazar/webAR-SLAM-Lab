@@ -14,7 +14,7 @@
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
 <script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
-<script type="module" src="./recorrido-slam.js?v=25"></script>
+<script type="module" src="./recorrido-slam.js?v=30"></script>
 <style>
 *{box-sizing:border-box}
 html,body{height:100%;width:100%;margin:0;overflow:hidden;color:#fff;background:#0a1811;font-family:system-ui,-apple-system,sans-serif}
@@ -76,7 +76,7 @@ button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
 <div id="diagnostic" hidden>Iniciando diagnóstico…</div>
 <div id="splash"><strong>Recorrido SLAM</strong>Preparando los marcadores y los modelos del recorrido.</div>
 <div id="messages">
-  <div id="trackingMessage">Tocá una escultura: arrastrá con un dedo para rotarla o pellizcá con dos para cambiar su escala (50–150 %). La posición del marcador permanece fija.</div>
+  <div id="trackingMessage">Las esculturas reaparecen automáticamente al reconocer su marcador. Si la cámara pierde esa referencia, se ocultan para evitar desplazamientos.</div>
   <section id="specimenInfo" hidden data-collapsed="false" role="region" aria-label="Descripción del espécimen reconocido">
     <div id="infoHead">
       <div id="infoIdentity"><span id="infoEyebrow">Espécimen reconocido</span><strong id="infoTitle"></strong></div>
