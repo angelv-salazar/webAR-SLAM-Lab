@@ -15,10 +15,10 @@
         "name": "slam-01-id-mw5osb74-je7n55",
         "type": "PLANAR",
         "properties": {
-          "top": 0,
-          "left": 225,
-          "width": 1350,
-          "height": 1800,
+          "top": 216,
+          "left": 180,
+          "width": 990,
+          "height": 1320,
           "isRotated": false,
           "originalWidth": 1800,
           "originalHeight": 1800
@@ -30,9 +30,9 @@
       "print": "imprimir/marcador-01-15cm.png",
       "legacyPatt": "patrones/marcador-01.patt",
       "xCm": 0,
-      "yCm": 2,
+      "yCm": -0.5,
       "zCm": -1.5,
-      "sizeCm": 9.5,
+      "sizeCm": 57.5,
       "rotationDeg": -25,
       "animation": "spin"
     },
@@ -45,10 +45,10 @@
         "name": "slam-02-id-mw5osb74-77vhiq",
         "type": "PLANAR",
         "properties": {
-          "top": 0,
-          "left": 225,
-          "width": 1350,
-          "height": 1800,
+          "top": 216,
+          "left": 180,
+          "width": 990,
+          "height": 1320,
           "isRotated": false,
           "originalWidth": 1800,
           "originalHeight": 1800
@@ -62,7 +62,7 @@
       "xCm": 0,
       "yCm": 0,
       "zCm": 0,
-      "sizeCm": 8.5,
+      "sizeCm": 144.5,
       "rotationDeg": 70,
       "animation": "float"
     },
@@ -75,10 +75,10 @@
         "name": "slam-03-id-mw5osb74-wisjfb",
         "type": "PLANAR",
         "properties": {
-          "top": 0,
-          "left": 225,
-          "width": 1350,
-          "height": 1800,
+          "top": 216,
+          "left": 180,
+          "width": 990,
+          "height": 1320,
           "isRotated": false,
           "originalWidth": 1800,
           "originalHeight": 1800
@@ -92,7 +92,7 @@
       "xCm": 0,
       "yCm": 0,
       "zCm": 0,
-      "sizeCm": 8,
+      "sizeCm": 28,
       "rotationDeg": 40,
       "animation": "pulse"
     }
