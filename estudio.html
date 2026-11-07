@@ -193,10 +193,9 @@ main{
 </div>
 <div class="divider"></div>
 <h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
-<p class="muted">Cada imagen activa un objeto independiente con 8th Wall. SLAM intenta mantenerlo anclado al alejarte del marcador; al volver a reconocerlo corrige su posición. Todos los QR comparten la URL del recorrido.</p>
+<p class="muted">Cada imagen activa un objeto independiente con 8th Wall. Todos los QR comparten la URL del recorrido.</p>
 <div id="entryList"></div>
 <button class="btn secondary" id="addEntry" style="width:100%">+ Agregar marcador</button>
-<div class="note" style="margin-top:14px">El recorrido se guarda en este navegador mediante IndexedDB. Aún no se publica en GitHub. Exportá un ZIP para conservar una copia de seguridad.</div>
 <div id="status">Preparando editor…</div>
 </section>
 <section class="card" id="settingsCard">
@@ -281,9 +280,12 @@ main{
   <span class="muted">cm</span>
 </div>
 <p id="legacySizeNote" class="muted" hidden style="font-size:11px;margin:0 0 11px">Este objeto conserva un tamaño anterior superior a 100 cm. No se reducirá hasta que modifiques expresamente el tamaño.</p>
-<label for="rotationY">Rotación vertical · grados</label>
+<label for="rotationY">Rotación horizontal · grados</label>
 <input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
 <div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotValue" class="pill">0°</span><span class="muted">180°</span></div>
+<label for="rotationX">Rotación vertical · grados</label>
+<input id="rotationX" type="range" min="-180" max="180" step="5" value="0">
+<div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotVerticalValue" class="pill">0°</span><span class="muted">180°</span></div>
 <label for="animation">Animación</label>
 <select id="animation">
   <option value="none">Ninguna</option>
@@ -356,7 +358,7 @@ if(currentGroup&&session){
     const motion=sampleObjectMotion(entry.animation,t,entry.size);
     // La animación modifica SOLO este grupo local, nunca el marcador.
     currentGroup.rotation.set(
-      motion.rotX,
+      THREE.MathUtils.degToRad(entry.rotationVertical||0)+motion.rotX,
       THREE.MathUtils.degToRad(entry.rotation)+
         (entry.animation==='spin'?t*.6:motion.rotY),
       motion.rotZ,'YXZ'
@@ -375,7 +377,7 @@ controls.update();renderer.render(scene,cam);
 function uid(){return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
 function newEntry(index){
 return {id:uid(),name:'Marcador '+String(index+1).padStart(2,'0'),kind:'custom',
-modelBlob:null,modelName:'',pattText:'',markerImageBlob:null,description:'',x:0,y:0,z:0,size:12,rotation:0,animation:'none'};
+modelBlob:null,modelName:'',pattText:'',markerImageBlob:null,description:'',x:0,y:0,z:0,size:12,rotation:0,rotationVertical:0,animation:'none'};
 }
 function newSession(){
 return {id:uid(),name:'Mi primer recorrido SLAM',description:'',createdAt:new Date().toISOString(),updatedAt:null,entries:[newEntry(0)]};
@@ -495,8 +497,9 @@ $('posX').value=e.x;$('posY').value=e.y;$('posZ').value=e.z;
 // modifica EXPLÍCITAMENTE el control de tamaño.
 $('modelSize').value=Math.min(100,e.size);$('modelSizeNumber').value=e.size;
 $('legacySizeNote').hidden=!(e.size>100);
-$('rotationY').value=e.rotation;$('animation').value=e.animation;
+$('rotationY').value=e.rotation;$('rotationX').value=e.rotationVertical||0;$('animation').value=e.animation;
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
+$('rotVerticalValue').textContent=(e.rotationVertical||0)+'°';
 }
 function changeFromControls(event){
 const e=selectedEntry();if(!e)return;
@@ -512,9 +515,12 @@ if(event?.target?.id==='modelSize'){
 $('modelSize').value=Math.min(100,e.size);
 $('modelSizeNumber').value=e.size;
 $('legacySizeNote').hidden=!(e.size>100);
-e.rotation=Number($('rotationY').value)||0;e.animation=$('animation').value;
+e.rotation=Number($('rotationY').value)||0;
+e.rotationVertical=Number($('rotationX').value)||0;
+e.animation=$('animation').value;
 $('customPattern').hidden=e.kind!=='custom';
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
+$('rotVerticalValue').textContent=e.rotationVertical+'°';
 $('selectedHint').textContent='Configurando: '+e.name;
 markDirty();drawList();describeMarkerQuality(e);applyTransform();void setMarkerTexture(e);
 }
@@ -573,7 +579,11 @@ function framePreviewObject(){
 function applyTransform(){
 const e=selectedEntry();if(!e||!currentGroup)return;
 currentGroup.position.set(e.x/15,e.y/15,e.z/15);
-currentGroup.rotation.set(0,THREE.MathUtils.degToRad(e.rotation),0,'YXZ');
+currentGroup.rotation.set(
+  THREE.MathUtils.degToRad(e.rotationVertical||0),
+  THREE.MathUtils.degToRad(e.rotation),
+  0,'YXZ'
+);
 currentGroup.scale.set(1,1,1);
 if(previewObject){
 const length=Number(previewObject.userData.normalizedLength)||1;
@@ -666,7 +676,7 @@ async function preparePublication(){
      target:{name:targetName,type:'PLANAR',properties:target.data.properties,image:imagePath,json:targetPath},
      model,print,legacyPatt:e.pattText?legacyPatt:null,
      xCm:e.x,yCm:e.y,zCm:e.z,sizeCm:e.size,
-     rotationDeg:e.rotation,animation:e.animation||'none'
+     rotationDeg:e.rotation,verticalRotationDeg:e.rotationVertical||0,animation:e.animation||'none'
    });
  }
  const manifest={
@@ -699,7 +709,7 @@ if(typeof JSZip==='undefined')throw Error('No se pudo cargar JSZip.');
 const zip=new JSZip(),manifest={format:'estudio-webar-v2',id:session.id,name:session.name,description:session.description,createdAt:session.createdAt,publicUrl:routeURL(session.id),published:false,entries:[]};
 for(const [i,e] of session.entries.entries()){
 const id='marcador-'+String(i+1).padStart(2,'0');
-const entry={id:e.id,name:e.name,description:String(e.description||'').slice(0,500),kind:e.kind,x:e.x,y:e.y,z:e.z,size:e.size,rotation:e.rotation,animation:e.animation,model:'',patt:'',image:'',
+const entry={id:e.id,name:e.name,description:String(e.description||'').slice(0,500),kind:e.kind,x:e.x,y:e.y,z:e.z,size:e.size,rotation:e.rotation,rotationVertical:e.rotationVertical||0,animation:e.animation,model:'',patt:'',image:'',
   validation:e.markerValidation?{ok:e.markerValidation.ok,width:e.markerValidation.info?.width,height:e.markerValidation.info?.height,
   warnings:e.markerValidation.warnings,errors:e.markerValidation.errors}:null};
 if(e.modelBlob){entry.model='modelos/'+id+'.glb';zip.file(entry.model,e.modelBlob);}
@@ -723,7 +733,7 @@ session.description=$('sessionDesc').value;
 markDirty();
 });
 }
-for(const id of ['entryName','entryPattern','posX','posY','posZ','modelSize','rotationY','animation'])$(id).addEventListener('input',changeFromControls);
+for(const id of ['entryName','entryPattern','posX','posY','posZ','modelSize','rotationY','rotationX','animation'])$(id).addEventListener('input',changeFromControls);
 $('framePreview').addEventListener('click',framePreviewObject);
 $('modelSizeNumber').addEventListener('change',()=>{
   const e=selectedEntry();if(!e)return;
