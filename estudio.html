@@ -163,9 +163,16 @@ main{
 <main>
 <section class="card" id="markerCard">
 <h2>1. Recorridos</h2>
-<label for="sessionSelect">Elegir recorrido</label><select id="sessionSelect"><option value="">Nuevo recorrido sin guardar</option></select>
-<label for="sessionName">Nombre del recorrido</label><input id="sessionName" value="Mi primer recorrido SLAM" maxlength="75">
-<label for="sessionDesc">Descripción (opcional)</label><textarea id="sessionDesc" rows="2" placeholder="Ej.: Recorrido de entidades digitales en el espacio expositivo"></textarea>
+<div id="existingSessionChooser" hidden>
+  <label for="sessionSelect">Elegir recorrido</label>
+  <select id="sessionSelect"><option value="">+ Nuevo recorrido</option></select>
+</div>
+<div id="newSessionFields" hidden>
+  <label for="sessionName">Nombre del recorrido</label>
+  <input id="sessionName" placeholder="Nombre del nuevo recorrido" maxlength="75" autocomplete="off">
+  <label for="sessionDesc">Descripción (opcional)</label>
+  <textarea id="sessionDesc" rows="2" placeholder="Ej.: Recorrido de entidades digitales en el espacio expositivo"></textarea>
+</div>
 <div id="sessionQRBox" class="sessionQRBox">
   <canvas id="sessionQR" width="132" height="132" aria-label="QR del recorrido, reservado hasta publicar"></canvas>
   <div class="sessionQRInfo">
@@ -175,7 +182,7 @@ main{
   </div>
 </div>
 <div class="row stretch" style="margin-top:12px">
-<button class="btn secondary" id="newSession">+ Nuevo</button>
+<button class="btn secondary" id="newSession">+ Nuevo recorrido</button>
 <button class="btn" id="saveSession">Guardar recorrido</button>
 </div>
 <div class="row stretch" style="margin-top:8px">
@@ -199,7 +206,7 @@ main{
 <div id="status">Preparando editor…</div>
 </section>
 <section class="card" id="settingsCard">
-<h2>3. Imagen, QR y modelo GLB · 8th Wall</h2>
+<h2>3. Imagen, QR y modelo GLB</h2>
 <p id="selectedHint" class="muted">Selecciona un marcador.</p>
 <div id="entryEditor">
 <label for="entryName">Nombre del marcador / objeto</label><input id="entryName" placeholder="Ej.: Micelio 01" maxlength="75">
@@ -249,7 +256,6 @@ main{
       <h2>4. Vista previa y transformación</h2>
       <p class="muted">Los cambios se aplican al instante. El cuadrado del visor representa un marcador de <strong>15 × 15 cm</strong>.</p>
     </div>
-    <span class="pill" aria-label="Visualización interactiva">En vivo</span>
   </div>
   <div class="viewerWorkspace">
     <div class="viewerStage">
@@ -317,7 +323,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 const $=id=>document.getElementById(id);
 const dbName='estudio-slam-recorridos', storeName='sessions';
-let db=null,session=null,activeId=null,dirty=false,previewObject=null,currentGroup=null,previewToken=0,markerMaterial=null,markerTexture=null,mixer=null,play=true,loadError='';
+let db=null,session=null,activeId=null,dirty=false,isNewSession=true,previewObject=null,currentGroup=null,previewToken=0,markerMaterial=null,markerTexture=null,mixer=null,play=true,loadError='';
 let markerPlane=null;
 const loader=new GLTFLoader();
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xdce5e2);
@@ -380,12 +386,18 @@ return {id:uid(),name:'Marcador '+String(index+1).padStart(2,'0'),kind:'custom',
 modelBlob:null,modelName:'',pattText:'',markerImageBlob:null,description:'',x:0,y:0,z:0,size:12,rotation:0,rotationVertical:0,animation:'none'};
 }
 function newSession(){
-return {id:uid(),name:'Mi primer recorrido SLAM',description:'',createdAt:new Date().toISOString(),updatedAt:null,entries:[newEntry(0)]};
+return {id:uid(),name:'',description:'',createdAt:new Date().toISOString(),updatedAt:null,entries:[newEntry(0)]};
 }
 function selectedEntry(){return session?.entries.find(x=>x.id===activeId)||null}
 function inform(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error)}
 function markDirty(){dirty=true;$('saveSession').textContent='Guardar cambios ●';}
 function clean(){dirty=false;$('saveSession').textContent='Guardar recorrido'}
+function updateSessionFieldsVisibility(){
+  // El nombre y la descripción solo se editan durante la creación.
+  // Los recorridos guardados se identifican por el selector.
+  $('newSessionFields').hidden=!isNewSession;
+  $('deleteSession').disabled=isNewSession;
+}
 function dbOpen(){
 return new Promise((resolve,reject)=>{
 const r=indexedDB.open(dbName,1);
@@ -406,9 +418,10 @@ async function sessionRemove(id){return await txn('readwrite',s=>s.delete(id))}
 async function refreshSessions(){
 const items=(await listSessions()).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const sel=$('sessionSelect');sel.replaceChildren();
-const opt=document.createElement('option');opt.value='';opt.textContent='Elige un recorrido…';sel.appendChild(opt);
+const opt=document.createElement('option');opt.value='';opt.textContent='+ Nuevo recorrido';sel.appendChild(opt);
 for(const item of items){const o=document.createElement('option');o.value=item.id;o.textContent=item.name;sel.appendChild(o)}
-sel.value=items.some(it=>it.id===session?.id)?session.id:'';
+$('existingSessionChooser').hidden=items.length===0;
+sel.value=!isNewSession&&items.some(it=>it.id===session?.id)?session.id:'';
 }
 let qrSessionRender=0;
 async function showSessionQR(){
@@ -427,9 +440,10 @@ async function showSessionQR(){
    }
  }
 }
-function setSession(data){
-session=data;activeId=session.entries[0]?.id||null;
-$('sessionName').value=session.name;$('sessionDesc').value=session.description||'';
+function setSession(data,{isNew=false}={}){
+session=data;isNewSession=isNew;activeId=session.entries[0]?.id||null;
+$('sessionName').value=session.name||'';$('sessionDesc').value=session.description||'';
+updateSessionFieldsVisibility();
 void showSessionQR();
 clean();drawList();populate();void showPreview();refreshSessions().catch(()=>{});
 }
@@ -947,19 +961,39 @@ $('printMarker').onclick=async()=>{
 };
 window.addEventListener('afterprint',()=>{if(printURL){URL.revokeObjectURL(printURL);printURL=null;printer.removeAttribute('src');}});
 $('saveSession').onclick=async()=>{
-try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Puedes volver a abrirlo desde la lista. Para respaldo usa Exportar ZIP.')}
-catch(error){inform('No se pudo guardar: '+error.message,true)}
+try{
+  if(isNewSession&&!session.name.trim()){
+    inform('Escribe un nombre para el nuevo recorrido antes de guardarlo.',true);
+    $('sessionName').focus();
+    return;
+  }
+  session.updatedAt=new Date().toISOString();
+  await sessionSave();
+  isNewSession=false;
+  updateSessionFieldsVisibility();
+  clean();await refreshSessions();
+  inform('Recorrido guardado. Puedes seleccionarlo desde la lista de recorridos existentes.');
+}catch(error){inform('No se pudo guardar: '+error.message,true)}
 };
 $('newSession').onclick=()=>{
 if(dirty&&!confirm('Hay cambios sin guardar. ¿Crear otro recorrido de todos modos?'))return;
-setSession(newSession());inform('Nuevo recorrido creado con QR propio y URL reservada. Carga una imagen por marcador y genera sus diseños. Publicaremos el enlace en una próxima etapa.');
+setSession(newSession(),{isNew:true});
+$('sessionName').focus();
+inform('Nuevo recorrido. Escribe el nombre y, si lo deseas, una descripción. Luego guarda el recorrido.');
 };
 $('sessionSelect').onchange=async e=>{
 const id=e.target.value;
-if(dirty&&!confirm('Hay cambios sin guardar. ¿Cambiar de recorrido?')){e.target.value=session.id;return;}
-if(!id){setSession(newSession());return;}
-const saved=await txn('readonly',s=>s.get(id));
-if(saved)setSession(saved);
+if(dirty&&!confirm('Hay cambios sin guardar. ¿Cambiar de recorrido?')){
+  e.target.value=isNewSession?'':session.id;
+  return;
+}
+if(!id){
+  setSession(newSession(),{isNew:true});
+  $('sessionName').focus();
+  return;
+}
+const saved=await txn('readonly',store=>store.get(id));
+if(saved)setSession(saved,{isNew:false});
 };
 $('testSession').onclick=async()=>{
  try{
@@ -990,15 +1024,18 @@ catch(error){inform('No se pudo exportar: '+error.message,true)}
 $('deleteSession').onclick=async()=>{
 if(!session)return;
 if(!confirm('¿Eliminar este recorrido guardado del navegador? No se puede deshacer.'))return;
-try{await sessionRemove(session.id);setSession(newSession());inform('Recorrido eliminado del almacenamiento local.')}
+try{await sessionRemove(session.id);setSession(newSession(),{isNew:true});inform('Recorrido eliminado del almacenamiento local.')}
 catch(error){inform('No se pudo eliminar: '+error.message,true)}
 };
 $('resetView').onclick=()=>{cam.position.set(1.35,1.2,1.55);controls.target.set(0,.16,0);controls.update()};
 $('playToggle').onclick=()=>{play=!play;$('playToggle').textContent=play?'Pausar animación':'Reproducir animación';if(!play)applyTransform()};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 (async()=>{
-try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession());inform('Editor listo. Crea tu recorrido y carga un modelo GLB.');}
-catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();activeId=session.entries[0].id;drawList();populate();void showPreview();}
+try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession(),{isNew:saved.length===0});inform('Editor listo. Crea tu recorrido y carga un modelo GLB.');}
+catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();isNewSession=true;activeId=session.entries[0].id;
+$('sessionName').value='';$('sessionDesc').value='';
+updateSessionFieldsVisibility();$('existingSessionChooser').hidden=true;
+drawList();populate();void showPreview();}
 })();
 </script>
 </body>
