@@ -47,6 +47,17 @@ Las dos rotaciones se aplican tanto a la vista previa 3D como al visor del telé
 
 Se eliminó el aviso técnico sobre IndexedDB debajo de la lista de marcadores y se simplificó su descripción a: «Cada imagen activa un objeto independiente con 8th Wall. Todos los QR comparten la URL del recorrido.» La interfaz del Estudio y el visor, los mensajes de grabación y las validaciones utilizan español latinoamericano neutro.
 
+## Selector de recorridos y creación (noviembre de 2026)
+
+El inicio del Estudio muestra la sección **1. Recorridos** de forma contextual:
+- Si ya existen recorridos guardados en el navegador, el selector **Elegir recorrido** muestra sus nombres. Al seleccionar uno, no se repiten sus campos de nombre y descripción.
+- El botón **+ Nuevo recorrido** o la opción equivalente del selector inicia un recorrido nuevo. **Solo entonces** se muestran **Nombre del recorrido** y **Descripción (opcional)**.
+- Al guardar por primera vez (con un nombre no vacío), esos campos se ocultan y el recorrido queda seleccionado por nombre en la lista. Se mantienen los controles de guardado de cambios, respaldo ZIP, marcadores y publicación.
+- Si todavía no hay recorridos guardados, los campos de creación aparecen directamente, sin mostrar un selector vacío.
+- El título del apartado 3 es **Imagen, QR y modelo GLB**, y se retira la etiqueta **En vivo** de la vista previa. No se alteró el funcionamiento del seguimiento SLAM ni el visor del teléfono.
+
+La tipografía permanece intacta hasta elegir una nueva fuente.
+
 ## Crear un recorrido
 
 1. Abrir **estudio.html** desde una computadora.
