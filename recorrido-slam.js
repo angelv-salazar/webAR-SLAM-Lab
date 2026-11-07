@@ -7,6 +7,7 @@
 import {buildTarget} from './image-targets.js?v=2';
 import {attachObjectGestures,applyTouchTransform} from './touch-objects.js';
 import {setupArVideoRecorder} from './record-clip.js';
+import {sampleObjectMotion,OBJECT_ANIMATION_TYPES} from './object-animations.js';
 import {
   MARKER_LOSS_GRACE_MS,BALANCED_GRACE_MS,
   BALANCED_MAX_CAMERA_TRAVEL_M,BALANCED_MAX_RADIAL_EXPANSION_M,
@@ -141,7 +142,7 @@ function addRow(item,modelURL,targetData){
     xCm:cleanTransform(item.xCm),yCm:cleanTransform(item.yCm),zCm:cleanTransform(item.zCm),
     sizeCm:Math.max(1,Math.min(300,cleanTransform(item.sizeCm)||12)),
     rotationDeg:cleanTransform(item.rotationDeg),
-    animation:['spin','float','pulse','embedded','none'].includes(item.animation)?item.animation:'none',
+    animation:OBJECT_ANIMATION_TYPES.includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
     lockHidden:false,violationSince:null,lastTrustedCameraPosition:null,
     candidate:null,rejected:0,
@@ -665,27 +666,34 @@ function updateFrame(now){
     if(stabilityMode==='legacy')checkAnchorSafePerimeter(row);
     const t=now/1000,rot=(row.rotationDeg*Math.PI)/180;
     const pivot=row.pivot.object3D;
-    // Los ejes de la vista previa son los mismos del modelo:
-    // X = derecha del papel; Y = arriba/normal al papel;
-    // Z = profundidad en el plano. axis.rotation.x convierte
-    // esos ejes al plano XY y normal +Z del image target.
+    const motion=sampleObjectMotion(row.animation,t,row.sizeCm);
+    // Las animaciones transcurren SOLO dentro del marcador, en pivot.
+    // root (pose SLAM) y center (centro de su impresión) nunca se mueven.
+    // Los cm siguen el formato interno histórico: y = altura, z = fondo.
     const unitsPerCm=row.markerLocalSide/PHYSICAL_PRINT_CM;
     pivot.position.set(
-      row.xCm*unitsPerCm,
-      (row.yCm+(row.animation==='float'?4.5*Math.sin(t*1.8):0))*unitsPerCm,
-      row.zCm*unitsPerCm
+      (row.xCm+motion.xCm)*unitsPerCm,
+      (row.yCm+motion.yCm)*unitsPerCm,
+      (row.zCm+motion.zCm)*unitsPerCm
     );
-    // Una rotación automática no debe competir con un dedo que explora.
-    // Congelar durante el gesto y unos segundos después; luego continuar.
+    // La rotación continua automática se pausa al tocar la escultura.
     if(row.animation==='spin'&&!row.isTouching&&now>row.spinPauseUntil){
       row.spinAngle+=dt*.6;
     }
-    pivot.rotation.y=rot+row.spinAngle;
+    pivot.rotation.set(
+      motion.rotX,
+      rot+row.spinAngle+motion.rotY,
+      motion.rotZ,'YXZ'
+    );
     const gestureScale=row.touchState?.scale||1;
-    const pulse=row.animation==='pulse'?1+.12*Math.sin(t*2):1;
-    // Límite de escala TOTAL: ni la animación pulsante supera 50–150 %.
-    const totalScale=Math.max(.5,Math.min(1.5,gestureScale*pulse));
-    pivot.scale.setScalar(totalScale/gestureScale);
+    // Limitar la escala total entre el 50 % y el 150 %, incluso si el
+    // usuario pellizca mientras la metamorfosis varía cada eje.
+    const limited=x=>Math.max(.5,Math.min(1.5,gestureScale*x))/gestureScale;
+    pivot.scale.set(
+      limited(motion.scaleX),
+      limited(motion.scaleY),
+      limited(motion.scaleZ)
+    );
     if(row.mixer)row.mixer.update(dt);
   }
   if(now-lastStatusUpdate>900){lastStatusUpdate=now;refreshDiagnostic();}
