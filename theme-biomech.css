@@ -524,3 +524,61 @@ footer{z-index:2}
 @media print{
   .card::before,.card::after,.transformDock::before{display:none!important}
 }
+
+/* === V3 — paneles biomecánicos volumétricos (no contornos finos) ===
+ * El marco completo es una membrana RELLENA con cavidades transparentes,
+ * no un border-image recortado. Funciona con tarjetas altas y angostas.
+ * Los adornos no reciben clics ni modifican los formularios o el visor.
+ */
+.card{
+  overflow:visible;
+  border-radius:35px 24px 39px 28px / 31px 40px 32px 42px;
+  padding:36px 27px 34px;
+  border:1px solid rgba(194,219,193,.36);
+}
+.card::before,
+#viewerCard::before{
+  inset:-17px;
+  border:0;
+  border-image:none;
+  background:url("./assets/biomech-frame-v3.svg") center / 100% 100% no-repeat;
+  opacity:1;
+  z-index:1;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.58));
+}
+.card::after,
+#viewerCard::after{
+  inset:-9px;
+  border:0;
+  border-radius:0;
+  background:
+    url("./assets/biomech-membrane-v2.svg") center top / 100% 106px no-repeat,
+    url("./assets/biomech-membrane-v2.svg") center bottom / 100% 104px no-repeat;
+  opacity:.86;
+  z-index:1;
+  pointer-events:none;
+}
+.card>*{position:relative;z-index:2}
+#viewerCard .viewerHeading,#viewerCard .viewerWorkspace{z-index:3}
+.transformDock::before{
+  inset:0;
+  background:
+    url("./assets/biomech-membrane-v2.svg") center top / 100% 82px no-repeat,
+    url("./assets/biomech-membrane-v2.svg") center bottom / 100% 72px no-repeat;
+  opacity:.65;
+}
+#preview{border-radius:33px 22px 36px 24px}
+#preview::after{border-radius:26px 15px 27px 15px}
+@media(max-width:1230px){
+ .card{padding:33px 24px 30px}
+ .card::before,#viewerCard::before{inset:-13px}
+ .card::after,#viewerCard::after{inset:-7px}
+}
+@media(max-width:780px){
+ .card{padding:34px 27px 30px}
+ .card::before,#viewerCard::before{inset:-11px}
+ .card::after,#viewerCard::after{inset:-6px}
+}
+@media print{
+ .card::before,.card::after,#viewerCard::before,#viewerCard::after{display:none!important}
+}
