@@ -142,6 +142,7 @@ function addRow(item,modelURL,targetData){
     xCm:cleanTransform(item.xCm),yCm:cleanTransform(item.yCm),zCm:cleanTransform(item.zCm),
     sizeCm:Math.max(1,Math.min(300,cleanTransform(item.sizeCm)||12)),
     rotationDeg:cleanTransform(item.rotationDeg),
+    verticalRotationDeg:cleanTransform(item.verticalRotationDeg),
     animation:OBJECT_ANIMATION_TYPES.includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
     lockHidden:false,violationSince:null,lastTrustedCameraPosition:null,
@@ -214,7 +215,8 @@ async function readLocal(){
     addRow({
       id:e.id,title:e.name,description:e.description,
       imageTargetName:targetName,xCm:e.x,yCm:e.y,zCm:e.z,
-      sizeCm:e.size,rotationDeg:e.rotation,animation:e.animation
+      sizeCm:e.size,rotationDeg:e.rotation,
+      verticalRotationDeg:e.rotationVertical||0,animation:e.animation
     },blobUrl(e.modelBlob),{
       ...target.data,imagePath:blobUrl(target.blob)
     });
@@ -681,7 +683,7 @@ function updateFrame(now){
       row.spinAngle+=dt*.6;
     }
     pivot.rotation.set(
-      motion.rotX,
+      (row.verticalRotationDeg*Math.PI/180)+motion.rotX,
       rot+row.spinAngle+motion.rotY,
       motion.rotZ,'YXZ'
     );
