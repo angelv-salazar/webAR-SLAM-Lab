@@ -1,91 +1,110 @@
-# WebAR · SLAM Lab
+# Estudio SLAM · Recorridos WebAR
 
-Laboratorio experimental de seguimiento espacial en navegadores, independiente de [webAR-QR](https://github.com/angelv-salazar/webAR-QR).
+**Editor de recorridos con marcadores personalizados, QR, modelos GLB y seguimiento espacial híbrido de 8th Wall.** Proyecto independiente del [Estudio WebAR-QR anterior](https://github.com/angelv-salazar/webAR-QR).
 
-## Estado
+Este repositorio comenzó como un laboratorio de un único objeto colocado tocando el piso. Después de comprobar que **8th Wall + marcador + SLAM** permitía una colocación más estable en el teléfono de prueba, se integró el editor completo de recorridos del proyecto WebAR original.
 
-**Prototipo técnico v0.1**. El código está publicado en este repositorio; la compatibilidad y estabilidad del seguimiento **deben verificarse en teléfonos reales**. No es todavía una aplicación de producción ni una garantía de funcionamiento universal.
+## Abrir
 
-Basado en **8th Wall Engine Binary** con SLAM (world tracking) y A-Frame/8-Frame. El motor binario se obtiene desde un CDN y está sujeto a su licencia propia; no se incluye ni se modifica el motor en este repositorio.
+- **Inicio:** https://angelv-salazar.github.io/webAR-SLAM-Lab/
+- **Editor de recorridos (principal):** https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html
+- **Visor de recorridos:** https://angelv-salazar.github.io/webAR-SLAM-Lab/recorrido.html?id=ID_DEL_RECORRIDO
+- **Editor experimental sin marcadores (conservado):** https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio-libre.html
+- **Prueba de colocación libre:** https://angelv-salazar.github.io/webAR-SLAM-Lab/visor.html
+- **Prueba híbrida de un solo marcador:** https://angelv-salazar.github.io/webAR-SLAM-Lab/hibrido.html
+- **Marcador de esa prueba:** https://angelv-salazar.github.io/webAR-SLAM-Lab/imprimir-hibrido.html
 
-## Publicación con GitHub Pages
+## Crear un recorrido
 
-1. Abrir **Settings → Pages** en este repositorio.
-2. En **Build and deployment**, seleccionar **Deploy from a branch**.
-3. Seleccionar **main**, carpeta **/(root)** y guardar.
-4. Una vez disponible la web, usar estas direcciones:
-   - Inicio: https://angelv-salazar.github.io/webAR-SLAM-Lab/
-   - Editor: https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html
-   - Prueba de cámara: https://angelv-salazar.github.io/webAR-SLAM-Lab/visor.html
+1. Abrir **estudio.html** desde una computadora.
+2. Crear un recorrido y escribir su nombre.
+3. Seleccionar **Agregar marcador** tantas veces como sea necesario.
+4. Para cada marcador:
+   - Cargar una **imagen cuadrada de alto contraste** (recomendado 1024 × 1024 px).
+   - Validar su calidad y presionar **Generar marcador final**. El editor compone un PNG imprimible de **15 × 15 cm**, con un **QR que comparte la URL del recorrido**.
+   - Cargar el modelo **.glb** de esa estación.
+   - Ajustar posición X/Y/Z en cm, tamaño entre 1 y 60 cm, rotación y animaciones disponibles.
+   - Escribir una descripción de hasta 500 caracteres (opcional).
+   - Comprobar la vista previa con Three.js.
+5. Guardar el recorrido. Los datos se guardan en **IndexedDB** de ese navegador, no en GitHub.
+6. Para comprobar en **ese mismo navegador**, presionar **Probar con mi cámara**, que abre el visor con el parámetro preview=1.
+7. Para utilizarlo en otros teléfonos, presionar **Preparar publicación**, guardar el ZIP y subir su carpeta recorridos/<id>/ a la rama main del repositorio, **manteniendo todas sus rutas**.
+8. Esperar la publicación de GitHub Pages, abrir el enlace reservado y comprobar los marcadores impresos.
 
-GitHub Pages proporciona HTTPS, necesario para acceder a la cámara en teléfonos.
+**No hay publicación automática desde el navegador**: es necesario subir el ZIP a GitHub o compartirlo con una herramienta que tenga permiso de escritura. No pongas tokens de GitHub en el código público.
 
-## Primera prueba: SLAM
+### Importar proyectos del WebAR anterior
 
-1. Abrir **visor.html** desde un teléfono con Android/Chrome o iPhone/Safari y conexión a Internet.
-2. Permitir el acceso a la cámara.
-3. Mover el teléfono lentamente alrededor de un área del piso bien iluminada, con textura y objetos reconocibles.
-4. **Tocar el suelo** en la pantalla para colocar el espécimen virtual.
-5. Alejarse y caminar alrededor del espécimen sin mantener ningún marcador impreso en cámara.
-6. Tocar de nuevo para cambiar la ubicación o **Recolocar** para quitar el objeto.
-7. Usar **Detalles** para ver el diagnóstico.
+En Estudio SLAM está el botón **Importar recorridos del Estudio WebAR anterior**. Busca la base IndexedDB del antiguo editor **en ese mismo navegador y dispositivo**. Al elegir uno, copia sus modelos, imágenes, transformaciones y descripciones y **regenera los marcadores/QR** para la nueva ruta SLAM.
 
-Esta prueba **no utiliza marcadores**: posiciona un objeto sobre un plano horizontal virtual con seguimiento espacial. Si el motor estima mal el plano o pierde el tracking, el objeto puede deslizarse o desplazarse. El anclaje no persiste entre sesiones y no implementa VPS.
+Los PNG impresos con QR para la URL antigua **no se redirigen** a la nueva experiencia; hace falta volver a imprimir los marcadores nuevos.
 
-### Android, iPhone y equipos no compatibles
+Los dos editores utilizan bases de datos diferentes para no sobrescribirse.
 
-8th Wall utiliza su propio sistema SLAM para funcionar en más navegadores que WebXR inmersivo por sí solo. Eso no garantiza compatibilidad universal. Pueden existir limitaciones por hardware, permisos, versiones del sistema, navegadores embebidos, memoria, cámara, iluminación y conexión. En escritorio, el parámetro allowedDevices: any puede presentar una escena 3D de simulación: **eso no prueba SLAM físico**.
+## ¿Qué hace el seguimiento híbrido?
 
-Si el visor falla, comparar con los [ejemplos oficiales de 8th Wall](https://github.com/8thwall/aframe-world-effects-example) y consultar la [documentación actual del motor](https://8thwall.org/docs/engine/overview).
+- El image target de 8th Wall detecta una imagen impresa.
+- La posición del modelo se establece mediante el marcador detectado.
+- **SLAM sigue estimando la cámara y el espacio** cuando el marcador sale del encuadre; el modelo permanece en coordenadas del mundo.
+- Al reaparecer la imagen, el anclaje se **corrige suavemente** con la nueva estimación del marcador.
+- El visitante puede activar varias estaciones del recorrido sin cerrar la cámara.
 
-## Editor experimental
+En el visor se puede alternar entre **Ver último** y **Ver todo** (todos los marcadores ya reconocidos). Los modelos que nunca se han reconocido todavía no aparecen.
 
-Desde **estudio.html** se puede:
+**Importante:** que el objeto siga visible no significa que haya un anclaje persistente perfecto. SLAM puede tener deriva, sobre todo al alejarse, girar bruscamente o atravesar zonas pobres en textura o luz. Los anclajes se pierden al cerrar/recargar la página.
 
-- Crear proyectos independientes con un GLB opcional.
-- Ajustar la **dimensión máxima entre 10 y 300 cm**, rotación, desplazamiento y altura.
-- Agregar nombre y texto descriptivo de hasta 500 caracteres.
-- Ver una previsualización 3D con cuadrícula en metros.
-- Guardar proyectos en **IndexedDB** del mismo navegador.
-- **Probar en este navegador** desde el visor con el identificador local. Este modo no comparte archivos con otros equipos.
-- Descargar **Preparar publicación ZIP**. Contiene la carpeta experiencias/<id>/, con config.json y modelo.glb si lo cargaste.
+### Limitaciones a ensayar
 
-### Publicar una obra propia
+- El experimento de **un marcador** ya fue probado por el usuario en Android/Chrome; el **visor nuevo de múltiples marcadores** requiere una nueva prueba física.
+- Aunque el editor conserva hasta 20 marcadores, ese número **no está validado como simultáneamente estable en el motor móvil**. Comenzar con dos o tres, comparar el rendimiento y aumentar progresivamente.
+- No se garantiza funcionamiento en todos los Android o iPhone.
+- No se calcula una malla 3D permanente de la sala ni un anclaje entre sesiones.
+- Los GLB grandes pueden afectar la fluidez o la memoria.
 
-1. Configurar y guardar la obra en el editor.
-2. Descargar el ZIP de publicación.
-3. Descomprimirlo y subir la carpeta experiencias/<id>/ a la rama main de este repositorio.
-4. Abrir la dirección web del visor con el parámetro exp=<id> en el teléfono.
+## Archivos del proyecto
 
-La geometría de ejemplo funciona sin GLB. Una vez subida la obra, su URL puede mantenerse fija aunque actualicemos config.json o modelo.glb.
+| Archivo | Función |
+| --- | --- |
+| index.html | Inicio y selección de modalidad |
+| estudio.html | Editor **principal** de recorridos con múltiples marcadores |
+| marker-composer.js | PNG de 15 cm con QR y archivo .patt heredado |
+| marker-validation.js | Control de calidad de imágenes |
+| image-targets.js | Conversión del PNG final a Image Target 8th Wall (PLANAR, JPEG gris 480 × 640) |
+| recorrido.html | Interfaz móvil de recorridos SLAM |
+| recorrido-slam.js | Seguimiento híbrido, posiciones independientes, GLB, animaciones y textos |
+| estudio-libre.html | Versión conservada del primer editor de un objeto sin marcadores |
+| visor.html | Colocación libre tocando el piso |
+| hibrido.html | Prueba de un único marcador con SLAM |
+| imprimir-hibrido.html | Marcador imprimible de la primera prueba |
+| diagnostico.html | Diagnóstico de cámara/SLAM |
 
-**Importante:** GitHub Pages no puede acceder por sí solo al IndexedDB de otro dispositivo. Guardar un proyecto en el editor no publica automáticamente sus archivos. El proyecto original webAR-QR no se modifica.
+### Estructura del ZIP de publicación
 
-## Diseño técnico
+La carpeta que genera Estudio SLAM contiene, para cada marcador:
 
-- index.html: pantalla inicial del laboratorio.
-- estudio.html: editor y vista previa Three.js, almacenamiento IndexedDB, exportación ZIP con JSZip.
-- visor.html: motor 8th Wall (@8thwall/engine-binary@1, módulo SLAM), 8-Frame/A-Frame, colocación tocando el suelo, renderizado de GLB o figura alternativa, botón recolocar y diagnóstico.
-- experiencias/<id>/config.json: manifiesto publicado para cada obra.
-- experiencias/<id>/modelo.glb: modelo opcional.
+- recorridos/<id>/manifest.json
+- recorridos/<id>/targets/marcador-01-luminance.jpg
+- recorridos/<id>/targets/marcador-01.json
+- recorridos/<id>/modelos/marcador-01.glb
+- recorridos/<id>/imprimir/marcador-01-15cm.png
+- recorridos/<id>/patrones/marcador-01.patt (compatibilidad heredada, **no usado por 8th Wall**)
 
-La escala se calcula a partir de la dimensión máxima de la caja envolvente del GLB. La escala física estimada por SLAM puede tener pequeñas variaciones. Las coordenadas X/Y/Z son desplazamientos relativos al punto seleccionado sobre el suelo.
+El recorte PLANAR se obtiene **del propio PNG imprimible**, con un área centrada de proporción 3:4, interpolación a 480 × 640 píxeles y conversión a escala de grises, en el formato del [image-target-cli oficial](https://github.com/8thwall/8thwall/tree/main/apps/image-target-cli).
 
-## Licencia y atribución del motor
+La **URL de todos los QR del recorrido es la misma**, con un identificador reservado. Cada imagen impresa produce un reconocimiento diferente, que activa su GLB y sus propios datos.
 
-Este laboratorio utiliza el componente distribuido cerrado **8th Wall XR Engine Binary** bajo los términos de Niantic Spatial. La distribución de ese motor **no equivale a una licencia MIT para el SLAM**.
+## Licencia y dependencia
+
+El motor utiliza el **8th Wall Engine Binary**, que proporciona SLAM. Es un componente distribuido de código cerrado y sujeto a su licencia, diferente de los componentes abiertos del ecosistema 8th Wall.
 
 > This product includes the XR Engine software developed by Niantic Spatial, Inc.  
 > Copyright © 2026 Niantic Spatial, Inc. All rights reserved.  
 > License: https://github.com/8thwall/engine/blob/main/LICENSE
 
-Consultar [licencia y atribuciones](https://8thwall.org/docs/open-source) y el [código del motor distribuido](https://github.com/8thwall/engine).
+Referencia oficial: [8th Wall Engine overview](https://8thwall.org/docs/engine/overview), [XR8.XrController.configure](https://8thwall.org/docs/api/engine/xrcontroller/configure).
 
-Se usan bibliotecas alojadas en CDN; para una instalación estable se recomienda fijar versiones probadas y, si corresponde, alojar localmente los recursos conforme a sus licencias.
+## Prueba recomendada
 
-## Próximos ensayos
+Comenzar con un recorrido que tenga **dos marcadores diferentes** y dos GLB livianos. Imprimir los marcadores en papel mate a escala real 15 × 15 cm; colocarlos sobre superficies con buena iluminación. Reconocer el primero, alejarse, volver a enfocarlo y comprobar corrección del anclaje; repetir con el segundo y usar **Ver todo**. Anotar estabilidad, carga, saltos y pérdida de reconocimiento.
 
-- Comparar estabilidad del mismo GLB en Android Chrome y iOS Safari.
-- Medir error y deriva al alejarse del punto de colocación.
-- Investigar detección real de plano, anclajes y relocalización.
-- Considerar un modo híbrido de referencia visual inicial + SLAM, sin confundir el QR de apertura con un anclaje espacial.
+Una prueba con un solo marcador no garantiza que múltiples marcadores y modelos sean igualmente estables. El proyecto original webAR-QR queda intacto.
