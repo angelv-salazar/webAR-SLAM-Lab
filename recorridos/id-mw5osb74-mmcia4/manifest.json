@@ -1,0 +1,100 @@
+{
+  "format": "estudio-slam-public-v1",
+  "id": "id-mw5osb74-mmcia4",
+  "name": "SLAM · Test_1",
+  "description": "Prueba 1",
+  "physicalSizeCm": 15,
+  "engine": "8thwall-slam",
+  "items": [
+    {
+      "id": "id-mw5osb74-je7n55",
+      "title": "Susi",
+      "description": "Aca vemos a Susi es una monita que esta girando",
+      "imageTargetName": "slam-01-id-mw5osb74-je7n55",
+      "target": {
+        "name": "slam-01-id-mw5osb74-je7n55",
+        "type": "PLANAR",
+        "properties": {
+          "top": 0,
+          "left": 225,
+          "width": 1350,
+          "height": 1800,
+          "isRotated": false,
+          "originalWidth": 1800,
+          "originalHeight": 1800
+        },
+        "image": "targets/marcador-01-luminance.jpg",
+        "json": "targets/marcador-01.json"
+      },
+      "model": "modelos/marcador-01.glb",
+      "print": "imprimir/marcador-01-15cm.png",
+      "legacyPatt": "patrones/marcador-01.patt",
+      "xCm": 0,
+      "yCm": 2,
+      "zCm": -1.5,
+      "sizeCm": 9.5,
+      "rotationDeg": -25,
+      "animation": "spin"
+    },
+    {
+      "id": "id-mw5osb74-77vhiq",
+      "title": "Rosi",
+      "description": "Esta es na pequeña estrella que esta flotando por las nuuebas y jhaksda jasda\nkajsdlasj\nes todo esto",
+      "imageTargetName": "slam-02-id-mw5osb74-77vhiq",
+      "target": {
+        "name": "slam-02-id-mw5osb74-77vhiq",
+        "type": "PLANAR",
+        "properties": {
+          "top": 0,
+          "left": 225,
+          "width": 1350,
+          "height": 1800,
+          "isRotated": false,
+          "originalWidth": 1800,
+          "originalHeight": 1800
+        },
+        "image": "targets/marcador-02-luminance.jpg",
+        "json": "targets/marcador-02.json"
+      },
+      "model": "modelos/marcador-02.glb",
+      "print": "imprimir/marcador-02-15cm.png",
+      "legacyPatt": "patrones/marcador-02.patt",
+      "xCm": 0,
+      "yCm": 0,
+      "zCm": 0,
+      "sizeCm": 8.5,
+      "rotationDeg": 70,
+      "animation": "float"
+    },
+    {
+      "id": "id-mw5osb74-wisjfb",
+      "title": "Ico",
+      "description": "aca se sta inflando un icono que hice en blender asi que tienen que tener paciencia sobre como se ve estoooooo\nasdasda\nasdasdasd por una vez de esja",
+      "imageTargetName": "slam-03-id-mw5osb74-wisjfb",
+      "target": {
+        "name": "slam-03-id-mw5osb74-wisjfb",
+        "type": "PLANAR",
+        "properties": {
+          "top": 0,
+          "left": 225,
+          "width": 1350,
+          "height": 1800,
+          "isRotated": false,
+          "originalWidth": 1800,
+          "originalHeight": 1800
+        },
+        "image": "targets/marcador-03-luminance.jpg",
+        "json": "targets/marcador-03.json"
+      },
+      "model": "modelos/marcador-03.glb",
+      "print": "imprimir/marcador-03-15cm.png",
+      "legacyPatt": "patrones/marcador-03.patt",
+      "xCm": 0,
+      "yCm": 0,
+      "zCm": 0,
+      "sizeCm": 8,
+      "rotationDeg": 40,
+      "animation": "pulse"
+    }
+  ]
+}

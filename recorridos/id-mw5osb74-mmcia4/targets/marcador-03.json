@@ -1,0 +1,15 @@
+{
+  "name": "slam-03-id-mw5osb74-wisjfb",
+  "type": "PLANAR",
+  "properties": {
+    "top": 0,
+    "left": 225,
+    "width": 1350,
+    "height": 1800,
+    "isRotated": false,
+    "originalWidth": 1800,
+    "originalHeight": 1800
+  },
+  "imagePath": "targets/marcador-03-luminance.jpg",
+  "metadata": null
+}
