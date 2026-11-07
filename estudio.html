@@ -170,9 +170,8 @@ main{
   <canvas id="sessionQR" width="132" height="132" aria-label="QR del recorrido, reservado hasta publicar"></canvas>
   <div class="sessionQRInfo">
     <strong>QR de este recorrido</strong>
-    <div id="sessionQRText" class="muted">Preparando enlace…</div>
-    <div class="muted">Se asigna automáticamente al crear el recorrido. Será el mismo en todos sus marcadores.</div>
-    <div class="pill" style="margin-top:8px;display:inline-block">Borrador · falta publicar</div>
+    <div class="muted">Se asigna automáticamente al crear el recorrido.</div>
+    <div id="sessionQRText" class="muted" hidden role="alert"></div>
   </div>
 </div>
 <div class="row stretch" style="margin-top:12px">
@@ -271,9 +270,9 @@ main{
       <div class="transformScroll">
         <h3>Posición · marcador 15 × 15 cm</h3>
 <div class="metrics">
-<div><label for="posX">X · cm</label><input id="posX" type="number" step=".5" min="-60" max="60" value="0"></div>
-<div><label for="posZ">Y · profundidad (cm)</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
-<div><label for="posY">Z · altura (cm)</label><input id="posY" type="number" step=".5" min="-20" max="60" value="0"></div>
+<div><label for="posX">X</label><input id="posX" type="number" step=".5" min="-60" max="60" value="0"></div>
+<div><label for="posZ">Y</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
+<div><label for="posY">Z</label><input id="posY" type="number" step=".5" min="-20" max="60" value="0"></div>
 </div>
 <label for="modelSize">Tamaño del objeto · dimensión máxima: <strong id="sizeValue">12 cm</strong></label>
 <div class="row" style="align-items:center;gap:10px">
@@ -281,7 +280,6 @@ main{
   <input id="modelSizeNumber" aria-label="Tamaño en centímetros" type="number" min="1" max="100" step=".5" value="12" style="width:90px;flex:none">
   <span class="muted">cm</span>
 </div>
-<p class="muted" style="font-size:11px;margin:5px 0 11px">De 1 a 100 cm (1 m). El marcador sigue midiendo 15 × 15 cm. Podés encuadrar el modelo con el botón de la vista previa.</p>
 <p id="legacySizeNote" class="muted" hidden style="font-size:11px;margin:0 0 11px">Este objeto conserva un tamaño anterior superior a 100 cm. No se reducirá hasta que modifiques expresamente el tamaño.</p>
 <label for="rotationY">Rotación vertical · grados</label>
 <input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
@@ -396,14 +394,17 @@ let qrSessionRender=0;
 async function showSessionQR(){
  const token=++qrSessionRender,id=session?.id;
  if(!id)return;
- $('sessionQRText').textContent=routeURL(id);
+ const qrError=$('sessionQRText');
+ qrError.hidden=true;qrError.textContent='';
  try{
    const canvas=await makeQR(routeURL(id),256);
    if(token!==qrSessionRender)return;
    const preview=$('sessionQR'),ctx=preview.getContext('2d');
    ctx.clearRect(0,0,preview.width,preview.height);ctx.drawImage(canvas,0,0,preview.width,preview.height);
  }catch(error){
-   if(token===qrSessionRender)$('sessionQRText').textContent='QR no disponible: '+error.message;
+   if(token===qrSessionRender){
+     qrError.hidden=false;qrError.textContent='QR no disponible: '+error.message;
+   }
  }
 }
 function setSession(data){
