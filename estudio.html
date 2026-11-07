@@ -159,6 +159,7 @@ main{
 }
 
 </style>
+<link rel="stylesheet" href="./theme-biomech.css?v=1">
 </head>
 <body>
 <header>
@@ -332,7 +333,7 @@ const dbName='estudio-slam-recorridos', storeName='sessions';
 let db=null,session=null,activeId=null,dirty=false,isNewSession=true,previewObject=null,currentGroup=null,previewToken=0,markerMaterial=null,markerTexture=null,mixer=null,play=true,loadError='';
 let markerPlane=null;
 const loader=new GLTFLoader();
-const scene=new THREE.Scene();scene.background=new THREE.Color(0xdce5e2);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x17231f);
 const cam=new THREE.PerspectiveCamera(45,1,.01,100);
 cam.position.set(1.35,1.2,1.55);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
@@ -346,11 +347,11 @@ controls.enableDamping=true;controls.target.set(0,.16,0);
 controls.minDistance=.35;controls.maxDistance=80;
 scene.add(new THREE.HemisphereLight(0xffffff,0x637a6d,2.6));
 const light=new THREE.DirectionalLight(0xffffff,2.4);light.position.set(1.5,3,2);scene.add(light);
-scene.add(new THREE.GridHelper(2,20,0x7b9a90,0xaac2ba));
+scene.add(new THREE.GridHelper(2,20,0x74a65e,0x3c5a4c));
 markerMaterial=new THREE.MeshStandardMaterial({color:0xffffff,side:THREE.DoubleSide,roughness:1});
 markerPlane=new THREE.Mesh(new THREE.PlaneGeometry(1,1),markerMaterial);
 markerPlane.rotation.x=-Math.PI/2;markerPlane.position.y=.003;scene.add(markerPlane);
-const border=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,.006,1)),new THREE.LineBasicMaterial({color:0x20453a}));
+const border=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,.006,1)),new THREE.LineBasicMaterial({color:0x8cbd75}));
 scene.add(border);
 const fallback=new THREE.IcosahedronGeometry(.4,1);
 const clock=new THREE.Clock();
