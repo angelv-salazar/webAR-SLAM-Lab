@@ -16,6 +16,7 @@ const infoText=$('infoText'),infoAccessible=$('accessibleText');
 const infoToggle=$('infoToggle'),splash=$('splash'),fatalPanel=$('fatal');
 const params=new URLSearchParams(location.search);
 const requestedId=params.get('id')||'',preview=params.get('preview')==='1';
+const useUniqueCrop=params.get('target')!=='original';
 const startedAt=performance.now();
 const ownedUrls=[],rows=[],rowByTarget=new Map();
 const reducedMotion=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -46,6 +47,7 @@ function refreshDiagnostic(){
   diag.textContent=[
     'Recorrido: '+(manifestName||'cargando')+' | '+requestedId,
     'Fuente: '+source,
+    'Reconocimiento: '+(useUniqueCrop?'ARTES SIN QR · anti-confusión':'ORIGINAL · QR incluido'),
     'Motor XR8: '+(window.XR8?'disponible':'cargando'),
     'Escena A-Frame: '+(scene.hasLoaded?'lista':'cargando'),
     'Seguimiento: '+(xrReady?'REALITY READY':'esperando'),
@@ -108,7 +110,7 @@ function addRow(item,modelURL,targetData){
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
     candidate:null,pendingPose:null,pendingDistanceM:0,rejected:0,
     lastRejectionAt:0,confirmationCount:0,
-    root:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
+    root:null,center:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
     markerLocalSide:.15,engineScale:1,detectedWidth:null,printSideWorld:null,
     baseBounds:null,baseMaxAxis:0,calibrationSquare:null,calibrationMaterial:null
   };
@@ -130,13 +132,30 @@ async function readPublished(){
     if(!item.target||item.target.type!=='PLANAR'||!item.target.properties)throw Error('Falta Image Target de '+item.title);
     const imagePath=requireFile(item.target.image,'targets');
     const modelPath=requireFile(item.model,'modelos');
-    addRow(item,new URL(modelPath,url).href,{
-      name:String(item.imageTargetName||item.target.name),
-      type:'PLANAR',
-      properties:item.target.properties,
-      imagePath:new URL(imagePath,url).href,
-      metadata:null
-    });
+    let targetData;
+    if(useUniqueCrop){
+      // Regenerar SOLO el target de reconocimiento en memoria a partir del
+      // PNG ya publicado. No modificar el PNG imprimible, el QR ni el ZIP.
+      // El JPG histórico incluye el QR repetido, causa probable de
+      // falsos positivos entre estaciones del mismo recorrido.
+      const printPath=requireFile(item.print,'imprimir');
+      const printable=await fetch(new URL(printPath,url));
+      if(!printable.ok)throw Error('No se pudo leer el marcador de '+item.title);
+      const marker=await buildTarget(
+        await printable.blob(),String(item.imageTargetName||item.target.name),
+        {mode:'unique'}
+      );
+      targetData={...marker.data,imagePath:blobUrl(marker.blob)};
+    }else{
+      targetData={
+        name:String(item.imageTargetName||item.target.name),
+        type:'PLANAR',
+        properties:item.target.properties,
+        imagePath:new URL(imagePath,url).href,
+        metadata:null
+      };
+    }
+    addRow(item,new URL(modelPath,url).href,targetData);
   }
 }
 async function readLocal(){
@@ -150,7 +169,8 @@ async function readLocal(){
     if(!(e.finalMarkerBlob instanceof Blob)||!(e.modelBlob instanceof Blob))
       throw Error('Falta generar un marcador 15×15 cm o cargar un GLB: '+e.name);
     const targetName='slam-'+String(i+1).padStart(2,'0')+'-'+e.id;
-    const target=await buildTarget(e.finalMarkerBlob,targetName);
+    const target=await buildTarget(e.finalMarkerBlob,targetName,
+      {mode:useUniqueCrop?'unique':'legacy'});
     addRow({
       id:e.id,title:e.name,description:e.description,
       imageTargetName:targetName,xCm:e.x,yCm:e.y,zCm:e.z,
@@ -168,15 +188,17 @@ function makeEntities(){
     // en ejes locales del image target (X, Y en el papel, Z normal).
     const root=document.createElement('a-entity');
     root.id='anclaje-'+row.id;root.object3D.visible=false;
+    const center=document.createElement('a-entity');
     const axis=document.createElement('a-entity');
     // A-Frame inicializa su componente rotation al adjuntar el nodo:
     // declararlo como atributo evita que el montaje restablezca el +90°.
     axis.setAttribute('rotation','90 0 0');
     const pivot=document.createElement('a-entity');
     const asset=document.createElement('a-entity');
-    pivot.appendChild(asset);axis.appendChild(pivot);root.appendChild(axis);
+    pivot.appendChild(asset);axis.appendChild(pivot);center.appendChild(axis);
+    root.appendChild(center);
     scene.appendChild(root);
-    row.root=root;row.axis=axis;row.pivot=pivot;row.model=asset;
+    row.root=root;row.center=center;row.axis=axis;row.pivot=pivot;row.model=asset;
 
     // Un cuadrado de 1×1 en coordenadas del papel, escalado al tamaño
     // físico del marcador (15 × 15 cm). Es una guía opcional de prueba.
@@ -189,7 +211,7 @@ function makeEntities(){
     const mat=new THREE.LineBasicMaterial({color:0xffff00,depthTest:false,depthWrite:false});
     const square=new THREE.LineLoop(geo,mat);
     square.visible=false;square.renderOrder=1000;
-    root.object3D.add(square);row.calibrationSquare=square;row.calibrationMaterial=mat;
+    center.object3D.add(square);row.calibrationSquare=square;row.calibrationMaterial=mat;
 
     asset.addEventListener('model-loaded',event=>{
       try{
@@ -297,6 +319,18 @@ function updateTargetMetrics(row,pose){
   row.markerLocalSide=pose.markerLocalSide;
   row.engineScale=pose.scale;
   row.printSideWorld=pose.markerLocalSide*pose.scale;
+  // El recorte exclusivo no tiene el mismo centro que la impresión
+  // cuadrada. Corregir el centro físico en coordenadas del image target;
+  // esto preserva las posiciones X/Y/Z y el contorno de 15 cm.
+  const props=row.targetData?.properties||{};
+  const W=Number(props.originalWidth),H=Number(props.originalHeight);
+  if(row.center&&W>0&&H>0){
+    const cropCenterX=Number(props.left)+Number(props.width)/2;
+    const cropCenterY=Number(props.top)+Number(props.height)/2;
+    const dx=(W/2-cropCenterX)/W*row.markerLocalSide;
+    const dy=(cropCenterY-H/2)/H*row.markerLocalSide;
+    row.center.object3D.position.set(dx,dy,0);
+  }
   if(row.calibrationSquare)row.calibrationSquare.scale.setScalar(row.markerLocalSide);
   if(Math.abs(previous-row.markerLocalSide)>1e-5)updateModelScale(row);
 }
