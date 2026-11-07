@@ -29,30 +29,31 @@
 <body>
   <header><div><small>Laboratorio experimental</small><br><strong>WebAR · SLAM</strong></div><span style="font-size:12px;color:#b0d0bc">8th Wall · seguimiento espacial</span></header>
   <main>
-    <h1>Una obra virtual que permanece en el espacio.</h1>
-    <p class="lead">Prototipo independiente para investigar seguimiento espacial en navegadores móviles. Colocá una escultura en el piso, caminá a su alrededor y observá qué tan estable resulta en tu teléfono.</p>
+    <h1>Recorridos de arte con marcadores y seguimiento espacial.</h1>
+    <p class="lead">Editor de múltiples obras y marcadores con QR, modelos GLB, descripciones y seguimiento híbrido de 8th Wall. El marcador fija la escultura y SLAM intenta conservarla mientras te alejás.</p>
     <div class="grid">
       <article>
-        <div class="eyebrow">01 / Crear</div>
+        <div class="eyebrow">01 / Editor de recorridos</div>
         <h2>Estudio SLAM</h2>
-        <p>Cargá un GLB, elegí su tamaño en centímetros, ajustá la orientación, agregá texto y exportá un paquete de publicación. Los borradores se guardan en este navegador.</p>
+        <p>Creá recorridos con varios marcadores de 15 × 15 cm, QR, imágenes propias, GLB, vista previa 3D, animaciones y textos. Exportá el paquete completo para GitHub Pages.</p>
         <a class="button" href="estudio.html">Abrir editor</a>
       </article>
       <article>
-        <div class="eyebrow">02 / Experimentar</div>
-        <h2>Prueba de cámara</h2>
-        <p>Probá la colocación sin preparar ningún archivo: aparece una escultura geométrica de referencia. Tocá el suelo y alejate sin necesidad de mantener un marcador en la imagen.</p>
-        <a class="button secondary" href="visor.html">Abrir visor SLAM</a>
+        <div class="eyebrow">02 / Seguimiento libre</div>
+        <h2>Modo sin marcadores</h2>
+        <p>Conservamos el primer experimento: posicioná una obra tocando el piso sin imágenes impresas. Ideal para comparar su deriva con el modo híbrido.</p>
+        <a class="button secondary" href="estudio-libre.html">Abrir editor libre</a>
+        <a href="visor.html" style="font-size:12px;color:#246549;margin-top:11px">Probar colocación libre</a>
       </article>
       <article>
-        <div class="eyebrow">03 / Anclar</div>
+        <div class="eyebrow">03 / Comparar tecnologías</div>
         <h2>Marcador + SLAM</h2>
         <p>Prueba híbrida: reconocé una imagen impresa, fijá la escultura y caminá a su alrededor. Al volver a enfocar el marcador, el sistema intenta corregir su posición.</p>
         <a class="button secondary" href="imprimir-hibrido.html">Imprimir marcador</a>
         <a href="hibrido.html" style="font-size:12px;color:#246549;margin-top:11px">Abrir prueba híbrida</a>
       </article>
     </div>
-    <aside><strong>Importante:</strong> el visor usa el motor SLAM binario de 8th Wall. La compatibilidad en Android y iPhone debe comprobarse en dispositivos reales. El seguimiento puede variar según iluminación, textura del suelo, navegador y sensores. Este laboratorio no modifica el proyecto WebAR-QR.</aside>
+    <aside><strong>Importante:</strong> 8th Wall + SLAM permite conservar temporalmente los objetos sin ver el marcador, pero puede presentar deriva. Este sistema de recorridos múltiples necesita pruebas reales antes de usarlo en una exposición. El repositorio original webAR-QR no se modifica.</aside>
     <footer><a href="https://github.com/angelv-salazar/webAR-SLAM-Lab">Código del laboratorio en GitHub</a> · Proyecto experimental</footer>
   </main>
 </body>
