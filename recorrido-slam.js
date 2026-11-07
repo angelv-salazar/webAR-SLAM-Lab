@@ -6,6 +6,7 @@
  */
 import {buildTarget} from './image-targets.js?v=2';
 import {attachObjectGestures,applyTouchTransform} from './touch-objects.js';
+import {setupArVideoRecorder} from './record-clip.js';
 import {
   ANCHOR_SAFE_LIMITS_M,DEFAULT_ANCHOR_SAFE_LIMIT_M,
   cameraRangeFromMarkerM,isOutsideSafeRadius,nextSafeLimit,limitLabel
@@ -34,6 +35,9 @@ let suppressedEvents=0,identityConflicts=0,autoCorrections=0;
 let safetyLimitM=DEFAULT_ANCHOR_SAFE_LIMIT_M;
 let safetyHideCount=0;
 const PHYSICAL_PRINT_CM=15;
+const videoRecorder=setupArVideoRecorder({
+  scene,button:$('recordVideo'),routeId:requestedId,say,note
+});
 let source='sin cargar';
 const log=[];
 function say(m){message.textContent=m;}
@@ -56,6 +60,7 @@ function refreshDiagnostic(){
     'Fuente: '+source,
     'Reconocimiento: '+(useUniqueCrop?'ARTES SIN QR · anti-confusión':'ORIGINAL · QR incluido'),
     'Motor XR8: '+(window.XR8?'disponible':'cargando'),
+    'Video AR: '+videoRecorder.getState(),
     'Escena A-Frame: '+(scene.hasLoaded?'lista':'cargando'),
     'Seguimiento: '+(xrReady?'REALITY READY':'esperando'),
     'Imágenes: '+rows.length+' | buscando: '+(scanStarted?'sí':'no'),
@@ -629,6 +634,10 @@ function initEngine(){
       disableWorldTracking:false,
       scale:'absolute'
     });
+    // Registrar el grabador como módulo de XR8 ANTES de iniciar xrweb.
+    // Utiliza el compositor AR nativo, sin otra cámara ni otro render.
+    // Si el grabador no existe en este navegador, el AR sigue funcionando.
+    videoRecorder.installPipeline();
     note('Activando '+rows.length+' image targets 8th Wall con SLAM');
     scene.setAttribute('xrconfig','');
     // Especificar también la escala en xrweb evita que su inicialización
@@ -693,6 +702,7 @@ scene.addEventListener('xrimagelost',targetLost);
 scene.addEventListener('xrimagescanning',()=>{scanStarted=true;note('Escaneo de imágenes listo');});
 scene.addEventListener('realityready',()=>{
   xrReady=true;splash.hidden=true;
+  videoRecorder.setReady(true);
   note('REALITY READY · SLAM funcionando');
   say('Enfocá cada marcador brevemente. Cuando volvés a verlo, su obra se reancla sola.');
   statusTop();
