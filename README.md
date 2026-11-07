@@ -108,6 +108,20 @@ El recorte PLANAR se obtiene **del propio PNG imprimible**, con un área centrad
 
 La **URL de todos los QR del recorrido es la misma**, con un identificador reservado. Cada imagen impresa produce un reconocimiento diferente, que activa su GLB y sus propios datos.
 
+## Manipulación táctil directa (sin modo exploración)
+
+Cuando un marcador activa una escultura en el visor, se puede interactuar **tocando directamente la geometría del objeto**, sin activar ningún modo ni control adicional:
+
+- **Arrastrar con un dedo:** rotar el modelo en sus ejes vertical y horizontal, manteniendo su posición en el espacio.
+- **Pellizcar con dos dedos:** modificar temporalmente la escala **entre el 50 % y el 150 %** del tamaño configurado en Estudio SLAM. En esculturas con animación de pulsación también se limita la escala total a ese rango.
+- **Soltar los dedos:** la escultura conserva su rotación y escala ajustadas mientras esté abierta esa sesión del recorrido.
+- **Volver a reconocer el marcador:** continúa funcionando el reanclaje automático de posición y orientación del marcador. Los gestos no alteran las coordenadas X/Y/Z ni la escala original definida en el Estudio.
+- **Reiniciar la página:** restaura la escala al 100 % y la orientación táctil a su estado inicial. El modelo y su tamaño original publicado no cambian.
+
+Para que una escultura con rotación automática (como Susi) no compita con el gesto del usuario, la rotación automática se detiene durante el contacto y unos segundos después.
+
+**Precisión técnica:** las transformaciones del visitante están en un nodo hijo diferente del anclaje 8th Wall. El usuario puede inspeccionar el modelo, pero **no arrastrarlo ni desplazar su marcador**. En móviles la compatibilidad de gestos debe comprobarse físicamente con la cámara y los GLB.
+
 ## Zona de confianza espacial para evitar arrastre entre estaciones
 
 En el visor de recorridos, cada imagen impresa sigue creando un anclaje independiente y se reancla automáticamente al volver a reconocerla.
