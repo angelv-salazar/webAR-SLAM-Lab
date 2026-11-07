@@ -111,12 +111,12 @@ export function setupArVideoRecorder({scene,button,routeId,say,note}){
       downloadClip();
       note('Descarga de '+clipName+' iniciada ('+Math.round(blob.size/1024)+' KB).');
       say(apple
-        ?'Video MP4 preparado. La descarga se solicitó; para añadirlo a Fotos, tocá «Guardar video».'
-        :'Video MP4 preparado. La descarga se inició: buscá el archivo en Descargas del teléfono.');
+        ?'Video MP4 preparado. La descarga se solicitó; para añadirlo a Fotos, toca «Guardar video».'
+        :'Video MP4 preparado. La descarga se inició: busca el archivo en Descargas del teléfono.');
     }catch(error){
       note('El navegador bloqueó la descarga automática: '+(error.message||error));
       phase='readyToShare';
-      say('El video está preparado. Tocá «Guardar video» para completar el guardado.');
+      say('El video está preparado. Toca «Guardar video» para completar el guardado.');
     }
     display();
   }
@@ -131,7 +131,7 @@ export function setupArVideoRecorder({scene,button,routeId,say,note}){
           if(seq!==serial)return;
           phase='recording';display();
           note('Grabación MP4 iniciada');
-          say('Grabando video AR. Tocá «Detener» para guardar (máximo 60 s).');
+          say('Grabando video AR. Toca «Detener» para guardar (máximo 60 s).');
         },
         onStop(){
           if(seq!==serial)return;
@@ -170,7 +170,7 @@ export function setupArVideoRecorder({scene,button,routeId,say,note}){
       }catch(error){
         if(error.name==='AbortError'){
           // Conservamos el video si se cerró la hoja de compartir.
-          say('Podés tocar «Guardar video» otra vez para elegir dónde conservarlo.');
+          say('Puedes tocar «Guardar video» otra vez para elegir dónde conservarlo.');
           return;
         }
         note('No se pudo compartir directamente: '+(error.message||error));
@@ -178,7 +178,7 @@ export function setupArVideoRecorder({scene,button,routeId,say,note}){
     }
     try{
       downloadClip();
-      say('Se solicitó nuevamente guardar '+clipName+'. Revisá Descargas/Archivos.');
+      say('Se solicitó nuevamente guardar '+clipName+'. Revisa Descargas/Archivos.');
       phase='idle';display();
     }catch(error){failure(error);}
   }
