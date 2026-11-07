@@ -158,8 +158,7 @@ main{
 </head>
 <body>
 <header>
-<div><h1>Estudio SLAM</h1><p>Recorridos · imagen y QR · modelos GLB · vista previa 3D · 8th Wall</p></div>
-<div class="tag">8th Wall + SLAM · múltiples marcadores</div>
+<div><h1>Estudio SLAM</h1><p>Un espacio para crear experiencias de realidad aumentada con objetos 3D.</p></div>
 </header>
 <main>
 <section class="card" id="markerCard">
@@ -184,16 +183,14 @@ main{
 <button class="btn secondary" id="exportSession">Respaldo ZIP</button>
 <button class="btn warn" id="deleteSession">Eliminar</button>
 </div>
-<button class="btn secondary" id="importLegacy" type="button" style="width:100%;margin-top:9px">Importar recorridos del Estudio WebAR anterior</button>
 <div class="publishPanel">
 <h3>Pruebas y publicación</h3>
 <p class="muted">Generá cada imagen y su QR, cargá un GLB y guardá. Después prepará el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
 <div class="row stretch">
-<button class="btn secondary" id="testSession">Probar con mi cámara</button>
+<button class="btn secondary" id="testSession" type="button" title="Abre una prueba AR en otra pestaña usando la cámara y los archivos guardados en este dispositivo">Vista previa AR (este dispositivo)</button>
 <button class="btn" id="preparePublish">Preparar publicación</button>
 </div>
-<button class="btn secondary" id="exportTexts" type="button" style="width:100%;margin-top:8px">Exportar solo descripciones (JSON)</button>
-<p class="muted" style="margin-top:8px">El modo de prueba local usa los archivos guardados en este mismo navegador. Para probar desde otro teléfono, publicá el ZIP en GitHub Pages; los QR abrirán la nueva experiencia SLAM.</p>
+<p class="muted" style="margin-top:8px">La vista previa AR abre otra pestaña y utiliza la cámara de este dispositivo y el recorrido guardado en este navegador. Para probarlo en otro celular, usá «Preparar publicación» y subí el ZIP a GitHub.</p>
 </div>
 <div class="divider"></div>
 <h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
@@ -264,7 +261,7 @@ main{
         <button id="resetView" class="btn secondary">Recentrar vista</button>
         <button id="playToggle" class="btn secondary">Pausar animación</button>
       </div>
-      <p class="viewerFootnote">El tamaño se calcula sobre la dimensión máxima del GLB. X y Z desplazan el objeto sobre el marcador; Y modifica la altura.</p>
+      <p class="viewerFootnote">El tamaño corresponde a la dimensión máxima del GLB. X e Y desplazan la escultura sobre el plano del marcador; Z es la altura vertical.</p>
     </div>
     <aside class="transformDock" aria-label="Controles de transformación">
       <div class="dockHeading">
@@ -275,16 +272,17 @@ main{
         <h3>Posición · marcador 15 × 15 cm</h3>
 <div class="metrics">
 <div><label for="posX">X · cm</label><input id="posX" type="number" step=".5" min="-60" max="60" value="0"></div>
-<div><label for="posY">Altura · cm</label><input id="posY" type="number" step=".5" min="-20" max="60" value="0"></div>
-<div><label for="posZ">Z · cm</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
+<div><label for="posZ">Y · profundidad (cm)</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
+<div><label for="posY">Z · altura (cm)</label><input id="posY" type="number" step=".5" min="-20" max="60" value="0"></div>
 </div>
 <label for="modelSize">Tamaño del objeto · dimensión máxima: <strong id="sizeValue">12 cm</strong></label>
 <div class="row" style="align-items:center;gap:10px">
-  <input id="modelSize" aria-label="Deslizador de tamaño del modelo" type="range" min="1" max="300" step=".5" value="12" style="flex:1;min-width:75px">
-  <input id="modelSizeNumber" aria-label="Tamaño en centímetros" type="number" min="1" max="300" step=".5" value="12" style="width:90px;flex:none">
+  <input id="modelSize" aria-label="Deslizador de tamaño del modelo" type="range" min="1" max="100" step=".5" value="12" style="flex:1;min-width:75px">
+  <input id="modelSizeNumber" aria-label="Tamaño en centímetros" type="number" min="1" max="100" step=".5" value="12" style="width:90px;flex:none">
   <span class="muted">cm</span>
 </div>
-<p class="muted" style="font-size:11px;margin:5px 0 11px">De 1 a 300 cm (3 m). El marcador sigue midiendo 15 × 15 cm. Para objetos grandes usá «Encuadrar modelo» en la vista previa.</p>
+<p class="muted" style="font-size:11px;margin:5px 0 11px">De 1 a 100 cm (1 m). El marcador sigue midiendo 15 × 15 cm. Podés encuadrar el modelo con el botón de la vista previa.</p>
+<p id="legacySizeNote" class="muted" hidden style="font-size:11px;margin:0 0 11px">Este objeto conserva un tamaño anterior superior a 100 cm. No se reducirá hasta que modifiques expresamente el tamaño.</p>
 <label for="rotationY">Rotación vertical · grados</label>
 <input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
 <div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotValue" class="pill">0°</span><span class="muted">180°</span></div>
@@ -473,18 +471,28 @@ $('fileName').textContent=e.modelName?('Cargado: '+e.modelName):'Sin archivo GLB
 describeMarkerQuality(e);
 void showMarkerResult(e);
 $('posX').value=e.x;$('posY').value=e.y;$('posZ').value=e.z;
-$('modelSize').value=e.size;$('modelSizeNumber').value=e.size;
+// Las sesiones anteriores pueden contener objetos >100 cm. Conservar
+// sus tamaños al editarlas; el nuevo máximo se aplica cuando el usuario
+// modifica EXPLÍCITAMENTE el control de tamaño.
+$('modelSize').value=Math.min(100,e.size);$('modelSizeNumber').value=e.size;
+$('legacySizeNote').hidden=!(e.size>100);
 $('rotationY').value=e.rotation;$('animation').value=e.animation;
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
 }
-function changeFromControls(){
+function changeFromControls(event){
 const e=selectedEntry();if(!e)return;
 e.name=$('entryName').value.trim()||'Sin nombre';
 e.kind=$('entryPattern').value;
+// La interfaz muestra X/Y/Z, con Z vertical. Conservar el formato de
+// sesiones y manifiestos existentes: e.y es altura y e.z profundidad.
+// Así no cambian las posiciones ya guardadas ni los QR publicados.
 e.x=Number($('posX').value)||0;e.y=Number($('posY').value)||0;e.z=Number($('posZ').value)||0;
-e.size=Math.max(1,Math.min(300,Number($('modelSize').value)||12));
-$('modelSize').value=e.size;
+if(event?.target?.id==='modelSize'){
+  e.size=Math.max(1,Math.min(100,Number($('modelSize').value)||12));
+}
+$('modelSize').value=Math.min(100,e.size);
 $('modelSizeNumber').value=e.size;
+$('legacySizeNote').hidden=!(e.size>100);
 e.rotation=Number($('rotationY').value)||0;e.animation=$('animation').value;
 $('customPattern').hidden=e.kind!=='custom';
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
@@ -698,12 +706,16 @@ markDirty();
 for(const id of ['entryName','entryPattern','posX','posY','posZ','modelSize','rotationY','animation'])$(id).addEventListener('input',changeFromControls);
 $('framePreview').addEventListener('click',framePreviewObject);
 $('modelSizeNumber').addEventListener('change',()=>{
+  const e=selectedEntry();if(!e)return;
   const n=Number($('modelSizeNumber').value);
   if(!Number.isFinite(n)){
-    $('modelSizeNumber').value=$('modelSize').value;
+    $('modelSizeNumber').value=e.size;
     return;
   }
-  $('modelSize').value=Math.max(1,Math.min(300,Math.round(n*2)/2));
+  // El límite de 100 cm rige para todo ajuste nuevo, pero no modifica
+  // tamaños históricos hasta que el usuario toca este campo o el slider.
+  e.size=Math.max(1,Math.min(100,Math.round(n*2)/2));
+  $('modelSize').value=e.size;
   changeFromControls();
 });
 $('entryDescription').addEventListener('input',()=>{
@@ -908,68 +920,6 @@ $('saveSession').onclick=async()=>{
 try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Podés volver a abrirlo desde la lista. Para respaldo usá Exportar ZIP.')}
 catch(error){inform('No se pudo guardar: '+error.message,true)}
 };
-async function listOldProjects(){
-  // Los dos proyectos usan el origen github.io y por eso pueden consultar
-  // los mismos datos locales sin alterar la base del editor anterior.
-  const oldDB=await new Promise((resolve,reject)=>{
-    const req=indexedDB.open('estudio-webar-recorridos',1);
-    req.onupgradeneeded=()=>{
-      req.transaction.abort();
-      reject(Error('No hay recorridos antiguos guardados en este navegador.'));
-    };
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error||Error('No se encontró la base WebAR anterior.'));
-  });
-  try{return await new Promise((resolve,reject)=>{
-    const req=oldDB.transaction('sessions','readonly').objectStore('sessions').getAll();
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=()=>reject(req.error);
-  });}finally{oldDB.close();}
-}
-$('importLegacy').onclick=async()=>{
-  const button=$('importLegacy');
-  if(dirty&&!confirm('Hay cambios sin guardar. ¿Importar un recorrido anterior de todos modos?'))return;
-  button.disabled=true;
-  try{
-    const old=await listOldProjects();
-    if(!old?.length)throw Error('No se encontraron recorridos del editor anterior en este navegador.');
-    const lines=old.map((e,i)=>(i+1)+'. '+e.name+' ('+(e.entries?.length||0)+' marcadores)').join('\n');
-    const chosen=prompt('Elegí el número del recorrido antiguo que querés copiar a SLAM:\n\n'+lines,'1');
-    if(chosen===null)return;
-    const pos=Number(chosen)-1;
-    if(!Number.isInteger(pos)||pos<0||pos>=old.length)throw Error('Número de recorrido inválido.');
-    const original=old[pos];
-    const copy={
-      ...original,id:uid(),name:'SLAM · '+original.name,
-      createdAt:new Date().toISOString(),updatedAt:null,
-      entries:(original.entries||[]).map((e,i)=>({
-        ...e,id:uid(),kind:'custom',
-        pattText:'',finalMarkerBlob:null,finalForURL:null,markerRatio:null,
-        description:String(e.description||'').slice(0,500)
-      }))
-    };
-    if(!copy.entries.length)throw Error('El recorrido no tiene marcadores para importar.');
-    setSession(copy);
-    markDirty();
-    let count=0;
-    for(const [index,entry] of copy.entries.entries()){
-      if(!entry.markerImageBlob)continue;
-      inform('Importando y regenerando QR para SLAM: '+(index+1)+' / '+copy.entries.length+'…');
-      try{
-        const result=await composeMarker({imageBlob:entry.markerImageBlob,sessionId:copy.id});
-        entry.pattText=result.pattern;
-        entry.finalMarkerBlob=result.finalBlob;
-        entry.finalForURL=result.url;
-        entry.markerRatio=result.ratio;
-        count++;
-      }catch(error){inform('No se pudo regenerar «'+entry.name+'»: '+error.message,true);}
-    }
-    copy.updatedAt=new Date().toISOString();
-    await sessionSave();setSession(copy);
-    inform('Importación completada: '+count+'/'+copy.entries.length+' marcadores nuevos. Los QR ahora apuntan a SLAM Lab. Revisá las imágenes, guardá si editás y prepará la publicación. Los QR antiguos NO se redirigen automáticamente.');
-  }catch(error){inform('No se pudo importar: '+error.message,true)}
-  finally{button.disabled=false;}
-};
 $('newSession').onclick=()=>{
 if(dirty&&!confirm('Hay cambios sin guardar. ¿Crear otro recorrido de todos modos?'))return;
 setSession(newSession());inform('Nuevo recorrido creado con QR propio y URL reservada. Cargá una imagen por marcador y generá sus diseños. Publicaremos el enlace en una próxima etapa.');
@@ -991,29 +941,6 @@ $('testSession').onclick=async()=>{
    window.open(url.href,'_blank','noopener');
    inform('Prueba abierta en otra pestaña. Autorizá la cámara y apuntá a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
  }catch(error){inform('No se pudo iniciar la prueba: '+error.message,true);}
-};
-$('exportTexts').onclick=()=>{
-  try{
-    if(dirty)throw Error('Guardá los cambios antes de exportar las descripciones.');
-    if(!session?.entries?.length)throw Error('El recorrido todavía no tiene marcadores.');
-    const data={
-      format:'estudio-slam-descriptions-v1',
-      id:session.id,
-      name:session.name,
-      entries:session.entries.map(e=>({
-        id:e.id,
-        title:e.name,
-        description:String(e.description||'').slice(0,500)
-      }))
-    };
-    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download='descripciones-'+session.id+'.json';
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),3500);
-    inform('Descripciones exportadas. Este archivo pequeño permite actualizar los textos publicados sin volver a subir los GLB o imprimir otros QR.');
-  }catch(error){inform('No se pudieron exportar las descripciones: '+error.message,true);}
 };
 $('preparePublish').onclick=async()=>{
  const button=$('preparePublish');
