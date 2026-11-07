@@ -19,18 +19,34 @@ function toJpeg(canvas){
     canvas.toBlob(blob=>blob?resolve(blob):reject(Error('No se pudo generar JPEG de reconocimiento.')),'image/jpeg',.94)
   );
 }
-export async function buildTarget(printBlob,name){
+export async function buildTarget(printBlob,name,{mode='unique'}={}){
+  // mode=unique evita que el QR (igual en las tres estaciones) forme
+  // parte de la imagen de reconocimiento de 8th Wall.
+  // mode=legacy conserva el recorte original para comparar A/B.
   if(!/^[a-z0-9-]{1,55}$/.test(name))throw Error('Nombre de target no válido.');
   const img=await imageFromBlob(printBlob);
   const W=img.naturalWidth,H=img.naturalHeight;
   if(W<512||H<512)throw Error('La imagen del marcador debe medir al menos 512 px.');
-  // Recorte 3:4 sobre el marcador FINAL, con el mismo centro físico.
-  // Así el QR (que está en la esquina inferior derecha) queda generalmente
-  // fuera de la región de seguimiento sin interferir con el reconocimiento.
+  // Marcador final: cuadrado con imagen artística y QR compartido en el
+  // extremo inferior derecho. El antiguo crop central 3:4 incluía la
+  // mayor parte de ese QR, y generaba rasgos iguales en TODOS los targets.
+  // Nuevo recorte 3:4: zona izquierda de la imagen útil, ANTES del QR.
+  // Se eligieron proporciones que preservan textura irregular y 700+
+  // puntos ORB en los tres marcadores del recorrido de prueba.
   const cropRatio=3/4;
-  const cw=Math.min(W,Math.round(H*cropRatio));
-  const ch=Math.min(H,Math.round(cw/cropRatio));
-  const left=Math.floor((W-cw)/2),top=Math.floor((H-ch)/2);
+  let cw,ch,left,top;
+  if(mode==='legacy'){
+    cw=Math.min(W,Math.round(H*cropRatio));
+    ch=Math.min(H,Math.round(cw/cropRatio));
+    left=Math.floor((W-cw)/2);top=Math.floor((H-ch)/2);
+  }else{
+    if(mode!=='unique')throw Error('Modo de recorte desconocido.');
+    cw=Math.round(W*.55);
+    ch=Math.round(cw/cropRatio);
+    left=Math.round(W*.10);
+    top=Math.round(H*.12);
+    if(left+cw>W||top+ch>H)throw Error('No se puede extraer el área exclusiva del marcador.');
+  }
   const canvas=document.createElement('canvas');
   canvas.width=480;canvas.height=640;
   const ctx=canvas.getContext('2d',{alpha:false,willReadFrequently:true});
