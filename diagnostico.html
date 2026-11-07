@@ -51,8 +51,6 @@
   <div id="groundhint">Si aparece el vídeo, mové la cámara lentamente. Si no aparece, consultá el panel superior.</div>
   <a-scene
     id="testScene"
-    xrconfig
-    xrweb="allowedDevices: any"
     renderer="colorManagement: true; antialias: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
@@ -67,12 +65,43 @@
       'use strict';
       const $=id=>document.getElementById(id);
       const scene=$('testScene');
-      const flags={sceneLoaded:false,realityReady:false,realityError:'',permission:'desconocido',cameraCheck:'sin probar'};
+      const flags={sceneLoaded:false,realityReady:false,realityError:'',permission:'desconocido',cameraCheck:'sin probar',xrInit:'esperando XR8'};
       const began=performance.now();
       const browser=navigator.userAgent;
       const events=[];
       const log=(s)=>{events.push(s);window.slamLog(s);update();};
-      scene.addEventListener('loaded',()=>{flags.sceneLoaded=true;log('A-Frame: escena lista');});
+      // El motor se carga de forma asíncrona. No activar xrconfig/xrweb antes de xrloaded:
+      // hacerlo prematuramente provocaba el error observado "XR8 is not defined".
+      let spatialStarted=false;
+      function activateXR(){
+        if(spatialStarted||!window.XR8||!window.AFRAME||!scene.hasLoaded)return;
+        try{
+          const apis=window.XR8.AFrame||{};
+          if(!AFRAME.components.xrconfig&&apis.xrconfigComponent)
+            AFRAME.registerComponent('xrconfig',apis.xrconfigComponent());
+          if(!AFRAME.components.xrweb&&apis.xrwebComponent)
+            AFRAME.registerComponent('xrweb',apis.xrwebComponent());
+          if(!AFRAME.components.xrconfig||!AFRAME.components.xrweb){
+            flags.xrInit='motor cargado, esperando componentes A-Frame';
+            return;
+          }
+          spatialStarted=true;
+          flags.xrInit='activando XRConfig y XRWeb';
+          log('XR8 ya disponible: inicializando xrconfig + xrweb');
+          scene.setAttribute('xrconfig','');
+          scene.setAttribute('xrweb','allowedDevices: any');
+          update();
+        }catch(e){
+          flags.xrInit='ERROR: '+e.message;
+          log('FALLO AL ACTIVAR: '+e.message);
+        }
+      }
+      window.addEventListener('xrloaded',()=>setTimeout(activateXR,0));
+      const activationPoll=setInterval(()=>{
+        activateXR();
+        if(spatialStarted||performance.now()-began>45000)clearInterval(activationPoll);
+      },500);
+      scene.addEventListener('loaded',()=>{flags.sceneLoaded=true;log('A-Frame: escena lista');activateXR();});
       scene.addEventListener('realityready',()=>{flags.realityReady=true;log('REALITY READY: seguimiento activo');});
       scene.addEventListener('realityerror',e=>{flags.realityError=String(e.detail?.message||e.detail?.error||'error sin detalle');log('REALITY ERROR: '+flags.realityError);});
       scene.addEventListener('camera-error',e=>log('CAMERA ERROR: '+String(e.detail?.message||e.detail||e)));
@@ -120,6 +149,8 @@
           'XRExtras: '+(window.XRExtras?'OK':'SIN CARGAR'),
           'Escena A-Frame: '+(flags.sceneLoaded||scene.hasLoaded?'lista':'esperando'),
           'Seguimiento: '+(flags.realityReady?'REALITY READY':flags.realityError?'ERROR':'esperando'),
+          'Activación AR: '+flags.xrInit,
+          'XR components: '+(window.AFRAME?['xrconfig','xrweb'].map(x=>x+'='+(AFRAME.components[x]?'OK':'NO')).join(', '):'no disponibles'),
           'Vídeo: '+(video?(video.videoWidth+' × '+video.videoHeight+' · listo='+video.readyState):'sin elemento'),
           'Cámara/permiso: '+flags.permission,
           'Prueba manual cámara: '+flags.cameraCheck,
