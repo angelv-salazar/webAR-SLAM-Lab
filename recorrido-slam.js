@@ -156,7 +156,9 @@ function makeEntities(){
     const root=document.createElement('a-entity');
     root.id='anclaje-'+row.id;root.object3D.visible=false;
     const axis=document.createElement('a-entity');
-    axis.object3D.rotation.x=Math.PI/2;
+    // A-Frame inicializa su componente rotation al adjuntar el nodo:
+    // declararlo como atributo evita que el montaje restablezca el +90°.
+    axis.setAttribute('rotation','90 0 0');
     const pivot=document.createElement('a-entity');
     const asset=document.createElement('a-entity');
     pivot.appendChild(asset);axis.appendChild(pivot);root.appendChild(axis);
