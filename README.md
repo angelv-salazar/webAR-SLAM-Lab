@@ -56,15 +56,19 @@ El inicio del Estudio muestra la sección **1. Recorridos** de forma contextual:
 - Si todavía no hay recorridos guardados, los campos de creación aparecen directamente, sin mostrar un selector vacío.
 - El título del apartado 3 es **Imagen, QR y modelo GLB**, y se retira la etiqueta **En vivo** de la vista previa. No se alteró el funcionamiento del seguimiento SLAM ni el visor del teléfono.
 
-La tipografía permanece intacta hasta elegir una nueva fuente.
+La identidad tipográfica actual usa Chakra Petch para títulos y Saira para el resto de los textos.
 
-## Prueba local de tipografía Klavika
+## Identidad tipográfica: Chakra Petch + Saira
 
-Se incorporó al final del Estudio SLAM un apartado plegable **«Tipografía de prueba · Klavika»**. Acepta el ZIP de Klavika de la persona usuaria, carga hasta siete variantes OTF mediante JSZip y la API FontFace y aplica la fuente al texto de la interfaz del **Estudio**, sin alterar su estructura, gráficos ni el visor AR del celular. También incluye **«Restaurar tipografía»**.
+La interfaz del **Estudio SLAM y del visor AR para celular** utiliza la siguiente combinación de tipografías libres:
 
-Las fuentes se guardan **únicamente en IndexedDB de ese navegador**, usando una base de datos separada de la de los recorridos para no interferir con las pruebas de cámara. No se cargan a GitHub ni se incluyen en los ZIP de publicación. Si el usuario reabre el Estudio en el mismo navegador, puede recuperar automáticamente la fuente; en otro dispositivo debe seleccionarla de nuevo.
+- **Chakra Petch:** títulos principales, encabezados de secciones, títulos de las obras y textos de identificación.
+- **Saira:** descripciones, controles, botones, opciones de formulario y mensajes de estado.
+- **Monoespaciada del sistema:** solo para el diagnóstico técnico del visor.
 
-**Licencias:** Klavika es una fuente comercial de Process Type Foundry. Los OTF suministrados no incluyen licencia web ni autorizan su redistribución en el repositorio público. Una integración pública permanente requeriría los archivos WOFF/WOFF2 y la licencia web correspondiente (o un proyecto alojado mediante Adobe Fonts). La prueba local no publica los archivos tipográficos.
+Se cargan desde la hoja CSS oficial de Google Fonts; cuando no hay conexión, el navegador usa automáticamente tipografías alternativas de sistema. Los archivos de las fuentes no se distribuyen en este repositorio. Ambas familias permiten uso web bajo SIL Open Font License 1.1.
+
+Se retiraron la prueba de Klavika, su botón de carga ZIP y su módulo `font-preview.js`. El Estudio también solicita la eliminación de su antigua base local de fuentes `estudio-slam-klavika-local-preview` sin modificar los recorridos guardados en otra base IndexedDB.
 
 ## Crear un recorrido
 
