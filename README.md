@@ -136,6 +136,16 @@ Para que una escultura con rotación automática (como Susi) no compita con el g
 
 **Precisión técnica:** las transformaciones del visitante están en un nodo hijo diferente del anclaje 8th Wall. El usuario puede inspeccionar el modelo, pero **no arrastrarlo ni desplazar su marcador**. En móviles la compatibilidad de gestos debe comprobarse físicamente con la cámara y los GLB.
 
+## Estabilidad estricta tras revisar el video del 7 de noviembre de 2026
+
+En una grabación de prueba (~20 segundos) se observó que la escultura permanecía anclada a la impresión sobre la mesa durante los primeros 7 segundos, pero entre los segundos 10 y 19 seguía apareciendo en paredes y puerta cuando la imagen ya no se reconocía. El problema observado es compatible con deriva o pérdida de localización de cámara SLAM, y **el perímetro de 1 m, al depender de la misma estimación espacial, no pudo garantizar que se ocultara**.
+
+Por eso, el visor usa **estabilidad estricta** por defecto: cuando pasan **700 ms sin una actualización válida de un marcador**, la escultura de ese marcador queda **oculta**, en lugar de seguir flotando con el teléfono. Se mantiene el anclaje en memoria, pero **solo reaparece después de volver a reconocer su propio marcador** y acumular las muestras coherentes de la confirmación temporal. Al reaparecer, se reancla automáticamente, conservando las interacciones táctiles de esa sesión.
+
+Este es un compromiso deliberado: **reduce los objetos flotantes, pero limita cuánto tiempo puede rodearse una escultura sin tener su marcador a la vista**. No equivale a solucionar SLAM de forma permanente. Para comparar sin cambiar ningún archivo, añadí `&stability=legacy` a la URL del recorrido: utiliza el comportamiento anterior, con conservación de anclajes y botón `Zona +1 m / +2 m / Sin límite`. Sin ese parámetro, el modo estricto es el predeterminado y ese botón redundante se oculta.
+
+No requiere modificar el ZIP, los GLB ni los QR existentes.
+
 ## Zona de confianza espacial para evitar arrastre entre estaciones
 
 En el visor de recorridos, cada imagen impresa sigue creando un anclaje independiente y se reancla automáticamente al volver a reconocerla.
