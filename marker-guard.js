@@ -9,14 +9,14 @@
  * de A-Frame ni hace operaciones de red.
  */
 export const MARKER_GUARD=Object.freeze({
-  minSamples:4,
-  confirmMs:400,
-  maxEventGapMs:600,
-  maxCandidatePositionStepM:.26,
+  minSamples:3,
+  confirmMs:180,
+  maxEventGapMs:650,
+  maxCandidatePositionStepM:.34,
   maxCandidateAngleRad:Math.PI*.32,
   maxCandidateScaleRatio:1.65,
   foreignAnchorRadiusM:.19,
-  maxLivePositionStepM:.25,
+  maxLivePositionStepM:.32,
   maxLiveAngleRad:Math.PI*.33,
   maxLiveScaleRatio:1.65,
   manualReanchorDistanceM:.30,
@@ -60,7 +60,9 @@ export function advanceCandidate(previous,pose,now){
 export function conflictsWithOtherAnchor(target,pose,rows){
   const t=MARKER_GUARD.foreignAnchorRadiusM;
   for(const row of rows){
-    if(row.id===target.id||!row.seen||!row.root?.object3D)continue;
+    // Un anclaje antiguo puede haber derivado: solo evitar coincidencia
+    // entre DOS imágenes confirmadas y ACTIVAS en la misma cámara.
+    if(row.id===target.id||!row.seen||!row.targetVisible||!row.root?.object3D)continue;
     if(row.root.object3D.position.distanceTo(pose.position)<t)return row;
   }
   return null;
