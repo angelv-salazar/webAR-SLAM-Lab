@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Estudio SLAM — Editor de recorridos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&amp;family=Saira:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/marker-creator@0.1.0/dist/marker-creator.umd.js"></script>
@@ -11,19 +14,11 @@
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/"}}
 </script>
 <style>
-:root{color-scheme:light;--bg:#f3f5f4;--ink:#172526;--muted:#647272;--line:#d9e1dd;--green:#236c57}
+:root{color-scheme:light;--bg:#f3f5f4;--ink:#172526;--muted:#647272;--line:#d9e1dd;--green:#236c57;--font-ui:"Saira",system-ui,-apple-system,"Segoe UI",sans-serif;--font-title:"Chakra Petch","Saira",sans-serif}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px}
 button,input,select,textarea{font:inherit}button{cursor:pointer}
-body.font-klavika{font-family:"Klavika local preview",system-ui,-apple-system,"Segoe UI",sans-serif}
-.localFontTrial{max-width:1490px;margin:0 auto 22px;padding:0 18px;color:#63726d;font-size:12px}
-.localFontTrial details{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 14px}
-.localFontTrial summary{cursor:pointer;font-weight:600;user-select:none}
-.localFontTrial .fontTrialFields{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin-top:10px}
-.localFontTrial .fontTrialFields>label{flex:1;min-width:200px;margin:0}
-.localFontTrial input[type=file]{display:block;margin-top:5px}
-.localFontTrial #fontTrialStatus{margin-top:8px}
-.localFontTrial #fontTrialStatus[data-error="true"]{color:#a32e37}
+h1,h2,h3,.dockHeading strong,.entry strong{font-family:var(--font-title)}
 header{background:#fff;border-bottom:1px solid var(--line);padding:17px max(18px,calc((100vw - 1450px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}
 header h1{margin:0;font-size:20px;letter-spacing:-.4px}header p{font-size:12px;color:var(--muted);margin:5px 0 0}
 .tag{font-size:11px;color:var(--green);background:#e4f3eb;border:1px solid #cee7db;padding:6px 10px;border-radius:40px;white-space:nowrap}
@@ -320,33 +315,19 @@ main{
 </section>
 </main>
 <footer>Estudio WebAR · los recorridos y modelos se guardan localmente. El QR se reserva al crear el recorrido, pero el enlace solo funcionará como experiencia AR cuando publiques sus archivos.</footer>
-<div class="localFontTrial">
-  <details>
-    <summary>Tipografía de prueba · Klavika</summary>
-    <div class="fontTrialFields">
-      <label for="fontTrialZip">Cargar Klavika desde un archivo ZIP
-        <input id="fontTrialZip" type="file" accept=".zip,application/zip">
-      </label>
-      <button class="btn secondary" id="fontTrialRestore" type="button">Restaurar tipografía</button>
-    </div>
-    <p class="muted" id="fontTrialStatus" role="status">La prueba funciona solo en este navegador y no publica los archivos de la fuente en GitHub.</p>
-  </details>
-</div>
 <div id="printSheet"><img id="printImage" alt="Marcador a imprimir con tamaño físico de 15 × 15 cm"></div>
 <script type="module">
 import {inspectMarkerImage,compareFingerprints,checkPatt} from './marker-validation.js';
 import {routeURL,makeQR,composeMarker,MARKER_RATIO} from './marker-composer.js?v=7';
 import {buildTarget} from './image-targets.js?v=2';
 import {sampleObjectMotion} from './object-animations.js';
-import {setupKlavikaPreview} from './font-preview.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
 const $=id=>document.getElementById(id);
-setupKlavikaPreview({
-  input:$('fontTrialZip'),restore:$('fontTrialRestore'),status:$('fontTrialStatus')
-});
+// Limpiar los datos tipográficos locales de la prueba anterior.
+try{indexedDB.deleteDatabase('estudio-slam-klavika-local-preview');}catch(error){}
 const dbName='estudio-slam-recorridos', storeName='sessions';
 let db=null,session=null,activeId=null,dirty=false,isNewSession=true,previewObject=null,currentGroup=null,previewToken=0,markerMaterial=null,markerTexture=null,mixer=null,play=true,loadError='';
 let markerPlane=null;
