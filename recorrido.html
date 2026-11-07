@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#12291d">
+<title>Recorrido SLAM · WebAR</title>
+<!--
+  8th Wall Engine Binary (licencia de Niantic Spatial).
+  This product includes the XR Engine software developed by Niantic Spatial, Inc.
+  Copyright © 2026 Niantic Spatial, Inc. All rights reserved.
+  License: https://github.com/8thwall/engine/blob/main/LICENSE
+-->
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
+<script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
+<script type="module" src="./recorrido-slam.js?v=1"></script>
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;width:100%;margin:0;overflow:hidden;color:#fff;background:#0a1811;font-family:system-ui,-apple-system,sans-serif}
+a-scene{position:fixed;inset:0;width:100%;height:100%}
+button{cursor:pointer;touch-action:manipulation;border:1px solid rgba(225,255,230,.38);background:rgba(17,57,39,.87);color:white;padding:11px 12px;border-radius:10px;font:600 12px system-ui;min-height:42px}
+button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
+#top{position:fixed;z-index:25;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start}
+#instruction{flex:1;min-width:34%;background:rgba(10,28,20,.78);border-radius:10px;padding:11px 12px;font:13px/1.4 system-ui;max-height:100px;overflow:auto}
+#instruction[hidden]{display:none}
+#top button{flex:none}
+#diagnostic{position:fixed;z-index:35;top:76px;left:12px;right:12px;max-height:44dvh;overflow:auto;padding:12px 13px;background:rgba(9,20,15,.93);border:1px solid #7caf89;border-radius:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+#diagnostic[hidden]{display:none}
+#messages{position:fixed;z-index:26;bottom:max(14px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;align-items:center;flex-direction:column;gap:8px;pointer-events:none}
+#trackingMessage{width:min(100%,470px);background:rgba(7,30,21,.83);padding:9px 13px;border-radius:11px;text-align:center;font:12px/1.45 system-ui}
+#trackingMessage[hidden]{display:none}
+#specimenInfo{width:min(100%,470px);pointer-events:auto;color:#000;background:linear-gradient(180deg,rgba(247,251,249,.60) 0%,rgba(247,251,249,.36) 45%,rgba(247,251,249,0) 100%);border:0;border-radius:18px 18px 0 0;overflow:hidden;max-height:38dvh}
+#specimenInfo[hidden]{display:none}
+#specimenInfo.entering{animation:floatIn .42s cubic-bezier(.2,.8,.2,1) both}
+#infoHead{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:14px 15px 6px}
+#infoIdentity{min-width:0}
+#infoEyebrow{display:flex;align-items:center;gap:7px;text-transform:uppercase;letter-spacing:.11em;font-weight:780;font-size:10px;color:#000}
+#infoEyebrow::before{content:"";width:7px;height:7px;background:#1b8057;border-radius:50%}
+#infoTitle{display:block;color:#000;font-size:17px;font-weight:740;letter-spacing:-.025em;margin-top:5px;overflow-wrap:anywhere}
+#infoToggle{color:#000;border:1px solid #092a1c25;border-radius:19px;background:rgba(255,255,255,.52);font:600 12px system-ui;flex:none;min-height:34px;padding:7px 9px}
+#infoText{color:#000;font:14px/1.6 system-ui;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:4px 15px 20px;max-height:26dvh;overflow-y:auto;overscroll-behavior:contain;text-shadow:none}
+#infoText.typing::after{content:"";width:2px;height:1em;display:inline-block;vertical-align:-.17em;margin-left:2px;background:#176544;animation:caret 800ms steps(1,end) infinite}
+#specimenInfo[data-collapsed="true"] #infoText{display:none}
+#specimenInfo[data-collapsed="true"] #infoHead{padding-bottom:13px}
+#accessibleText{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#fatal{position:fixed;z-index:50;inset:0;background:rgba(9,22,15,.90);display:flex;align-items:center;justify-content:center;padding:20px}
+#fatal[hidden]{display:none}
+#fatalBody{max-width:420px;padding:23px;border-radius:17px;background:#f6faf7;color:#153e29;line-height:1.6}
+#fatalBody h2{margin:0 0 10px;font-size:19px}
+#fatalBody p{font-size:13px}
+#fatalBody a{color:#206f4b}
+#fatalBody button{display:inline-block;margin-top:6px}
+#splash{position:fixed;z-index:21;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(8,29,20,.86);border:1px solid #87d3a35e;padding:19px 23px;border-radius:14px;width:min(90vw,355px);text-align:center;font:13px/1.5 system-ui;pointer-events:none}
+#splash[hidden]{display:none}
+#splash strong{display:block;font-size:16px;margin-bottom:6px}
+@keyframes floatIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){#specimenInfo.entering,#infoText.typing::after{animation:none!important}#infoText.typing::after{display:none}}
+</style>
+</head>
+<body>
+<div id="top">
+  <div id="instruction">Iniciando el recorrido…</div>
+  <button id="framing" type="button" hidden>Ver todo</button>
+  <button id="fullscreen" type="button">Pantalla completa</button>
+  <button id="details" type="button">Detalles</button>
+</div>
+<div id="diagnostic" hidden>Iniciando diagnóstico…</div>
+<div id="splash"><strong>Recorrido SLAM</strong>Preparando los marcadores y los modelos del recorrido.</div>
+<div id="messages">
+  <div id="trackingMessage">Mové lentamente el celular y apuntá a un marcador del recorrido.</div>
+  <section id="specimenInfo" hidden data-collapsed="false" role="region" aria-label="Descripción del espécimen reconocido">
+    <div id="infoHead">
+      <div id="infoIdentity"><span id="infoEyebrow">Espécimen reconocido</span><strong id="infoTitle"></strong></div>
+      <button id="infoToggle" type="button" aria-controls="infoText" aria-expanded="true">Minimizar</button>
+    </div>
+    <p id="infoText" aria-hidden="true"></p>
+    <span id="accessibleText" aria-live="polite"></span>
+  </section>
+</div>
+<div id="fatal" hidden>
+  <div id="fatalBody">
+    <h2>No se pudo iniciar el recorrido</h2>
+    <p id="fatalDetail"></p>
+    <button id="retry" type="button">Reintentar</button>
+    <p><a href="./">Volver a Estudio SLAM</a></p>
+  </div>
+</div>
+<!-- Sin xrconfig ni xrweb en el HTML inicial. Esos componentes se activan
+     cuando XR8 ya existe, para evitar el fallo de inicialización anterior. -->
+<a-scene id="scene" renderer="colorManagement: true; antialias: true"
+  vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <a-camera position="0 1.6 0"></a-camera>
+  <a-light type="ambient" intensity="1.35"></a-light>
+  <a-entity light="type: directional; intensity: 1.7" position="1 3 2"></a-entity>
+</a-scene>
+</body>
+</html>
