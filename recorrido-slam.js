@@ -4,7 +4,7 @@
  * El objeto se mantiene en coordenadas del mundo cuando el target sale
  * del encuadre y se corrige suavemente al reenfocarlo.
  */
-import {buildTarget} from './image-targets.js';
+import {buildTarget} from './image-targets.js?v=2';
 import {
   MARKER_GUARD,advanceCandidate,conflictsWithOtherAnchor,
   largeCorrection,plausibleLiveUpdate
