@@ -70,19 +70,20 @@ Se cargan desde la hoja CSS oficial de Google Fonts; cuando no hay conexión, el
 
 Se retiraron la prueba de Klavika, su botón de carga ZIP y su módulo `font-preview.js`. El Estudio también solicita la eliminación de su antigua base local de fuentes `estudio-slam-klavika-local-preview` sin modificar los recorridos guardados en otra base IndexedDB.
 
-## Diseño visual Biomech / Toxic Chrome (primera versión en vivo)
+## Diseño visual Biomech / Toxic Chrome (segunda versión de marcos orgánicos)
 
 La interfaz del **Estudio SLAM** utiliza temporalmente una capa visual llamada `theme-biomech.css`, inspirada en el concepto seleccionado de membranas biomecánicas oscuras, chrome semitransparente, contornos perforados y acentos verde ácido. No modifica los datos de los recorridos, las imágenes, los QR, los GLB ni el visor AR móvil.
 
 - Fondo: `assets/biomech-weave.svg`, con filamentos, membranas huecas y estructuras metálicas abstractas originales.
-- Marcos de módulos: `assets/biomech-card.svg`, superpuesto mediante pseudoelementos para crear bordes y ganchos orgánicos sin tapar campos ni botones.
+- Marcos de módulos: `assets/biomech-frame-v2.svg` con escalado SVG de nueve secciones (`border-image-slice:235`), para que las esquinas cromadas y las protuberancias mantengan grosor incluso al estirar un panel. El SVG anterior `assets/biomech-card.svg` queda archivado pero no se utiliza en la versión 2.
+- Membranas: `assets/biomech-membrane-v2.svg` contiene una piel cromada de **orificios transparentes reales** (trazados SVG con `fill-rule:evenodd`), usada arriba y abajo de los paneles, en la cabecera y en el panel de transformación.
 - Estilos: paneles oscuros translúcidos, encabezados Chakra Petch, textos Saira, controles metálicos y estados de validación de alto contraste.
 - La vista 3D del Estudio tiene un fondo oscuro y una retícula verde; el modelo, sus transformaciones y la navegación OrbitControls no se alteraron.
 - La hoja incluye diseños para pantallas medianas, móviles y preservación de impresión de marcadores de 15 × 15 cm.
 
 **Reversibilidad:** la hoja temática se enlaza desde `estudio.html` como `<link rel="stylesheet" href="./theme-biomech.css?v=1">`. Quitar ese enlace devuelve el diseño CSS previo, con la salvedad de que la escena 3D se oscureció mediante un cambio separado de sus valores de color. No se alteró `recorrido.html` ni `recorrido-slam.js`.
 
-Esta es una primera traducción funcional del render conceptual al navegador, pendiente de la evaluación visual en el equipo del usuario.
+Después de comprobar que los marcos de la primera versión se percibían solo como líneas, la segunda versión utiliza masas orgánicas perceptibles, células perforadas y marcos cromados más gruesos. Sigue siendo una aproximación SVG/CSS, no una reproducción píxel a píxel de la referencia generada. La hoja temática está separada de la lógica del Estudio.
 
 ## Crear un recorrido
 
