@@ -591,7 +591,7 @@ function targetLost(event){
       isBalancedTracking(stabilityMode)?'seguimiento equilibrado temporal':
       'anclaje SLAM conservado'));
     say(isStrictTracking(stabilityMode)
-      ?'Si perdés su marcador, '+row.title+' se oculta hasta volver a detectarlo.'
+      ?'Si pierdes su marcador, '+row.title+' se oculta hasta volver a detectarlo.'
       :isBalancedTracking(stabilityMode)
         ?row.title+' sigue visible por un tiempo y hasta un límite espacial. Vuelve a enfocarla para corregirla.'
         :row.title+' mantiene su posición SLAM estimada. Al reenfocarlo, se reancla automáticamente.');
