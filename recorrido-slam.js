@@ -6,6 +6,10 @@
  */
 import {buildTarget} from './image-targets.js?v=2';
 import {
+  ANCHOR_SAFE_LIMITS_M,DEFAULT_ANCHOR_SAFE_LIMIT_M,
+  cameraRangeFromMarkerM,isOutsideSafeRadius,nextSafeLimit,limitLabel
+} from './anchor-safety.js';
+import {
   MARKER_GUARD,advanceCandidate,conflictsWithOtherAnchor,
   plausibleLiveUpdate
 } from './marker-guard.js';
@@ -26,6 +30,8 @@ let currentId=null,showAll=true,lastError='',lastFrame=0,typingFrame=0,typingSta
 let descriptionId=null,descriptionCollapsed=false;
 let scanStarted=false,markerFoundCount=0,lastStatusUpdate=0,calibrationVisible=false;
 let suppressedEvents=0,identityConflicts=0,autoCorrections=0;
+let safetyLimitM=DEFAULT_ANCHOR_SAFE_LIMIT_M;
+let safetyHideCount=0;
 const PHYSICAL_PRINT_CM=15;
 let source='sin cargar';
 const log=[];
@@ -58,6 +64,15 @@ function refreshDiagnostic(){
     'Activos en imagen: '+(rows.filter(r=>r.targetVisible).map(r=>r.title).join(', ')||'ninguno'),
     'En pantalla: '+(rows.filter(r=>r.root?.object3D.visible).map(r=>r.title).join(', ')||'ninguno'),
     'Visualización: '+(showAll?'Todos los reconocidos':'Último reconocido'),
+    'Perímetro de seguridad: '+limitLabel(safetyLimitM)+' (distancia radial adicional)',
+    'Ocultaciones de seguridad: '+safetyHideCount,
+    'Posición cámara: '+(cameraWorldPosition()?.toArray().map(x=>x.toFixed(2)).join(' / ')||'no disponible'),
+    ...rows.filter(r=>r.seen).map(r=>{
+      const reference=Number.isFinite(r.lastTrustedRangeM)?r.lastTrustedRangeM.toFixed(2):'?';
+      const current=cameraRangeM(r);
+      return r.title+': '+(r.safetyHidden?'OCULTO por distancia':r.targetVisible?'marcador visible':'seguimiento aproximado')+
+        ' · cámara '+(current===null?'?':current.toFixed(2))+' m · referencia '+reference+' m';
+    }),
     ...rows.filter(r=>r.candidate).map(r=>
       r.title+': verificando identidad/corrección ('+r.candidate.samples+' eventos)'
     ),
@@ -107,6 +122,7 @@ function addRow(item,modelURL,targetData){
     animation:['spin','float','pulse','embedded','none'].includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
     candidate:null,rejected:0,
+    safetyHidden:false,lastTrustedRangeM:null,lastSafetyExcessM:0,
     lastRejectionAt:0,confirmationCount:0,
     root:null,center:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
     markerLocalSide:.15,engineScale:1,detectedWidth:null,printSideWorld:null,
@@ -279,10 +295,57 @@ function updateModelScale(row){
     -((bounds.min.z+bounds.max.z)/2)*f
   );
 }
+// La estimación de cámara y los anclajes están en el espacio de XR8.
+// Esta medida NO conoce la desviación real sobre el piso cuando no se
+// reconoce el papel: es una zona aproximada de confianza del seguimiento.
+const cameraPositionScratch=new THREE.Vector3();
+function cameraWorldPosition(){
+  if(!xrReady)return null;
+  const camera=scene.camera||scene.querySelector('a-camera')?.getObject3D('camera');
+  if(!camera||!camera.getWorldPosition)return null;
+  camera.updateWorldMatrix?.(true,false);
+  camera.getWorldPosition(cameraPositionScratch);
+  return [cameraPositionScratch.x,cameraPositionScratch.y,cameraPositionScratch.z]
+    .every(Number.isFinite)?cameraPositionScratch:null;
+}
+function cameraRangeM(row){
+  if(!row?.root?.object3D)return null;
+  const camera=cameraWorldPosition();
+  if(!camera)return null;
+  // El centro del image target es el nodo independiente root, no el
+  // GLB ni su desplazamiento de montaje: tamaños grandes no afectan.
+  return cameraRangeFromMarkerM(camera,row.root.object3D.position);
+}
+function rememberTrustedCameraRange(row){
+  const distance=cameraRangeM(row);
+  if(distance!==null){
+    // Actualizamos solo cuando ESTE marcador está realmente reconocido.
+    row.lastTrustedRangeM=distance;
+  }
+}
+function checkAnchorSafePerimeter(row){
+  if(!row.seen||row.targetVisible||row.safetyHidden||safetyLimitM===0)return;
+  if(!Number.isFinite(row.lastTrustedRangeM))return;
+  const nowRange=cameraRangeM(row);
+  if(!isOutsideSafeRadius(row.lastTrustedRangeM,nowRange,safetyLimitM))return;
+  row.safetyHidden=true;
+  row.lastSafetyExcessM=nowRange-row.lastTrustedRangeM;
+  safetyHideCount++;
+  note('LÍMITE DE ANCLAJE: '+row.title+' se oculta al alejarse +'+
+    row.lastSafetyExcessM.toFixed(2)+' m desde su última posición fiable.');
+  if(currentId===row.id&&descriptionId===row.id){
+    // Evitar mostrar la ficha de una escultura que ya no está visible.
+    stopTyping(true);
+    info.hidden=true;
+    descriptionId=null;
+  }
+  say(row.title+' se ocultó al superar la zona de confianza. Al enfocar su marcador reaparecerá automáticamente.');
+  syncVisibility();
+}
 function syncVisibility(){
   for(const row of rows){
     if(row.root)row.root.object3D.visible=Boolean(
-      row.seen&&(row.loaded||calibrationVisible)&&(showAll||row.id===currentId)
+      row.seen&&!row.safetyHidden&&(row.loaded||calibrationVisible)&&(showAll||row.id===currentId)
     );
     if(row.calibrationSquare)row.calibrationSquare.visible=calibrationVisible;
   }
@@ -333,7 +396,7 @@ function updateTargetMetrics(row,pose){
   if(Math.abs(previous-row.markerLocalSide)>1e-5)updateModelScale(row);
 }
 function chooseSpecimen(row){
-  if(row.id!==currentId){
+  if(row.id!==currentId||info.hidden){
     currentId=row.id;
     selectDescription(row);
   }
@@ -376,6 +439,9 @@ function acceptConfirmedTarget(row,pose,now){
   row.root.object3D.quaternion.copy(pose.rotation);
   row.root.object3D.scale.setScalar(pose.scale);
   row.pose=pose;
+  row.safetyHidden=false;
+  row.lastSafetyExcessM=0;
+  rememberTrustedCameraRange(row);
   row.recognitions++;
   markerFoundCount++;
   if(isNew){
@@ -432,6 +498,7 @@ function receiveTarget(event){
   row.lastTargetAt=now;
   updateTargetMetrics(row,pose);
   row.pose=pose;
+  rememberTrustedCameraRange(row);
 }
 function targetLost(event){
   const row=rowByTarget.get(event.detail?.name);
@@ -506,6 +573,9 @@ function updateFrame(now){
       row.pose=null;
       row.candidate=null;
     }
+    // Solo se evalúa DESPUÉS de perder la imagen. Mientras el marcador
+    // es visible no hay límite: se corrige continuamente con la imagen.
+    checkAnchorSafePerimeter(row);
     const t=now/1000,rot=(row.rotationDeg*Math.PI)/180;
     const pivot=row.pivot.object3D;
     // Los ejes de la vista previa son los mismos del modelo:
@@ -546,6 +616,24 @@ function initEngine(){
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
 }
+$('safetyLimit').onclick=()=>{
+  safetyLimitM=nextSafeLimit(safetyLimitM);
+  $('safetyLimit').textContent=limitLabel(safetyLimitM);
+  $('safetyLimit').setAttribute('aria-label','Límite radial adicional: '+limitLabel(safetyLimitM));
+  // Si el visitante desactiva la protección, recuperar la modalidad
+  // original para permitir comparar su comportamiento A/B.
+  if(safetyLimitM===0){
+    for(const row of rows){row.safetyHidden=false;row.lastSafetyExcessM=0;}
+    syncVisibility();
+    note('Zona de seguridad desactivada para comparación: todas las obras confirmadas pueden mostrarse.');
+    say('Límite desactivado: SLAM conservará las obras sin protección de distancia.');
+  }else{
+    note('Límite de zona de confianza ajustado a +'+safetyLimitM+' m.');
+    say('Nueva zona de confianza: +'+safetyLimitM+' m desde la última detección de cada marcador. Las obras ya ocultas reaparecen al reenfocarlas.');
+  }
+  refreshDiagnostic();
+};
+$('safetyLimit').textContent=limitLabel(safetyLimitM);
 $('framing').onclick=()=>{
   showAll=!showAll;syncVisibility();
   note(showAll?'Mostrando todos los anclajes':'Mostrando el último marcador reconocido');
