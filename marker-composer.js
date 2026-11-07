@@ -139,7 +139,7 @@ function normalizeArtwork(image){
  return canvas;
 }
 export async function composeMarker({imageBlob,sessionId}){
- if(!(imageBlob instanceof Blob))throw new Error('Primero cargá una imagen validada.');
+ if(!(imageBlob instanceof Blob))throw new Error('Primero carga una imagen validada.');
  if(!sessionId)throw new Error('Este recorrido no tiene identificador.');
  const img=await readyImage(imageBlob);
  const qr=await makeQR(routeURL(sessionId));
