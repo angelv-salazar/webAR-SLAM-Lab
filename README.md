@@ -136,23 +136,20 @@ Para que una escultura con rotación automática (como Susi) no compita con el g
 
 **Precisión técnica:** las transformaciones del visitante están en un nodo hijo diferente del anclaje 8th Wall. El usuario puede inspeccionar el modelo, pero **no arrastrarlo ni desplazar su marcador**. En móviles la compatibilidad de gestos debe comprobarse físicamente con la cámara y los GLB.
 
-## Estabilidad equilibrada (predeterminada desde la siguiente prueba)
+## Estabilidad equilibrada (modo predeterminado, ajustado para exteriores)
 
-Después de comprobar que el modo estricto de 700 ms generaba interrupciones y parpadeo constantes, el visor pasa a **modo equilibrado por defecto**, conservando el mundo SLAM temporalmente sin exigir tener el marcador siempre en cámara:
+Después de comprobar que 700 ms generaban parpadeos y que la versión de 6,5 s con 1,25 m resultaba más estable, ampliamos la tolerancia para una experiencia en un espacio abierto y en relación con el paisaje:
 
-- **Hasta 6,5 segundos sin detectar un marcador**: la escultura puede permanecer visible para permitir explorarla desde otro ángulo.
-- **Límite espacial estimado**: si la cámara se aleja más de **1,25 m de la última posición de cámara validada** al ver ese marcador, o crece más de **1,05 m la distancia radial al marcador**, se oculta esa estación tras **320 ms** de exceso continuo. Un salto muy grande (2,2 m) se oculta inmediatamente.
-- **Reenfocá el marcador**: la misma escultura vuelve a su lugar, orientación y escala del marcador automáticamente, sin botones ni reiniciar la experiencia. Los gestos de exploración táctil no alteran el anclaje.
-- **No se modifica el GLB ni su tamaño configurado**, el modo de grabación de video ni los marcadores físicos.
+- **Hasta 10 segundos sin detectar un marcador**: la escultura permanece visible mientras no supere las condiciones de seguridad espacial.
+- **2 metros de desplazamiento de cámara** respecto de su última posición validada al reconocer ese marcador.
+- **2 metros de alejamiento radial adicional** respecto de la distancia cámara–marcador registrada mientras se reconocía el papel.
+- **320 ms de confirmación** cuando se supera un límite espacial, para evitar cortes por una lectura aislada.
+- **Salto extremo de 3,5 m** estimados: se oculta inmediatamente porque puede indicar una pérdida súbita del seguimiento.
+- **Volver a enfocar el marcador**: reaparece y se reancla automáticamente, sin pulsar botones. Conserva la escala y rotación táctiles de la sesión.
 
-Las reglas están separadas por escultura y evitan esconderla por una pérdida breve o un único pico espacial. La ubicación real del marcador no se puede verificar sin volver a verlo: si la localización interna SLAM se congela, el límite de distancia puede fallar, pero el temporizador de 6,5 s es el límite de respaldo.
+La primera condición cumplida (tiempo máximo o límite espacial) oculta solo esa escultura. Ninguno de estos valores es un perímetro físico absoluto: dependen de la posición estimada por SLAM, que puede derivar si no se ve el marcador. El temporizador impide que una escultura persista indefinidamente en caso de pérdida de referencia.
 
-Podés comparar comportamientos sin cambios en el ZIP ni botones extra:
-- URL normal: `stability=balanced` (modo predeterminado, si se omite).
-- `&stability=strict`: ocultación rápida a los 700 ms.
-- `&stability=legacy`: seguimiento anterior continuo, con botón de límite de distancia `Zona +1 m`.
-
-El compromiso de este modo es permitir desplazamientos moderados, sin garantizar un anclaje físico absoluto. La combinación de marcadores visuales + SLAM con un único teléfono no puede detectar toda la deriva cuando el marcador está ausente.
+Los modos experimentales se comparan con el parámetro URL: `&stability=balanced` (predeterminado si se omite), `&stability=strict` (700 ms) y `&stability=legacy` (persistencia anterior sin límite de tiempo). No se modificaron el tamaño de los GLB, la grabación de video, los gestos táctiles ni los QR/ZIP.
 
 ## Estabilidad estricta tras revisar el video del 7 de noviembre de 2026
 
