@@ -1,0 +1,104 @@
+/* Estudio SLAM — Laboratorio biomecánico V5.
+   Estructura esculpida: cada marco pinta TODA la silueta de la tarjeta.
+   Sin border-image / overlays sobre texto ni superficies rectangulares ocultas.
+   Todas las operaciones del editor permanecen intactas. */
+:root{color-scheme:dark;--green:#bfef91;--ink:#f2f5ec;--muted:#b8cabc;--line:rgba(202,222,203,.27)}
+html{background:#060e0b}
+body{background:radial-gradient(ellipse 50% 70% at 110% 8%,rgba(77,117,75,.15),transparent),radial-gradient(ellipse 60% 55% at -10% 89%,rgba(82,105,81,.15),transparent),linear-gradient(140deg,#0b100f,#030908 70%,#0b120e);overflow-x:clip}
+body::before{opacity:.1}
+header{
+  min-height:150px;padding:27px max(30px,calc((100vw - 1750px)/2)) 34px;
+  background:linear-gradient(90deg,rgba(4,10,9,.97),rgba(8,14,12,.87));
+}
+header h1{color:#bfde9c;font-size:clamp(29px,3.1vw,49px);letter-spacing:.045em}
+header::after{width:min(51vw,800px);height:175px;left:auto;right:0;top:-20px;bottom:auto;
+  background:url("./assets/biomech-weave.svg") right top / cover no-repeat;opacity:.5;
+  -webkit-mask-image:linear-gradient(90deg,transparent,black 22%);mask-image:linear-gradient(90deg,transparent,black 22%);
+}
+main{max-width:1810px;padding:13px 24px 48px;grid-template-columns:minmax(245px,.84fr) minmax(275px,.99fr) minmax(525px,2.25fr);gap:17px}
+.card{
+  position:relative;isolation:isolate;
+  background:transparent!important;box-shadow:none!important;
+  border:0!important;border-radius:0!important;overflow:visible;
+  padding:61px 39px 66px;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.card::before{
+  content:"";position:absolute;inset:-15px;z-index:-1;pointer-events:none;
+  opacity:1;border:0!important;border-image:none!important;
+  background:url("./assets/bio-v5-narrow.svg") center center /100% 100% no-repeat!important;
+  filter:drop-shadow(0 10px 13px rgba(0,0,0,.4));
+}
+.card::after{content:none!important;display:none!important;background:none!important}
+.card>*{position:relative;z-index:1;min-width:0}
+#settingsCard::before{background-image:url("./assets/bio-v5-mid.svg")!important}
+#viewerCard::before{background-image:url("./assets/bio-v5-wide.svg")!important}
+.card h2{
+  font:600 clamp(16px,1.17vw,21px)/1.2 var(--font-title);
+  color:#f0f1e8;letter-spacing:.008em;margin-bottom:17px;
+  border-bottom:1px solid rgba(206,234,199,.14);
+  padding-bottom:14px;
+}
+.card h2::first-letter{color:#bfef91}
+.card h3,.dockHeading strong{color:#ccefa8}
+#viewerCard{position:sticky;top:11px;max-height:calc(100dvh - 22px);min-height:530px;
+  overflow:visible;box-shadow:none!important;background:none!important}
+#viewerCard::after{display:none!important}
+.viewerWorkspace{grid-template-columns:minmax(0,1.17fr) minmax(219px,.83fr);gap:20px}
+.viewerHeading{padding-right:6px}
+.viewerHeading h2{margin-bottom:8px}
+#preview{
+  clip-path:polygon(3% 0%,14% 1%,26% 0%,41% 1.6%,61% 0%,75% 1.4%,91% 0%,97% 4%,100% 12%,98.3% 27%,100% 42%,98.5% 59%,100% 79%,97% 94%,90% 99%,70% 98.5%,51% 100%,33% 98.7%,12% 100%,3% 96%,0% 88%,1.2% 61%,0% 35%,1.8% 14%);
+  border-radius:0;border:0!important;
+  background:radial-gradient(ellipse at 51% 44%,#273a2f,#0c1713 75%);
+}
+#preview::after{border-radius:24px 16px 27px 20px}
+.transformDock{
+  position:relative;isolation:isolate;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  border-radius:0!important;
+  padding:58px 34px 59px;
+  overflow:visible;
+  max-height:calc(100dvh - 175px);
+}
+.transformDock::before{
+  content:"";position:absolute;z-index:-1;inset:-12px;
+  border:0!important;border-image:none!important;
+  background:url("./assets/bio-v5-dock.svg") center /100% 100% no-repeat!important;
+  pointer-events:none;filter:drop-shadow(0 7px 8px rgba(0,0,0,.29));opacity:1;
+}
+.transformDock>*{position:relative;z-index:1}
+.transformScroll{min-height:0;overflow:auto}
+.sessionQRBox,.publishPanel,.markerMaker,.qualityBox{border-radius:25px 16px 32px 20px}
+#previewTools .btn{border-radius:21px 13px 25px 14px}
+@media(max-width:1390px){
+ main{grid-template-columns:minmax(255px,310px) minmax(0,1fr);gap:15px;padding:14px 18px 40px}
+ #markerCard{grid-column:1;grid-row:1}
+ #settingsCard{grid-column:1;grid-row:2}
+ #viewerCard{grid-column:2;grid-row:1/span 3}
+ .viewerWorkspace{grid-template-columns:minmax(0,1fr);gap:14px}
+ .transformDock{max-height:calc(100dvh - 490px);min-height:220px}
+ #preview{height:clamp(265px,44dvh,415px)}
+}
+@media(max-width:880px){
+ main{display:flex;flex-direction:column;gap:16px;padding:16px 15px 40px}
+ .card{width:100%;padding:55px 35px 62px}
+ #viewerCard{position:relative;top:auto;max-height:none;order:1}
+ #markerCard{order:0}#settingsCard{order:2}
+ .viewerWorkspace{grid-template-columns:minmax(0,1fr)}
+ .transformDock{max-height:none;min-height:0}
+ .transformScroll{overflow:visible}
+ #preview{height:clamp(270px,46dvh,450px)}
+}
+@media(max-width:540px){
+ header{min-height:116px;padding:23px 22px}
+ header::after{opacity:.25}
+ main{padding:14px 11px 30px}
+ .card{padding:52px 31px 55px}
+ .card::before{inset:-9px}
+ .transformDock{padding:52px 27px 57px}
+}
+@media print{
+ .card::before,.transformDock::before{display:none!important}
+ .card{background:#fff!important;color:#000!important}
+}
