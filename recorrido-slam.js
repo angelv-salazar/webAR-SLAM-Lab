@@ -8,7 +8,11 @@ import {buildTarget} from './image-targets.js?v=2';
 import {attachObjectGestures,applyTouchTransform} from './touch-objects.js';
 import {setupArVideoRecorder} from './record-clip.js';
 import {
-  MARKER_LOSS_GRACE_MS,shouldHideStaleAnchor,isAnchorVisible,isStrictTracking
+  MARKER_LOSS_GRACE_MS,BALANCED_GRACE_MS,
+  BALANCED_MAX_CAMERA_TRAVEL_M,BALANCED_MAX_RADIAL_EXPANSION_M,
+  BALANCED_BOUNDARY_CONFIRM_MS,
+  shouldHideStaleAnchor,balancedSpatialLimit,isAnchorVisible,
+  isStrictTracking,isBalancedTracking
 } from './marker-stability.js';
 import {
   ANCHOR_SAFE_LIMITS_M,DEFAULT_ANCHOR_SAFE_LIMIT_M,
@@ -26,7 +30,8 @@ const infoToggle=$('infoToggle'),splash=$('splash'),fatalPanel=$('fatal');
 const params=new URLSearchParams(location.search);
 const requestedId=params.get('id')||'',preview=params.get('preview')==='1';
 const useUniqueCrop=params.get('target')!=='original';
-const stabilityMode=params.get('stability')==='legacy'?'legacy':'strict';
+const stabilityMode=['legacy','strict'].includes(params.get('stability'))
+  ?params.get('stability'):'balanced';
 const startedAt=performance.now();
 const ownedUrls=[],rows=[],rowByTarget=new Map();
 const reducedMotion=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,7 +42,7 @@ let descriptionId=null,descriptionCollapsed=false;
 let scanStarted=false,markerFoundCount=0,lastStatusUpdate=0,calibrationVisible=false;
 let suppressedEvents=0,identityConflicts=0,autoCorrections=0;
 let safetyLimitM=DEFAULT_ANCHOR_SAFE_LIMIT_M;
-let safetyHideCount=0,markerLossHideCount=0;
+let safetyHideCount=0,markerLossHideCount=0,balancedSpatialHideCount=0;
 const PHYSICAL_PRINT_CM=15;
 const videoRecorder=setupArVideoRecorder({
   scene,button:$('recordVideo'),routeId:requestedId,say,note
@@ -68,9 +73,12 @@ function refreshDiagnostic(){
     'Escena A-Frame: '+(scene.hasLoaded?'lista':'cargando'),
     'Seguimiento: '+(xrReady?'REALITY READY':'esperando'),
     'Estabilidad: '+(isStrictTracking(stabilityMode)
-      ?'ESTRICTA · ocultar '+MARKER_LOSS_GRACE_MS+' ms después de perder marcador'
-      :'ANTERIOR · SLAM visible sin marcador'),
-    'Ocultaciones por falta de marcador: '+markerLossHideCount,
+      ?'ESTRICTA · ocultar '+MARKER_LOSS_GRACE_MS+' ms'
+      :isBalancedTracking(stabilityMode)
+        ?'EQUILIBRADA · hasta '+(BALANCED_GRACE_MS/1000)+' s, +'+BALANCED_MAX_CAMERA_TRAVEL_M+' m cámara, +'+BALANCED_MAX_RADIAL_EXPANSION_M+' m radial'
+        :'ANTERIOR · SLAM libre sin marcador'),
+    'Ocultaciones por tiempo: '+markerLossHideCount+
+      ' | por desplazamiento: '+balancedSpatialHideCount,
     'Imágenes: '+rows.length+' | buscando: '+(scanStarted?'sí':'no'),
     'Detectados al menos una vez: '+rows.filter(r=>r.seen).length,
     'Confirmaciones: '+markerFoundCount+' | Detenciones breves: '+suppressedEvents,
@@ -135,7 +143,7 @@ function addRow(item,modelURL,targetData){
     rotationDeg:cleanTransform(item.rotationDeg),
     animation:['spin','float','pulse','embedded','none'].includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
-    lockHidden:false,
+    lockHidden:false,violationSince:null,lastTrustedCameraPosition:null,
     candidate:null,rejected:0,
     safetyHidden:false,lastTrustedRangeM:null,lastSafetyExcessM:0,
     lastRejectionAt:0,confirmationCount:0,
@@ -348,6 +356,8 @@ function rememberTrustedCameraRange(row){
   if(distance!==null){
     // Actualizamos solo cuando ESTE marcador está realmente reconocido.
     row.lastTrustedRangeM=distance;
+    const camera=cameraWorldPosition();
+    if(camera)row.lastTrustedCameraPosition=camera.clone();
   }
 }
 function checkAnchorSafePerimeter(row){
@@ -369,22 +379,41 @@ function checkAnchorSafePerimeter(row){
   say(row.title+' se ocultó al superar la zona de confianza. Al enfocar su marcador reaparecerá automáticamente.');
   syncVisibility();
 }
-function hideExpiredAnchor(row,now){
-  if(!shouldHideStaleAnchor(row,now,stabilityMode))return;
+function concealUntrustedAnchor(row,reason,byDistance=false){
+  if(row.lockHidden)return;
   row.lockHidden=true;
-  row.pose=null; // no aplicar más interpolaciones de una pose caducada
   row.targetVisible=false;
+  row.pose=null;
   row.candidate=null;
-  markerLossHideCount++;
-  note('REFERENCIA PERDIDA: '+row.title+' se ocultó tras '+
-    MARKER_LOSS_GRACE_MS+' ms sin seguimiento de SU marcador.');
+  row.violationSince=null;
+  if(byDistance)balancedSpatialHideCount++;
+  else markerLossHideCount++;
+  note('ANCLAJE OCULTO: '+row.title+' · '+reason+
+    ' · esperar su imagen física para reanclar.');
   if(currentId===row.id&&descriptionId===row.id){
     stopTyping(true);
     info.hidden=true;
     descriptionId=null;
   }
-  say(row.title+' oculta para evitar desplazamientos. Al reenfocar su marcador reaparecerá automáticamente.');
+  say(row.title+' quedó fuera de la zona confiable. Volvé a enfocar su marcador para recuperarla.');
   syncVisibility();
+}
+function hideExpiredAnchor(row,now){
+  if(!shouldHideStaleAnchor(row,now,stabilityMode))return;
+  const grace=isStrictTracking(stabilityMode)?MARKER_LOSS_GRACE_MS:BALANCED_GRACE_MS;
+  concealUntrustedAnchor(row,'sin detección durante '+(grace/1000)+' s');
+}
+function checkBalancedSpatialLimit(row,now){
+  if(!isBalancedTracking(stabilityMode)||row.lockHidden||row.targetVisible||!row.seen)return;
+  const problem=balancedSpatialLimit(row,now,cameraWorldPosition(),cameraRangeM(row));
+  if(!problem){
+    row.violationSince=null;
+    return;
+  }
+  if(row.violationSince===null)row.violationSince=now;
+  if(problem.immediate||now-row.violationSince>=BALANCED_BOUNDARY_CONFIRM_MS){
+    concealUntrustedAnchor(row,problem.type+' ('+problem.value.toFixed(2)+' m)',true);
+  }
 }
 function syncVisibility(){
   for(const row of rows){
@@ -483,6 +512,7 @@ function acceptConfirmedTarget(row,pose,now){
   row.root.object3D.quaternion.copy(pose.rotation);
   row.root.object3D.scale.setScalar(pose.scale);
   row.pose=pose;
+  row.violationSince=null;
   row.lockHidden=false; // SOLO una confirmación de SU imagen autoriza a reaparecer
   row.safetyHidden=false;
   row.lastSafetyExcessM=0;
@@ -554,10 +584,14 @@ function targetLost(event){
   row.candidate=null;
   if(wasVisible){
     note('Marcador fuera de cámara: '+row.title+' · '+(
-      isStrictTracking(stabilityMode)?'ocultación por pérdida de referencia pendiente':'anclaje SLAM conservado'));
+      isStrictTracking(stabilityMode)?'ocultación rápida pendiente':
+      isBalancedTracking(stabilityMode)?'seguimiento equilibrado temporal':
+      'anclaje SLAM conservado'));
     say(isStrictTracking(stabilityMode)
-      ?'Al perder '+row.title+', se ocultará para evitar que se desplace. Volvé a enfocarla para recuperarla.'
-      :row.title+' mantiene su posición estimada. Al reenfocarlo, se reancla automáticamente.');
+      ?'Si perdés su marcador, '+row.title+' se oculta hasta volver a detectarlo.'
+      :isBalancedTracking(stabilityMode)
+        ?row.title+' sigue visible por un tiempo y hasta un límite espacial. Volvé a enfocarla para corregirla.'
+        :row.title+' mantiene su posición SLAM estimada. Al reenfocarlo, se reancla automáticamente.');
   }
 }
 function stopTyping(finish=false){
@@ -621,12 +655,13 @@ function updateFrame(now){
       row.pose=null;
       row.candidate=null;
     }
-    // La cámara puede perder el mundo SLAM y arrastrar la obra por la sala.
-    // En modo estricto, la ausencia de poses de SU imagen durante 700 ms
-    // oculta el modelo independientemente de la distancia estimada por SLAM.
+    // No ocultar ante pérdidas breves. En modo equilibrado, esperar
+    // hasta 6.5 s o una salida prolongada del área estimada del marcador.
+    // Incluso si SLAM se queda inmóvil, el tiempo evita una deriva infinita.
     hideExpiredAnchor(row,now);
-    // Regla adicional de distancia para la modalidad anterior/comparación.
-    checkAnchorSafePerimeter(row);
+    checkBalancedSpatialLimit(row,now);
+    // El control experimental de 1 m anterior sigue disponible en legacy.
+    if(stabilityMode==='legacy')checkAnchorSafePerimeter(row);
     const t=now/1000,rot=(row.rotationDeg*Math.PI)/180;
     const pivot=row.pivot.object3D;
     // Los ejes de la vista previa son los mismos del modelo:
@@ -683,7 +718,6 @@ function initEngine(){
 $('safetyLimit').onclick=()=>{
   safetyLimitM=nextSafeLimit(safetyLimitM);
   $('safetyLimit').textContent=limitLabel(safetyLimitM);
-$('safetyLimit').hidden=isStrictTracking(stabilityMode); // 1 m es redundante en modo estricto
   $('safetyLimit').setAttribute('aria-label','Límite radial adicional: '+limitLabel(safetyLimitM));
   // Si el visitante desactiva la protección, recuperar la modalidad
   // original para permitir comparar su comportamiento A/B.
@@ -699,6 +733,7 @@ $('safetyLimit').hidden=isStrictTracking(stabilityMode); // 1 m es redundante en
   refreshDiagnostic();
 };
 $('safetyLimit').textContent=limitLabel(safetyLimitM);
+$('safetyLimit').hidden=stabilityMode!=='legacy';
 $('framing').onclick=()=>{
   showAll=!showAll;syncVisibility();
   note(showAll?'Mostrando todos los anclajes':'Mostrando el último marcador reconocido');
@@ -739,8 +774,10 @@ scene.addEventListener('realityready',()=>{
   videoRecorder.setReady(true);
   note('REALITY READY · SLAM funcionando');
   say(isStrictTracking(stabilityMode)
-    ?'Cada escultura se oculta al perder su marcador y reaparece al reenfocarlo.'
-    :'Enfocá cada marcador brevemente. Al volver, su obra se reancla sola.');
+    ?'Estabilidad estricta: las obras se ocultan rápido sin marcador.'
+    :isBalancedTracking(stabilityMode)
+      ?'Las esculturas permanecen un tiempo sin marcador y se reanclan al reenfocarlas.'
+      :'Seguimiento SLAM continuo: al volver al marcador, la obra se reancla sola.');
   statusTop();
 });
 scene.addEventListener('realityerror',e=>{
