@@ -136,6 +136,24 @@ Para que una escultura con rotación automática (como Susi) no compita con el g
 
 **Precisión técnica:** las transformaciones del visitante están en un nodo hijo diferente del anclaje 8th Wall. El usuario puede inspeccionar el modelo, pero **no arrastrarlo ni desplazar su marcador**. En móviles la compatibilidad de gestos debe comprobarse físicamente con la cámara y los GLB.
 
+## Estabilidad equilibrada (predeterminada desde la siguiente prueba)
+
+Después de comprobar que el modo estricto de 700 ms generaba interrupciones y parpadeo constantes, el visor pasa a **modo equilibrado por defecto**, conservando el mundo SLAM temporalmente sin exigir tener el marcador siempre en cámara:
+
+- **Hasta 6,5 segundos sin detectar un marcador**: la escultura puede permanecer visible para permitir explorarla desde otro ángulo.
+- **Límite espacial estimado**: si la cámara se aleja más de **1,25 m de la última posición de cámara validada** al ver ese marcador, o crece más de **1,05 m la distancia radial al marcador**, se oculta esa estación tras **320 ms** de exceso continuo. Un salto muy grande (2,2 m) se oculta inmediatamente.
+- **Reenfocá el marcador**: la misma escultura vuelve a su lugar, orientación y escala del marcador automáticamente, sin botones ni reiniciar la experiencia. Los gestos de exploración táctil no alteran el anclaje.
+- **No se modifica el GLB ni su tamaño configurado**, el modo de grabación de video ni los marcadores físicos.
+
+Las reglas están separadas por escultura y evitan esconderla por una pérdida breve o un único pico espacial. La ubicación real del marcador no se puede verificar sin volver a verlo: si la localización interna SLAM se congela, el límite de distancia puede fallar, pero el temporizador de 6,5 s es el límite de respaldo.
+
+Podés comparar comportamientos sin cambios en el ZIP ni botones extra:
+- URL normal: `stability=balanced` (modo predeterminado, si se omite).
+- `&stability=strict`: ocultación rápida a los 700 ms.
+- `&stability=legacy`: seguimiento anterior continuo, con botón de límite de distancia `Zona +1 m`.
+
+El compromiso de este modo es permitir desplazamientos moderados, sin garantizar un anclaje físico absoluto. La combinación de marcadores visuales + SLAM con un único teléfono no puede detectar toda la deriva cuando el marcador está ausente.
+
 ## Estabilidad estricta tras revisar el video del 7 de noviembre de 2026
 
 En una grabación de prueba (~20 segundos) se observó que la escultura permanecía anclada a la impresión sobre la mesa durante los primeros 7 segundos, pero entre los segundos 10 y 19 seguía apareciendo en paredes y puerta cuando la imagen ya no se reconocía. El problema observado es compatible con deriva o pérdida de localización de cámara SLAM, y **el perímetro de 1 m, al depender de la misma estimación espacial, no pudo garantizar que se ocultara**.
