@@ -98,11 +98,11 @@ La **URL de todos los QR del recorrido es la misma**, con un identificador reser
 
 El recorrido usa un guardián de anclajes independientes (marker-guard.js):
 
-1. **Identidad comprobada:** requiere al menos cuatro actualizaciones geométricas coherentes durante un mínimo de 400 ms antes de activar una estación. Una falsa detección muy breve no cambia de obra.
+1. **Identidad comprobada:** requiere al menos tres actualizaciones geométricas coherentes durante aproximadamente 180 ms antes de activar o recuperar una estación. Una falsa detección muy breve no cambia de obra.
 2. **Cada estación tiene su propio anclaje:** el visor muestra por defecto **todos los marcadores ya reconocidos**; no mueve otros anclajes cuando aparece uno nuevo. El botón **Ver último** permite aislar solo el espécimen activo.
-3. **Protección frente a confusiones espaciales:** si el motor atribuye a otro marcador una pose a menos de unos 19 cm del anclaje de otra estación, se descarta esa lectura. Este umbral experimental supone que los marcadores se colocan físicamente separados, en distintas estaciones.
+3. **Protección frente a confusiones espaciales:** si dos marcadores están siendo reconocidos al mismo tiempo y el motor atribuye a uno una pose a menos de unos 19 cm del anclaje activo del otro, se descarta esa lectura. Los anclajes antiguos no bloquean el reanclaje: pueden haber derivado.
 4. **Saltos e incoherencias:** rechaza actualizaciones individuales con movimientos o giros exagerados.
-5. **Reanclaje manual:** si un marcador se recupera, pero su ubicación nueva queda a más de unos 30 cm del anclaje anterior (o cambia mucho de giro o escala), no se mueve automáticamente el modelo; aparece el botón **Reanclar [nombre]**. Usalo solo después de comprobar que la cámara está apuntando al marcador correcto.
+5. **Reanclaje automático:** al volver a reconocer un marcador mediante varias muestras coherentes, el visor actualiza automáticamente la posición, orientación y escala de **ese** modelo, sin botón. La posición anterior se sustituye para evitar que la obra se deslice arrastrándose por la sala. Mientras el marcador sigue visible, las correcciones normales se suavizan.
 
 ### Evitar que el QR compartido confunda al reconocimiento
 
