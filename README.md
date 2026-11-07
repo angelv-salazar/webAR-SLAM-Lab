@@ -22,6 +22,21 @@ Los controles de posición se muestran como **X (horizontal), Y (profundidad) y 
 
 El nuevo máximo de tamaño es **100 cm**, sin recortar automáticamente obras ya guardadas de mayor tamaño. Si se modifica expresamente el control de tamaño de una obra histórica de 144,5 cm, a partir de entonces su máximo será 100 cm. Ningún recorrido público cambia hasta que se exporta y sube un ZIP actualizado.
 
+## Animaciones experimentales de objetos 3D
+
+El selector **Animación** del Estudio ofrece ahora dos combinaciones adicionales, además de rotación continua, flotación, pulsación y animaciones incluidas en el GLB:
+
+- **Órbita irregular · flotar y balancearse** (`animation: "orbit"`): combina pequeños desplazamientos laterales alrededor de la posición definida, levitación suave, balanceo y oscilaciones de giro. El radio de los movimientos locales se adapta al tamaño y no supera 6 cm en los ejes horizontales.
+- **Metamorfosis · pulsos asimétricos** (`animation: "metamorphosis"`): mezcla pulsaciones de diferente frecuencia en los ejes X/Y/Z, inclinación lenta y una oscilación vertical. **No deforma vértices ni reentrena el GLB**: cambia temporalmente sus proporciones por escala no uniforme.
+
+El Estudio y el visor AR comparten las fórmulas del módulo `object-animations.js`. Las transformaciones actúan únicamente sobre un grupo **dentro del objeto anclado**, nunca sobre el `root` ni el sistema de seguimiento espacial de 8th Wall. En el visor, los gestos de pinza siguen limitando la escala total por eje a **50–150 %**. Las nuevas opciones no alteran recorridos antiguos si no se seleccionan y no modifican los marcadores físicos.
+
+Para probarlas, elegí un marcador en **Vista previa y transformación → Animación** y observá su respuesta en el visor 3D del Estudio. Para que la animación nueva aparezca en un teléfono ajeno al editor, guardá el recorrido, descargá el ZIP mediante **Preparar publicación** y subilo a la carpeta `importar/` de GitHub, como en las ediciones anteriores. No hace falta reimprimir el QR.
+
+### Ajustes de interfaz de esta etapa
+
+Los controles de transformación llevan ahora solo las etiquetas **X, Y, Z**, sin texto junto a cada eje. Se retiró la explicación redundante bajo el control de tamaño. En el bloque del QR permanecen el título y la frase **«Se asigna automáticamente al crear el recorrido.»**; ya no se imprime la dirección web ni el estado borrador junto al código. Se mantiene intacto el pie de página de Estudio WebAR.
+
 ## Crear un recorrido
 
 1. Abrir **estudio.html** desde una computadora.
