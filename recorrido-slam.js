@@ -120,7 +120,7 @@ function requireFile(path,folder){
 async function storedSession(id){
   const db=await new Promise((resolve,reject)=>{
     const req=indexedDB.open('estudio-slam-recorridos',1);
-    req.onupgradeneeded=()=>reject(Error('Primero guardá un recorrido en Estudio SLAM.'));
+    req.onupgradeneeded=()=>reject(Error('Primero guarda un recorrido en Estudio SLAM.'));
     req.onsuccess=()=>resolve(req.result);
     req.onerror=()=>reject(req.error||Error('No se pudo abrir la base local.'));
   });
@@ -162,7 +162,7 @@ async function readPublished(){
   source='Publicado en GitHub Pages';
   const url=new URL('./recorridos/'+encodeURIComponent(requestedId)+'/manifest.json',location.href);
   const response=await fetch(url,{cache:'no-store'});
-  if(!response.ok)throw Error('El recorrido todavía no está publicado (HTTP '+response.status+'). Prepará su ZIP en Estudio SLAM.');
+  if(!response.ok)throw Error('El recorrido todavía no está publicado (HTTP '+response.status+'). Prepara su ZIP en Estudio SLAM.');
   const data=await response.json();
   if(data.format!=='estudio-slam-public-v1'||data.id!==requestedId)
     throw Error('El manifiesto no tiene el formato de recorridos SLAM.');
@@ -398,7 +398,7 @@ function concealUntrustedAnchor(row,reason,byDistance=false){
     info.hidden=true;
     descriptionId=null;
   }
-  say(row.title+' quedó fuera de la zona confiable. Volvé a enfocar su marcador para recuperarla.');
+  say(row.title+' quedó fuera de la zona confiable. Vuelve a enfocar su marcador para recuperarla.');
   syncVisibility();
 }
 function hideExpiredAnchor(row,now){
@@ -524,7 +524,7 @@ function acceptConfirmedTarget(row,pose,now){
   markerFoundCount++;
   if(isNew){
     note('Marcador confirmado: '+row.title+' · primer anclaje');
-    say(row.title+' colocado. Arrastrá sobre el objeto para rotarlo; pellizcá con dos dedos para ajustar su escala.');
+    say(row.title+' colocado. Arrastra sobre el objeto para rotarlo; pellizca con dos dedos para ajustar su escala.');
   }else{
     autoCorrections++;
     const cm=Math.round(oldPosition.distanceTo(pose.position)*100);
@@ -593,7 +593,7 @@ function targetLost(event){
     say(isStrictTracking(stabilityMode)
       ?'Si perdés su marcador, '+row.title+' se oculta hasta volver a detectarlo.'
       :isBalancedTracking(stabilityMode)
-        ?row.title+' sigue visible por un tiempo y hasta un límite espacial. Volvé a enfocarla para corregirla.'
+        ?row.title+' sigue visible por un tiempo y hasta un límite espacial. Vuelve a enfocarla para corregirla.'
         :row.title+' mantiene su posición SLAM estimada. Al reenfocarlo, se reancla automáticamente.');
   }
 }
@@ -722,7 +722,7 @@ function initEngine(){
     // Especificar también la escala en xrweb evita que su inicialización
     // restablezca la opción global predeterminada "responsive".
     scene.setAttribute('xrweb','allowedDevices: any; scale: absolute');
-    say('Autorizá la cámara. Apuntá a uno de los marcadores impresos.');
+    say('Autoriza la cámara. Apuntá a uno de los marcadores impresos.');
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
 }
@@ -803,7 +803,7 @@ const poll=setInterval(()=>{
 },450);
 setTimeout(()=>{
   if(xrReady||!configReady)return;
-  diag.hidden=false;note('El seguimiento todavía no comenzó. Revisá permisos y navegador.');
+  diag.hidden=false;note('El seguimiento todavía no comenzó. Revisa permisos y navegador.');
 },18000);
 window.addEventListener('pagehide',()=>{
   stopTyping();
@@ -813,7 +813,7 @@ requestAnimationFrame(updateFrame);
 (async()=>{
   try{
     if(!isId(requestedId))throw Error('El enlace no contiene un identificador válido de recorrido.');
-    if(!THREE)throw Error('A-Frame no pudo cargar. Comprobá la conexión.');
+    if(!THREE)throw Error('A-Frame no pudo cargar. Comprueba la conexión.');
     if(preview)await readLocal();else await readPublished();
     configReady=true;document.title=manifestName+' · Recorrido SLAM';
     note('Recorrido cargado: '+rows.length+' marcadores');
@@ -821,7 +821,7 @@ requestAnimationFrame(updateFrame);
     // Disponible automáticamente al mostrar el GLB; sin botones ni modos.
     attachObjectGestures({scene,THREE,rows,note});
     splash.hidden=true;
-    instructions.textContent='Autorizá la cámara y buscá un marcador impreso.';
+    instructions.textContent='Autoriza la cámara y busca un marcador impreso.';
     initEngine();
   }catch(e){fail(e)}
 })();
