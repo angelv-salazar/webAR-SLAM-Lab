@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#10291e">
+  <title>WebAR · Anclaje híbrido 8th Wall</title>
+  <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
+  <script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
+  <script src="marcador-hibrido.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0a1711;color:#fff;font-family:system-ui,-apple-system,sans-serif}
+    a-scene{position:fixed;inset:0;width:100%;height:100%}
+    #top{position:fixed;z-index:20;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;align-items:start;gap:8px;pointer-events:none}
+    #titlebox{flex:1;min-width:0;border-radius:14px;background:#0c2a20d9;padding:11px 12px;backdrop-filter:blur(6px)}
+    #titlebox small{font-size:10px;letter-spacing:.13em;color:#97dfba;font-weight:750}
+    #titlebox strong{display:block;margin-top:4px;font-size:15px;line-height:1.3}
+    button,a.button{pointer-events:auto;border:1px solid #9ac8ac85;border-radius:10px;background:#15402ef0;color:#fff;padding:12px;font:650 12px system-ui;cursor:pointer;text-decoration:none}
+    #lower{position:fixed;z-index:20;left:12px;right:12px;bottom:max(15px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}
+    #state{max-width:470px;width:100%;background:#0b2820e8;border-radius:13px;padding:12px 14px;text-align:center;font:13px/1.5 system-ui;box-shadow:0 5px 25px #0004}
+    #targetState{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.08em;color:#b8dfc2;padding-bottom:3px}
+    #info{max-width:470px;width:100%;color:#000;background:linear-gradient(180deg,rgba(248,251,249,.70),rgba(248,251,249,0));padding:14px 15px 18px;border-radius:13px 13px 0 0;line-height:1.5;font-size:13px}
+    #info[hidden]{display:none!important}
+    #debug{position:fixed;z-index:30;top:88px;left:12px;right:12px;max-height:45vh;overflow:auto;background:#101b16ec;border:1px solid #88b59a;border-radius:12px;padding:13px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word}
+    #debug[hidden]{display:none!important}
+    #starter{position:fixed;z-index:19;top:47%;left:50%;transform:translate(-50%,-50%);text-align:center;width:min(86vw,350px);padding:19px 21px;border:1px solid #7cbaa185;border-radius:18px;background:#0c2a20cf;line-height:1.6;pointer-events:none}
+    #starter[hidden]{display:none!important}
+    #starter strong{display:block;font-size:17px}
+    #starter a{color:#a4eac0}
+  </style>
+</head>
+<body>
+  <div id="top">
+    <div id="titlebox"><small>MARCADOR + SLAM / PRUEBA HÍBRIDA</small><strong>Espécimen anclado al marcador</strong></div>
+    <button id="restart" type="button">Reiniciar</button>
+    <button id="details" type="button">Detalles</button>
+  </div>
+  <div id="starter">
+    <strong>Buscando marcador</strong>
+    Este ensayo comienza cuando la cámara reconoce la imagen SLAM LAB 01 de 15 × 15 cm.
+    <div style="margin-top:8px;font-size:12px"><a href="imprimir-hibrido.html">Ver marcador imprimible</a></div>
+  </div>
+  <div id="lower">
+    <div id="targetState">Iniciando 8th Wall…</div>
+    <div id="state" role="status">Autorizá la cámara. Después apuntá al marcador impreso.</div>
+    <div id="info" hidden>El marcador establece y corrige la posición. Cuando sale del encuadre, el objeto permanece gracias a SLAM; puede existir deriva hasta volver a reconocer la imagen.</div>
+  </div>
+  <div id="debug" hidden>Esperando bibliotecas…</div>
+  <a-scene
+    id="arScene"
+    renderer="colorManagement: true; antialias: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    <a-camera id="arCamera" position="0 1.6 0"></a-camera>
+    <a-light type="ambient" intensity="1.35"></a-light>
+    <a-entity light="type: directional; intensity: 1.7" position="1 3 2"></a-entity>
+    <!-- Objeto independiente del marcador. Cuando se pierde la imagen
+         permanece en coordenadas del mundo mientras SLAM continúe activo. -->
+    <a-entity id="anchor" visible="false">
+      <a-icosahedron position="0 .5 0" radius=".46" detail="2"
+        material="color:#3cd6a1;metalness:.18;roughness:.4;flatShading:true"></a-icosahedron>
+      <a-torus position="0 .5 0" rotation="65 18 0" radius=".53" radius-tubular=".041"
+        material="color:#13543d;metalness:.38;roughness:.35"></a-torus>
+      <a-cylinder position="0 .025 0" radius=".52" height=".05"
+        material="color:#e3f5e9;roughness:1;opacity:.6;transparent:true"></a-cylinder>
+    </a-entity>
+  </a-scene>
+  <script>
+  (function(){
+    'use strict';
+    const $=id=>document.getElementById(id);
+    const scene=$('arScene'),root=$('anchor'),status=$('state'),targetState=$('targetState'),debug=$('debug');
+    let engineStarted=false,worldReady=false,markerVisible=false,locked=false;
+    let targetCount=0,correctedCount=0,targetURL='',targetConfigured=false,lastTargetAt=0;
+    let eventLog=[],lastError='',pose=null,rootYaw=0;
+    const began=performance.now();
+    let lastState='';
+    function report(line){
+      eventLog.push(new Date().toLocaleTimeString()+' · '+line);
+      if(eventLog.length>12)eventLog.shift();
+      refreshDebug();
+    }
+    function state(label,detail){
+      targetState.textContent=label;
+      if(detail!==lastState){status.textContent=detail;lastState=detail;}
+      refreshDebug();
+    }
+    function refreshDebug(){
+      if(debug.hidden)return;
+      const p=root.object3D.position;
+      debug.textContent=[
+        'Motor: '+(window.XR8?'XR8 listo':'esperando XR8'),
+        'Escena: '+(scene.hasLoaded?'cargada':'esperando'),
+        'Seguimiento SLAM: '+(worldReady?'REALITY READY':'esperando'),
+        'Imagen: '+(markerVisible?'VISIBLE':targetConfigured?'buscando / fuera de cámara':'preparando archivo'),
+        'Bloqueo espacial: '+(locked?'ACTIVO':'sin anclaje'),
+        'Detecciones: '+targetCount+' | Reanclajes: '+correctedCount,
+        'Posición: '+[p.x,p.y,p.z].map(v=>v.toFixed(2)).join(' / ')+' m',
+        'Modelo: geometría de prueba, 1 m',
+        lastError?'Error: '+lastError:'',
+        'Eventos recientes:\n'+eventLog.join('\n')
+      ].filter(Boolean).join('\n');
+    }
+    $('details').addEventListener('click',()=>{debug.hidden=!debug.hidden;refreshDebug();});
+    $('restart').addEventListener('click',()=>{
+      markerVisible=false;locked=false;pose=null;
+      root.object3D.visible=false;$('info').hidden=true;$('starter').hidden=false;
+      state('Buscando marcador','Anclaje reiniciado. Volvé a apuntar al marcador SLAM LAB 01.');
+      report('Se descartó el anclaje anterior.');
+    });
+    function cameraError(e){lastError=String(e?.message||e);debug.hidden=false;refreshDebug();}
+    window.addEventListener('error',e=>cameraError(e));
+    window.addEventListener('unhandledrejection',e=>cameraError(e.reason));
+    function yawFor(q){
+      // El image target es un plano XY. Se proyecta su eje vertical al suelo
+      // y se mantiene el espécimen erguido respecto al mundo.
+      const THREE=AFRAME.THREE;
+      const rot=new THREE.Quaternion(q.x||0,q.y||0,q.z||0,Number.isFinite(q.w)?q.w:1);
+      const dir=new THREE.Vector3(0,1,0).applyQuaternion(rot);
+      dir.y=0;
+      if(dir.lengthSq()<.001)return rootYaw;
+      dir.normalize();
+      return Math.atan2(dir.x,dir.z);
+    }
+    function captureImage(e,found){
+      const d=e.detail||{};
+      if(d.name!=='slam-lab-01')return;
+      if(!d.position||!d.rotation)return;
+      if(found||!markerVisible){
+        targetCount++;
+        if(locked)correctedCount++;
+        report(locked?'Marcador recuperado; corrigiendo anclaje':'Marcador encontrado; anclando objeto');
+      }
+      markerVisible=true;lastTargetAt=performance.now();
+      pose={
+        position:new AFRAME.THREE.Vector3(Number(d.position.x)||0,Number(d.position.y)||0,Number(d.position.z)||0),
+        yaw:yawFor(d.rotation)
+      };
+      if(!locked){
+        locked=true;
+        root.object3D.position.copy(pose.position);
+        root.object3D.rotation.y=pose.yaw;
+        root.object3D.visible=true;
+        $('starter').hidden=true;$('info').hidden=false;
+      }
+      state('Marcador reconocido','Escultura fijada a la imagen. Alejate lentamente y observá qué ocurre cuando el marcador sale de la cámara.');
+    }
+    scene.addEventListener('xrimagefound',e=>captureImage(e,true));
+    scene.addEventListener('xrimageupdated',e=>captureImage(e,false));
+    scene.addEventListener('xrimagelost',e=>{
+      if(e.detail?.name!=='slam-lab-01')return;
+      markerVisible=false;
+      pose=null;
+      report('Marcador fuera de cámara. El objeto queda en el espacio con SLAM.');
+      if(locked)state('SLAM · anclaje conservado','Marcador fuera del encuadre. Caminá alrededor; cuando vuelvas a apuntarlo corregiremos el anclaje.');
+    });
+    scene.addEventListener('xrimageloading',()=>report('Cargando la imagen de reconocimiento'));
+    scene.addEventListener('xrimagescanning',()=>report('Imagen cargada; búsqueda de marcador activa'));
+    scene.addEventListener('realityready',()=>{
+      worldReady=true;report('REALITY READY: SLAM activo');
+      state('SLAM listo · buscando imagen','Apuntá al marcador de 15 × 15 cm. El objeto aparecerá al reconocerlo.');
+    });
+    scene.addEventListener('realityerror',e=>{
+      cameraError('Error de seguimiento: '+String(e.detail?.message||e.detail?.error||'no especificado'));
+    });
+    let lastFrame=performance.now();
+    function frame(now){
+      requestAnimationFrame(frame);
+      const dt=Math.max(0,Math.min(.06,(now-lastFrame)/1000));lastFrame=now;
+      // Mientras el marcador está visible, corregir suavemente el anclaje.
+      // Al perderlo, NO mover la escultura: queda en coordenadas del mundo.
+      if(locked&&markerVisible&&pose&&root.object3D){
+        const a=1-Math.exp(-dt*8);
+        root.object3D.position.lerp(pose.position,a);
+        let delta=pose.yaw-root.object3D.rotation.y;
+        delta=Math.atan2(Math.sin(delta),Math.cos(delta));
+        root.object3D.rotation.y+=delta*a;
+      }
+      if(markerVisible&&now-lastTargetAt>1600&&locked){
+        markerVisible=false;pose=null;
+        state('SLAM · esperando marcador','No se reciben actualizaciones de la imagen. La escultura permanece anclada al mundo estimado por SLAM.');
+      }
+    }
+    requestAnimationFrame(frame);
+    async function activate(){
+      if(engineStarted||!window.XR8||!window.AFRAME||!scene.hasLoaded)return;
+      try{
+        const af=XR8.AFrame||{};
+        if(!AFRAME.components.xrconfig&&af.xrconfigComponent)AFRAME.registerComponent('xrconfig',af.xrconfigComponent());
+        if(!AFRAME.components.xrweb&&af.xrwebComponent)AFRAME.registerComponent('xrweb',af.xrwebComponent());
+        if(!AFRAME.components.xrconfig||!AFRAME.components.xrweb){
+          state('Esperando componentes','8th Wall cargó, esperando conexión con A-Frame.');
+          return;
+        }
+        engineStarted=true;
+        state('Preparando marcador','Generando archivo de seguimiento 8th Wall para el marcador experimental…');
+        const marker=await window.SlamLabMarker.target();
+        targetURL=marker.url;
+        // Configurar la imagen ANTES de que XRWeb comience el seguimiento.
+        XR8.XrController.configure({
+          imageTargetData:[marker.data],
+          disableWorldTracking:false,
+          scale:'absolute'
+        });
+        targetConfigured=true;
+        report('Image target configurado, crop 900×1200 → 480×640, SLAM habilitado.');
+        scene.setAttribute('xrconfig','');
+        scene.setAttribute('xrweb','allowedDevices: any');
+        state('Iniciando seguimiento','Solicitando cámara; al comenzar, buscá el marcador físico.');
+      }catch(e){
+        lastError=String(e.message||e);
+        engineStarted=false;
+        debug.hidden=false;
+        state('Error al preparar SLAM',lastError);
+      }
+    }
+    scene.addEventListener('loaded',activate);
+    window.addEventListener('xrloaded',()=>setTimeout(activate,0));
+    const poll=setInterval(()=>{
+      activate();
+      if(engineStarted||performance.now()-began>45000)clearInterval(poll);
+    },500);
+    window.addEventListener('pagehide',()=>{if(targetURL)URL.revokeObjectURL(targetURL);});
+    setTimeout(()=>{
+      if(worldReady)return;
+      debug.hidden=false;refreshDebug();
+    },16000);
+  })();
+  </script>
+</body>
+</html>
