@@ -19,3 +19,9 @@ La importación rechaza archivos con rutas inseguras, modelos GLB inválidos, ta
 Si una ejecución de Actions falla, conservá el ZIP original y compartí el mensaje de error antes de volver a intentar.
 
 Esta carpeta no debe contener contraseñas ni tokens.
+
+## Actualizar un recorrido que ya existe
+
+El Estudio genera un ZIP nuevo con un sello de fecha/hora, para no reutilizar el archivo anterior. Subí el ZIP nuevo a esta misma carpeta con **Add file → Upload files**. El flujo GitHub Actions solo procesa los ZIP modificados en ese commit, valida el contenido y **sobrescribe los archivos del mismo identificador de recorrido**. La URL y los QR permanecen iguales; no hace falta reimprimirlos si solo cambiás tamaños o posiciones.
+
+No borres manualmente los archivos del recorrido publicado para actualizarlo.
