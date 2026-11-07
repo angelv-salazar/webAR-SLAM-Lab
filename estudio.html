@@ -661,7 +661,7 @@ async function preparePublication(){
  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:3}});
  const href=URL.createObjectURL(blob);
  const a=document.createElement('a');a.href=href;
- a.download='publicar-slam-'+session.id+'.zip';a.click();
+ a.download='publicar-slam-'+session.id+'-'+new Date().toISOString().replace(/\D/g,'').slice(0,14)+'.zip';a.click();
  setTimeout(()=>URL.revokeObjectURL(href),8000);
  return {count:items.length,url:routeURL(session.id)};
 }
@@ -1022,7 +1022,7 @@ $('preparePublish').onclick=async()=>{
    inform('Generando Image Targets 8th Wall, GLB, marcadores imprimibles y manifiesto SLAM…');
    const result=await preparePublication();
    inform('ZIP de publicación listo para '+result.count+' marcador(es).\nURL definitiva: '+result.url+
-   '\nTodavía NO está publicado. Subí este único ZIP en la carpeta importar/ de webAR-SLAM-Lab (GitHub → Add file → Upload files). La automatización lo publicará.');
+   '\nTodavía NO está publicado. Subí este nuevo ZIP en la carpeta importar/ de webAR-SLAM-Lab (GitHub → Add file → Upload files). La automatización actualizará el recorrido sin cambiar su URL ni sus QR.');
  }catch(error){inform('No se pudo preparar la publicación:\n'+error.message,true);}
  finally{button.disabled=false;button.textContent='Preparar publicación';}
 };
