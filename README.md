@@ -108,6 +108,20 @@ El recorte PLANAR se obtiene **del propio PNG imprimible**, con un área centrad
 
 La **URL de todos los QR del recorrido es la misma**, con un identificador reservado. Cada imagen impresa produce un reconocimiento diferente, que activa su GLB y sus propios datos.
 
+## Grabar videos MP4 del recorrido (un solo botón)
+
+En el visor, el botón rojo **● Grabar** inicia una grabación de la cámara más los modelos 3D renderizados. **■ Detener** termina la captura y, cuando 8th Wall finaliza el archivo, inicia automáticamente la descarga de un **MP4** identificado con el ID del recorrido y la fecha.
+
+- Se utiliza el **grabador nativo de XR8** integrado con el compositor de cámara/AR, en vez de otro renderizador de video.
+- Máximo de **60 segundos** y dimensión de salida hasta **720 px**, para limitar el consumo en teléfonos durante el seguimiento SLAM.
+- **Sin grabación de micrófono** ni solicitud de permiso para audio.
+- El botón queda desactivado mientras no esté lista la cámara o mientras se procesa un video. Un clip nuevo se puede iniciar después del anterior.
+- **Android:** el navegador inicia una descarga; buscar el MP4 en **Descargas/Archivos**. La ubicación final depende de las preferencias del navegador.
+- **iPhone/iPad:** se intenta descargar el MP4 al detener, pero Safari puede exigir una intervención del visitante para guardarlo en Fotos. En ese caso, el mismo botón muestra **Guardar video**, que activa la hoja nativa de compartir para que la persona elija **Guardar video**. Los navegadores no pueden forzar que se guarde silenciosamente en la galería Fotos.
+- Si aparece un error o el navegador no ofrece la función, los marcadores y las esculturas siguen funcionando normalmente.
+
+**Importante:** comprobar en el teléfono real que el archivo incluye tanto el fondo de cámara como los GLB. Si el SDK cambia o los permisos del navegador bloquean la grabación, la interfaz muestra el motivo. No hace falta volver a subir el ZIP ni imprimir marcadores.
+
 ## Manipulación táctil directa (sin modo exploración)
 
 Cuando un marcador activa una escultura en el visor, se puede interactuar **tocando directamente la geometría del objeto**, sin activar ningún modo ni control adicional:
