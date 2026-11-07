@@ -184,12 +184,12 @@ main{
 </div>
 <div class="publishPanel">
 <h3>Pruebas y publicación</h3>
-<p class="muted">Generá cada imagen y su QR, cargá un GLB y guardá. Después prepará el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
+<p class="muted">Genera cada imagen y su QR, carga un GLB y guarda. Después prepara el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
 <div class="row stretch">
 <button class="btn secondary" id="testSession" type="button" title="Abre una prueba AR en otra pestaña usando la cámara y los archivos guardados en este dispositivo">Vista previa AR (este dispositivo)</button>
 <button class="btn" id="preparePublish">Preparar publicación</button>
 </div>
-<p class="muted" style="margin-top:8px">La vista previa AR abre otra pestaña y utiliza la cámara de este dispositivo y el recorrido guardado en este navegador. Para probarlo en otro celular, usá «Preparar publicación» y subí el ZIP a GitHub.</p>
+<p class="muted" style="margin-top:8px">La vista previa AR abre otra pestaña y utiliza la cámara de este dispositivo y el recorrido guardado en este navegador. Para probarlo en otro celular, usa «Preparar publicación» y sube el ZIP a GitHub.</p>
 </div>
 <div class="divider"></div>
 <h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
@@ -200,7 +200,7 @@ main{
 </section>
 <section class="card" id="settingsCard">
 <h2>3. Imagen, QR y modelo GLB · 8th Wall</h2>
-<p id="selectedHint" class="muted">Seleccioná un marcador.</p>
+<p id="selectedHint" class="muted">Selecciona un marcador.</p>
 <div id="entryEditor">
 <label for="entryName">Nombre del marcador / objeto</label><input id="entryName" placeholder="Ej.: Micelio 01" maxlength="75">
 <label for="entryPattern">Patrón de reconocimiento</label>
@@ -211,11 +211,11 @@ main{
 </details>
 <label for="markerImage">Imagen del marcador (PNG, JPG o WebP)</label><input id="markerImage" type="file" accept="image/png,image/jpeg,image/webp">
 <p class="muted">Formato cuadrado 1:1 · mínimo 512 × 512 px · recomendado 1024 × 1024 px · máximo 10 MB.</p>
-<div id="markerQuality" class="qualityBox" aria-live="polite">Cargá una imagen para analizar su calidad.</div>
+<div id="markerQuality" class="qualityBox" aria-live="polite">Carga una imagen para analizar su calidad.</div>
 <button class="btn secondary" id="revalidateImage" type="button" style="margin-top:7px">Analizar imagen guardada</button>
 <div class="markerMaker">
 <button class="btn" id="buildMarker" type="button" style="width:100%">Generar marcador final</button>
-<div id="markerBuildInfo" class="muted" role="status" style="margin-top:9px">Primero cargá una imagen válida. El QR quedará en la esquina inferior derecha sin opciones adicionales.</div>
+<div id="markerBuildInfo" class="muted" role="status" style="margin-top:9px">Primero carga una imagen válida. El QR quedará en la esquina inferior derecha sin opciones adicionales.</div>
 <div id="markerBuildResult" hidden>
 <canvas id="finalCanvas" width="1800" height="1800" aria-label="Marcador imprimible con QR incluido"></canvas>
 <div class="row stretch" style="margin-top:10px">
@@ -224,7 +224,7 @@ main{
 </div>
 </div>
 </div>
-<p class="muted">El visor 3D muestra el marcador final con QR después de generarlo. Si modificás la imagen, tendrás que regenerar el marcador y su .patt.</p>
+<p class="muted">El visor 3D muestra el marcador final con QR después de generarlo. Si modificas la imagen, tendrás que regenerar el marcador y su .patt.</p>
 </div>
 <label for="modelFile">Modelo 3D (.glb)</label>
 <input type="file" id="modelFile" accept=".glb,model/gltf-binary,application/octet-stream">
@@ -253,7 +253,7 @@ main{
   </div>
   <div class="viewerWorkspace">
     <div class="viewerStage">
-      <div class="stageLabel">Vista 3D · Arrastrá para girar y usá la rueda para acercarte</div>
+      <div class="stageLabel">Vista 3D · Arrastra para girar y usa la rueda para acercarte</div>
       <div id="preview"><div id="previewStatus">Cargando Three.js…</div></div>
       <div id="previewTools">
         <button id="resetView" class="btn secondary">Recentrar vista</button>
@@ -299,7 +299,7 @@ main{
 
       </div>
       <button class="btn secondary" id="framePreview" type="button" style="width:100%;margin-top:9px">Encuadrar modelo 3D</button>
-      <p class="dockFootnote">Los cambios se guardan cuando presionás «Guardar recorrido».</p>
+      <p class="dockFootnote">Los cambios se guardan cuando presionas «Guardar recorrido».</p>
     </aside>
   </div>
 </section>
@@ -406,7 +406,7 @@ async function sessionRemove(id){return await txn('readwrite',s=>s.delete(id))}
 async function refreshSessions(){
 const items=(await listSessions()).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
 const sel=$('sessionSelect');sel.replaceChildren();
-const opt=document.createElement('option');opt.value='';opt.textContent='Elegí un recorrido…';sel.appendChild(opt);
+const opt=document.createElement('option');opt.value='';opt.textContent='Elige un recorrido…';sel.appendChild(opt);
 for(const item of items){const o=document.createElement('option');o.value=item.id;o.textContent=item.name;sel.appendChild(o)}
 sel.value=items.some(it=>it.id===session?.id)?session.id:'';
 }
@@ -456,7 +456,7 @@ function describeMarkerQuality(e){
  const report=e?.markerValidation;
  $('revalidateImage').disabled=!e?.markerImageBlob;
  if(!e?.markerImageBlob){setMarkerQuality('Aún no se cargó una imagen. El análisis comprobará dimensiones, contraste, asimetría y diferenciación entre marcadores.');return;}
- if(!report){setMarkerQuality('Imagen guardada antes de incorporar el validador. Presioná «Analizar imagen guardada».','warning');return;}
+ if(!report){setMarkerQuality('Imagen guardada antes de incorporar el validador. Presiona «Analizar imagen guardada».','warning');return;}
  const meta=report.info||{};
  const other=session?.entries.filter(it=>it.id!==e.id&&it.kind==='custom'&&it.markerValidation?.info?.fingerprint)||[];
  const identical=[];
@@ -467,8 +467,8 @@ function describeMarkerQuality(e){
    else if(dist!==null && dist<.12)similar.push(item.name);
  }
  const warnings=[...(report.warnings||[])];
- if(identical.length)warnings.unshift('PATRÓN MUY SIMILAR a '+identical.join(', ')+': elegí una imagen distinta para evitar confusiones.');
- if(similar.length)warnings.push('Se parece a '+similar.join(', ')+'. Probá patrones más distintos.');
+ if(identical.length)warnings.unshift('PATRÓN MUY SIMILAR a '+identical.join(', ')+': elige una imagen distinta para evitar confusiones.');
+ if(similar.length)warnings.push('Se parece a '+similar.join(', ')+'. Prueba patrones más distintos.');
  const text=[
     report.ok?'Archivo admitido para generar el patrón (validación preliminar).':'Imagen no válida para esta versión.',
     meta.width&&meta.height?'Imagen: '+meta.width+' × '+meta.height+' px · '+Math.round((meta.bytes||0)/1024)+' KB':'',
@@ -622,7 +622,7 @@ mesh.position.sub(new THREE.Vector3(center.x,bounds.min.y,center.z));
 const wrap=new THREE.Group();wrap.userData.normalizedLength=longest;wrap.add(mesh);
 previewObject=wrap;currentGroup.add(wrap);
 applyTransform();
-$('previewStatus').textContent=(e.modelBlob?'Vista previa: '+e.modelName:'Figura de referencia · cargá un GLB para reemplazarla')+(e.kind==='custom'&&e.finalMarkerBlob?' · marcador final con QR':'');
+$('previewStatus').textContent=(e.modelBlob?'Vista previa: '+e.modelName:'Figura de referencia · carga un GLB para reemplazarla')+(e.kind==='custom'&&e.finalMarkerBlob?' · marcador final con QR':'');
 }catch(error){$('previewStatus').textContent='No se pudo abrir el GLB: '+error.message;inform(error.message,true)}
 }
 
@@ -647,7 +647,7 @@ function publicationErrors(){
 }
 async function preparePublication(){
  if(typeof JSZip==='undefined')throw Error('No se cargó el generador ZIP.');
- if(dirty)throw Error('Guardá los cambios del recorrido antes de preparar su publicación.');
+ if(dirty)throw Error('Guarda los cambios del recorrido antes de preparar su publicación.');
  const errors=publicationErrors();
  if(errors.length)throw Error(errors.join('\n'));
  const zip=new JSZip();
@@ -688,10 +688,10 @@ async function preparePublication(){
  zip.file('INSTRUCCIONES-PUBLICAR.txt',
   'PAQUETE DE PUBLICACION · ESTUDIO SLAM / 8TH WALL\n\n'+
   '1. Descomprimí este ZIP conservando la carpeta recorridos/.\n'+
-  '2. Subí la carpeta al repositorio angelv-salazar/webAR-SLAM-Lab, rama main, sin modificar rutas.\n'+
-  '3. Esperá GitHub Pages y abrí: '+routeURL(session.id)+'\n'+
-  '4. Imprimí cada PNG de la carpeta imprimir/ a 15x15 cm y escala 100%.\n'+
-  '5. Probá todos los marcadores con la cámara. Usá una buena iluminación.\n\n'+
+  '2. Sube la carpeta al repositorio angelv-salazar/webAR-SLAM-Lab, rama main, sin modificar rutas.\n'+
+  '3. Espera GitHub Pages y abre: '+routeURL(session.id)+'\n'+
+  '4. Imprime cada PNG de la carpeta imprimir/ a 15x15 cm y escala 100%.\n'+
+  '5. Prueba todos los marcadores con la cámara. Usa una buena iluminación.\n\n'+
   'El archivo .patt se conserva solo como copia heredada; 8th Wall usa targets/*.jpg + *.json.\n'+
   'El mismo QR abre el recorrido completo. No cambia la URL después de la publicación.\n'+
   'Importante: aunque SLAM conserve la obra cuando no ve el marcador, puede tener deriva.\n'+
@@ -762,7 +762,7 @@ $('addEntry').onclick=()=>{
 if(session.entries.length>=20){inform('Para esta primera versión admitimos hasta 20 marcadores por recorrido.',true);return;}
 const e=newEntry(session.entries.length);
 session.entries.push(e);activeId=e.id;markDirty();drawList();populate();void showPreview();
-inform('Marcador agregado. Cargá una imagen propia, comprobá su validez y presioná «Generar marcador final». Todos los marcadores compartirán el QR del recorrido.');
+inform('Marcador agregado. Carga una imagen propia, comprueba su validez y presiona «Generar marcador final». Todos los marcadores compartirán el QR del recorrido.');
 };
 $('duplicateEntry').onclick=()=>{
 const e=selectedEntry();if(!e)return;
@@ -778,14 +778,14 @@ activeId=session.entries[0].id;markDirty();drawList();populate();void showPrevie
 };
 $('modelFile').onchange=async e=>{
 const f=e.target.files?.[0];if(!f)return;
-if(!f.name.toLowerCase().endsWith('.glb')){inform('Elegí un archivo GLB (.glb).',true);return;}
+if(!f.name.toLowerCase().endsWith('.glb')){inform('Elige un archivo GLB (.glb).',true);return;}
 const entry=selectedEntry();if(!entry)return;
 entry.modelBlob=f;entry.modelName=f.name;markDirty();drawList();populate();await showPreview();
 };
 $('pattFile').onchange=async e=>{
  const f=e.target.files?.[0],entry=selectedEntry();if(!f||!entry)return;
  try{
-   if(!f.name.toLowerCase().endsWith('.patt')||f.size>250000)throw Error('Elegí un archivo .patt válido, de menos de 250 KB.');
+   if(!f.name.toLowerCase().endsWith('.patt')||f.size>250000)throw Error('Elige un archivo .patt válido, de menos de 250 KB.');
    const txt=await f.text();checkPatt(txt);
    const duplicate=session.entries.find(it=>it.id!==entry.id&&it.kind==='custom'&&it.pattText?.trim()===txt.trim());
    if(duplicate)throw Error('Este mismo .patt ya está asignado a '+duplicate.name+'. Cada marcador requiere un patrón diferente.');
@@ -827,7 +827,7 @@ async function validateMarkerUpload(file,entry,replace=true){
    describeMarkerQuality(entry);
    await showMarkerResult(entry);
    if(replace)await showPreview();
-   inform('Imagen admitida. Ahora podés presionar «Generar marcador final» para incorporar el QR y crear el .patt.');
+   inform('Imagen admitida. Ahora puedes presionar «Generar marcador final» para incorporar el QR y crear el .patt.');
  }
  return true;
 }
@@ -854,23 +854,23 @@ async function showMarkerResult(entry){
  wrap.hidden=true;
  $('buildMarker').disabled=!entry||entry.kind!=='custom'||!entry.markerImageBlob||entry.markerValidation?.ok!==true;
  if(!entry||entry.kind!=='custom'){
-   note.textContent='Seleccioná «Personalizado (.patt)» y cargá tu imagen para generar un marcador con QR.';
+   note.textContent='Selecciona «Personalizado (.patt)» y carga tu imagen para generar un marcador con QR.';
    return;
  }
  if(!entry.markerImageBlob){
-   note.textContent='Cargá una imagen cuadrada. Si supera la validación podrás generar el marcador con un clic.';
+   note.textContent='Carga una imagen cuadrada. Si supera la validación podrás generar el marcador con un clic.';
    return;
  }
  if(entry.markerValidation?.ok!==true){
-   note.textContent='La imagen no está validada. Revisá el informe o presioná «Analizar imagen guardada».';
+   note.textContent='La imagen no está validada. Revisa el informe o presiona «Analizar imagen guardada».';
    return;
  }
  if(!entry.finalMarkerBlob){
-   note.textContent='Imagen validada. Presioná «Generar marcador final» para incorporar el QR y obtener el .patt.';
+   note.textContent='Imagen validada. Presiona «Generar marcador final» para incorporar el QR y obtener el .patt.';
    return;
  }
  note.textContent=(entry.markerRatio!==MARKER_RATIO
-   ?'Este diseño fue generado con un borde anterior (ratio '+(entry.markerRatio||'desconocido')+'). Presioná «Generar marcador final» para actualizar el marco y el QR. '
+   ?'Este diseño fue generado con un borde anterior (ratio '+(entry.markerRatio||'desconocido')+'). Presiona «Generar marcador final» para actualizar el marco y el QR. '
    :'Diseño generado: 15 × 15 cm, borde compacto y QR junto a la esquina. ')
    +'El enlace está reservado, pendiente de publicación.';
  try{
@@ -886,7 +886,7 @@ async function showMarkerResult(entry){
 $('buildMarker').onclick=async()=>{
  const entry=selectedEntry(),sessionId=session?.id;
  if(!entry||entry.kind!=='custom'||!entry.markerImageBlob||entry.markerValidation?.ok!==true){
-   inform('Primero cargá y validá una imagen personalizada para este marcador.',true);return;
+   inform('Primero carga y validá una imagen personalizada para este marcador.',true);return;
  }
  const button=$('buildMarker');button.disabled=true;
  $('markerBuildInfo').textContent='Preparando QR, composición 15 × 15 cm y archivo de reconocimiento .patt…';
@@ -906,7 +906,7 @@ $('buildMarker').onclick=async()=>{
      await setMarkerTexture(entry);
      $('previewStatus').textContent=(entry.modelName?'Vista previa: '+entry.modelName:'Figura de referencia')+' · marcador final con QR';
    }
-   inform('Marcador generado: imagen de impresión y patrón .patt. Guardá el recorrido para conservar ambos archivos. El QR todavía no abre una experiencia publicada.');
+   inform('Marcador generado: imagen de impresión y patrón .patt. Guarda el recorrido para conservar ambos archivos. El QR todavía no abre una experiencia publicada.');
  }catch(error){
    $('markerBuildInfo').textContent='No se pudo generar el marcador: '+error.message;
    inform('Generación fallida: '+error.message,true);
@@ -918,7 +918,7 @@ $('buildMarker').onclick=async()=>{
 $('downloadMarkerFiles').onclick=async()=>{
  const entry=selectedEntry();
  if(!entry?.finalMarkerBlob||!entry?.pattText){
-   inform('Primero generá el marcador final.',true);return;
+   inform('Primero genera el marcador final.',true);return;
  }
  try{
    if(!window.JSZip)throw Error('No se pudo cargar el generador ZIP.');
@@ -947,12 +947,12 @@ $('printMarker').onclick=async()=>{
 };
 window.addEventListener('afterprint',()=>{if(printURL){URL.revokeObjectURL(printURL);printURL=null;printer.removeAttribute('src');}});
 $('saveSession').onclick=async()=>{
-try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Podés volver a abrirlo desde la lista. Para respaldo usá Exportar ZIP.')}
+try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Puedes volver a abrirlo desde la lista. Para respaldo usa Exportar ZIP.')}
 catch(error){inform('No se pudo guardar: '+error.message,true)}
 };
 $('newSession').onclick=()=>{
 if(dirty&&!confirm('Hay cambios sin guardar. ¿Crear otro recorrido de todos modos?'))return;
-setSession(newSession());inform('Nuevo recorrido creado con QR propio y URL reservada. Cargá una imagen por marcador y generá sus diseños. Publicaremos el enlace en una próxima etapa.');
+setSession(newSession());inform('Nuevo recorrido creado con QR propio y URL reservada. Carga una imagen por marcador y genera sus diseños. Publicaremos el enlace en una próxima etapa.');
 };
 $('sessionSelect').onchange=async e=>{
 const id=e.target.value;
@@ -963,13 +963,13 @@ if(saved)setSession(saved);
 };
 $('testSession').onclick=async()=>{
  try{
-   if(dirty)throw Error('Guardá el recorrido antes de probarlo con la cámara.');
+   if(dirty)throw Error('Guarda el recorrido antes de probarlo con la cámara.');
    const errors=publicationErrors();
    if(errors.length)throw Error(errors.join('\n'));
    const url=new URL(routeURL(session.id));
    url.searchParams.set('preview','1');
    window.open(url.href,'_blank','noopener');
-   inform('Prueba abierta en otra pestaña. Autorizá la cámara y apuntá a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
+   inform('Prueba abierta en otra pestaña. Autoriza la cámara y apuntá a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
  }catch(error){inform('No se pudo iniciar la prueba: '+error.message,true);}
 };
 $('preparePublish').onclick=async()=>{
@@ -979,7 +979,7 @@ $('preparePublish').onclick=async()=>{
    inform('Generando Image Targets 8th Wall, GLB, marcadores imprimibles y manifiesto SLAM…');
    const result=await preparePublication();
    inform('ZIP de publicación listo para '+result.count+' marcador(es).\nURL definitiva: '+result.url+
-   '\nTodavía NO está publicado. Subí este nuevo ZIP en la carpeta importar/ de webAR-SLAM-Lab (GitHub → Add file → Upload files). La automatización actualizará el recorrido sin cambiar su URL ni sus QR.');
+   '\nTodavía NO está publicado. Sube este nuevo ZIP en la carpeta importar/ de webAR-SLAM-Lab (GitHub → Add file → Upload files). La automatización actualizará el recorrido sin cambiar su URL ni sus QR.');
  }catch(error){inform('No se pudo preparar la publicación:\n'+error.message,true);}
  finally{button.disabled=false;button.textContent='Preparar publicación';}
 };
@@ -997,7 +997,7 @@ $('resetView').onclick=()=>{cam.position.set(1.35,1.2,1.55);controls.target.set(
 $('playToggle').onclick=()=>{play=!play;$('playToggle').textContent=play?'Pausar animación':'Reproducir animación';if(!play)applyTransform()};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 (async()=>{
-try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession());inform('Editor listo. Creá tu recorrido y cargá un modelo GLB.');}
+try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession());inform('Editor listo. Crea tu recorrido y carga un modelo GLB.');}
 catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();activeId=session.entries[0].id;drawList();populate();void showPreview();}
 })();
 </script>
