@@ -1,8 +1,8 @@
 /**
  * Control de confianza de los anclajes 8th Wall.
  *
- * balanced (predeterminado): mantiene cada GLB unos segundos sin imagen
- * y lo oculta cuando vence el tiempo o la cámara se aleja demasiado
+ * balanced (predeterminado): mantiene cada GLB hasta 10 segundos sin imagen
+ * y lo oculta cuando vence el tiempo o la cámara se aleja más de 2 m
  * de su ÚLTIMA pose observada mientras el marcador estaba reconocido.
  *
  * strict: oculta rápidamente (700 ms), para comparar.
@@ -13,11 +13,11 @@
  * funciona como protección incluso cuando SLAM queda congelado.
  */
 export const MARKER_LOSS_GRACE_MS=700;
-export const BALANCED_GRACE_MS=6500;
-export const BALANCED_MAX_CAMERA_TRAVEL_M=1.25;
-export const BALANCED_MAX_RADIAL_EXPANSION_M=1.05;
+export const BALANCED_GRACE_MS=10000;
+export const BALANCED_MAX_CAMERA_TRAVEL_M=2.00;
+export const BALANCED_MAX_RADIAL_EXPANSION_M=2.00;
 export const BALANCED_BOUNDARY_CONFIRM_MS=320;
-export const BALANCED_IMMEDIATE_TRAVEL_M=2.20;
+export const BALANCED_IMMEDIATE_TRAVEL_M=3.50;
 
 export function isStrictTracking(mode){
   return mode==='strict';
