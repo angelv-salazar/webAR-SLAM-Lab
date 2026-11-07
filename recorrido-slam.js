@@ -553,8 +553,11 @@ function targetLost(event){
   row.pose=null;
   row.candidate=null;
   if(wasVisible){
-    note('Marcador fuera de cámara: '+row.title+' · anclaje conservado por SLAM');
-    say(row.title+' mantiene su posición estimada. Al reenfocarlo, se reancla automáticamente.');
+    note('Marcador fuera de cámara: '+row.title+' · '+(
+      isStrictTracking(stabilityMode)?'ocultación por pérdida de referencia pendiente':'anclaje SLAM conservado'));
+    say(isStrictTracking(stabilityMode)
+      ?'Al perder '+row.title+', se ocultará para evitar que se desplace. Volvé a enfocarla para recuperarla.'
+      :row.title+' mantiene su posición estimada. Al reenfocarlo, se reancla automáticamente.');
   }
 }
 function stopTyping(finish=false){
@@ -680,6 +683,7 @@ function initEngine(){
 $('safetyLimit').onclick=()=>{
   safetyLimitM=nextSafeLimit(safetyLimitM);
   $('safetyLimit').textContent=limitLabel(safetyLimitM);
+$('safetyLimit').hidden=isStrictTracking(stabilityMode); // 1 m es redundante en modo estricto
   $('safetyLimit').setAttribute('aria-label','Límite radial adicional: '+limitLabel(safetyLimitM));
   // Si el visitante desactiva la protección, recuperar la modalidad
   // original para permitir comparar su comportamiento A/B.
