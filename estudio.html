@@ -184,6 +184,7 @@ main{
 <button class="btn secondary" id="exportSession">Respaldo ZIP</button>
 <button class="btn warn" id="deleteSession">Eliminar</button>
 </div>
+<button class="btn secondary" id="importLegacy" type="button" style="width:100%;margin-top:9px">Importar recorridos del Estudio WebAR anterior</button>
 <div class="publishPanel">
 <h3>Pruebas y publicación</h3>
 <p class="muted">Generá cada imagen y su QR, cargá un GLB y guardá. Después prepará el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
@@ -877,6 +878,68 @@ window.addEventListener('afterprint',()=>{if(printURL){URL.revokeObjectURL(print
 $('saveSession').onclick=async()=>{
 try{session.updatedAt=new Date().toISOString();await sessionSave();clean();await refreshSessions();inform('Recorrido guardado en este navegador. Podés volver a abrirlo desde la lista. Para respaldo usá Exportar ZIP.')}
 catch(error){inform('No se pudo guardar: '+error.message,true)}
+};
+async function listOldProjects(){
+  // Los dos proyectos usan el origen github.io y por eso pueden consultar
+  // los mismos datos locales sin alterar la base del editor anterior.
+  const oldDB=await new Promise((resolve,reject)=>{
+    const req=indexedDB.open('estudio-webar-recorridos',1);
+    req.onupgradeneeded=()=>{
+      req.transaction.abort();
+      reject(Error('No hay recorridos antiguos guardados en este navegador.'));
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||Error('No se encontró la base WebAR anterior.'));
+  });
+  try{return await new Promise((resolve,reject)=>{
+    const req=oldDB.transaction('sessions','readonly').objectStore('sessions').getAll();
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });}finally{oldDB.close();}
+}
+$('importLegacy').onclick=async()=>{
+  const button=$('importLegacy');
+  if(dirty&&!confirm('Hay cambios sin guardar. ¿Importar un recorrido anterior de todos modos?'))return;
+  button.disabled=true;
+  try{
+    const old=await listOldProjects();
+    if(!old?.length)throw Error('No se encontraron recorridos del editor anterior en este navegador.');
+    const lines=old.map((e,i)=>(i+1)+'. '+e.name+' ('+(e.entries?.length||0)+' marcadores)').join('\n');
+    const chosen=prompt('Elegí el número del recorrido antiguo que querés copiar a SLAM:\n\n'+lines,'1');
+    if(chosen===null)return;
+    const pos=Number(chosen)-1;
+    if(!Number.isInteger(pos)||pos<0||pos>=old.length)throw Error('Número de recorrido inválido.');
+    const original=old[pos];
+    const copy={
+      ...original,id:uid(),name:'SLAM · '+original.name,
+      createdAt:new Date().toISOString(),updatedAt:null,
+      entries:(original.entries||[]).map((e,i)=>({
+        ...e,id:uid(),kind:'custom',
+        pattText:'',finalMarkerBlob:null,finalForURL:null,markerRatio:null,
+        description:String(e.description||'').slice(0,500)
+      }))
+    };
+    if(!copy.entries.length)throw Error('El recorrido no tiene marcadores para importar.');
+    setSession(copy);
+    markDirty();
+    let count=0;
+    for(const [index,entry] of copy.entries.entries()){
+      if(!entry.markerImageBlob)continue;
+      inform('Importando y regenerando QR para SLAM: '+(index+1)+' / '+copy.entries.length+'…');
+      try{
+        const result=await composeMarker({imageBlob:entry.markerImageBlob,sessionId:copy.id});
+        entry.pattText=result.pattern;
+        entry.finalMarkerBlob=result.finalBlob;
+        entry.finalForURL=result.url;
+        entry.markerRatio=result.ratio;
+        count++;
+      }catch(error){inform('No se pudo regenerar «'+entry.name+'»: '+error.message,true);}
+    }
+    copy.updatedAt=new Date().toISOString();
+    await sessionSave();setSession(copy);
+    inform('Importación completada: '+count+'/'+copy.entries.length+' marcadores nuevos. Los QR ahora apuntan a SLAM Lab. Revisá las imágenes, guardá si editás y prepará la publicación. Los QR antiguos NO se redirigen automáticamente.');
+  }catch(error){inform('No se pudo importar: '+error.message,true)}
+  finally{button.disabled=false;}
 };
 $('newSession').onclick=()=>{
 if(dirty&&!confirm('Hay cambios sin guardar. ¿Crear otro recorrido de todos modos?'))return;
