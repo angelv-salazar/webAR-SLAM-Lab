@@ -285,7 +285,15 @@ main{
 <input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
 <div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotValue" class="pill">0°</span><span class="muted">180°</span></div>
 <label for="animation">Animación</label>
-<select id="animation"><option value="none">Ninguna</option><option value="spin">Rotación continua</option><option value="float">Flotar suavemente</option><option value="pulse">Pulsación de escala</option><option value="embedded">Animación incluida en el GLB (si existe)</option></select>
+<select id="animation">
+  <option value="none">Ninguna</option>
+  <option value="spin">Rotación continua</option>
+  <option value="float">Flotar suavemente</option>
+  <option value="pulse">Pulsación de escala</option>
+  <option value="orbit">Órbita irregular · flotar y balancearse</option>
+  <option value="metamorphosis">Metamorfosis · pulsos asimétricos</option>
+  <option value="embedded">Animación incluida en el GLB (si existe)</option>
+</select>
 
       </div>
       <button class="btn secondary" id="framePreview" type="button" style="width:100%;margin-top:9px">Encuadrar modelo 3D</button>
@@ -300,6 +308,7 @@ main{
 import {inspectMarkerImage,compareFingerprints,checkPatt} from './marker-validation.js';
 import {routeURL,makeQR,composeMarker,MARKER_RATIO} from './marker-composer.js?v=7';
 import {buildTarget} from './image-targets.js?v=2';
+import {sampleObjectMotion} from './object-animations.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -344,11 +353,20 @@ if(currentGroup&&session){
   const entry=selectedEntry();
   if(entry&&play){
     const t=performance.now()/1000;
-    if(entry.animation==='spin') currentGroup.rotation.y=THREE.MathUtils.degToRad(entry.rotation)+(t*.6);
-    else currentGroup.rotation.y=THREE.MathUtils.degToRad(entry.rotation);
-    currentGroup.position.y=entry.y/15+(entry.animation==='float'?.045*Math.sin(t*1.8):0);
-    const s=entry.animation==='pulse'?1+.12*Math.sin(t*2):1;
-    currentGroup.scale.setScalar(s);
+    const motion=sampleObjectMotion(entry.animation,t,entry.size);
+    // La animación modifica SOLO este grupo local, nunca el marcador.
+    currentGroup.rotation.set(
+      motion.rotX,
+      THREE.MathUtils.degToRad(entry.rotation)+
+        (entry.animation==='spin'?t*.6:motion.rotY),
+      motion.rotZ,'YXZ'
+    );
+    currentGroup.position.set(
+      (entry.x+motion.xCm)/15,
+      (entry.y+motion.yCm)/15,
+      (entry.z+motion.zCm)/15
+    );
+    currentGroup.scale.set(motion.scaleX,motion.scaleY,motion.scaleZ);
     if(entry.animation==='embedded'&&mixer)mixer.update(dt);
   }
 }
@@ -555,7 +573,8 @@ function framePreviewObject(){
 function applyTransform(){
 const e=selectedEntry();if(!e||!currentGroup)return;
 currentGroup.position.set(e.x/15,e.y/15,e.z/15);
-currentGroup.rotation.set(0,THREE.MathUtils.degToRad(e.rotation),0);
+currentGroup.rotation.set(0,THREE.MathUtils.degToRad(e.rotation),0,'YXZ');
+currentGroup.scale.set(1,1,1);
 if(previewObject){
 const length=Number(previewObject.userData.normalizedLength)||1;
 previewObject.scale.setScalar((e.size/15)/length);
