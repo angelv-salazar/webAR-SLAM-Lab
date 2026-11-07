@@ -656,8 +656,9 @@ function updateFrame(now){
       row.candidate=null;
     }
     // No ocultar ante pérdidas breves. En modo equilibrado, esperar
-    // hasta 6.5 s o una salida prolongada del área estimada del marcador.
-    // Incluso si SLAM se queda inmóvil, el tiempo evita una deriva infinita.
+    // hasta 10 s o una salida prolongada de 2 m respecto de la última
+    // referencia visual confiable de este marcador.
+    // Incluso si SLAM se queda inmóvil, el temporizador limita la deriva.
     hideExpiredAnchor(row,now);
     checkBalancedSpatialLimit(row,now);
     // El control experimental de 1 m anterior sigue disponible en legacy.
