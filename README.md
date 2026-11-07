@@ -28,10 +28,11 @@ Este repositorio comenzó como un laboratorio de un único objeto colocado tocan
    - Comprobar la vista previa con Three.js.
 5. Guardar el recorrido. Los datos se guardan en **IndexedDB** de ese navegador, no en GitHub.
 6. Para comprobar en **ese mismo navegador**, presionar **Probar con mi cámara**, que abre el visor con el parámetro preview=1.
-7. Para utilizarlo en otros teléfonos, presionar **Preparar publicación**, guardar el ZIP y subir su carpeta recorridos/<id>/ a la rama main del repositorio, **manteniendo todas sus rutas**.
+7. Para utilizarlo en otros teléfonos, presionar **Preparar publicación** y guardar el ZIP. Entrar a la carpeta [importar/](https://github.com/angelv-salazar/webAR-SLAM-Lab/tree/main/importar), elegir **Add file → Upload files** y subir **únicamente ese ZIP**. GitHub Actions lo validará y descomprimirá automáticamente en recorridos/<id>/.
+   También es posible descomprimirlo y subir manualmente sus archivos respetando las rutas originales.
 8. Esperar la publicación de GitHub Pages, abrir el enlace reservado y comprobar los marcadores impresos.
 
-**No hay publicación automática desde el navegador**: es necesario subir el ZIP a GitHub o compartirlo con una herramienta que tenga permiso de escritura. No pongas tokens de GitHub en el código público.
+**No hay publicación automática desde el navegador**: basta con subir **un solo ZIP** a importar/ en GitHub. La automatización lo extrae y solicita la reconstrucción de Pages. También podés pedir que se verifique el estado después de subirlo. No pongas tokens de GitHub en el código público.
 
 ### Importar proyectos del WebAR anterior
 
