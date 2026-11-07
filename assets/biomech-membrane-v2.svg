@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 245" preserveAspectRatio="none">
+<defs>
+ <linearGradient id="metal" x1="0" y1="0" x2=".86" y2="1">
+  <stop offset="0" stop-color="#f8fff8" stop-opacity=".89"/>
+  <stop offset=".12" stop-color="#728780" stop-opacity=".73"/>
+  <stop offset=".24" stop-color="#e8eee8" stop-opacity=".89"/>
+  <stop offset=".44" stop-color="#303e38" stop-opacity=".45"/>
+  <stop offset=".68" stop-color="#b4c6ba" stop-opacity=".67"/>
+  <stop offset="1" stop-color="#b8d6ba" stop-opacity=".38"/>
+ </linearGradient>
+ <linearGradient id="high" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#fff" stop-opacity=".8"/><stop offset=".4" stop-color="#bac9ba" stop-opacity=".25"/><stop offset="1" stop-color="#b5e5bb" stop-opacity=".04"/>
+ </linearGradient>
+ <linearGradient id="acid" x1="0" y1="0" x2="1" y2="1">
+  <stop stop-color="#b5ff66" stop-opacity=".51"/><stop offset="1" stop-color="#c9f5af" stop-opacity="0"/>
+ </linearGradient>
+</defs>
+<path fill="url(#metal)" fill-rule="evenodd" d="
+ M-24 0 L1022 0 L1014 100 C962 117 929 88 879 81 C819 72 802 132 742 155 C686 181 646 140 609 119 C552 89 498 125 469 161 C429 209 376 177 334 144 C278 100 239 115 195 145 C121 194 70 140 15 131 L-24 100 Z
+ M30 41 C72 7 119 18 146 48 C168 75 127 98 88 91 C51 88 35 68 30 41Z
+ M173 34 C213 12 274 28 282 65 C281 89 230 101 191 76 C172 63 160 44 173 34 Z
+ M294 20 C348 4 403 19 420 52 C433 82 401 98 364 97 C321 96 304 65 294 20 Z
+ M446 35 C481 1 558 8 581 48 C595 70 564 92 522 91 C476 87 455 69 446 35 Z
+ M590 25 C639 2 695 16 708 48 C725 85 675 97 647 87 C615 78 603 52 590 25 Z
+ M737 21 C791 0 832 19 852 48 C866 79 829 106 790 91 C748 76 740 56 737 21 Z
+ M875 28 C917 3 971 22 979 55 C988 82 966 89 931 80 C909 73 888 47 875 28 Z
+ M139 112 C170 85 223 99 239 122 C206 149 176 159 139 112 Z
+ M339 109 C370 89 410 114 430 133 C413 153 377 153 339 109 Z
+ M610 106 C653 93 690 120 714 145 C672 160 638 131 610 106 Z
+ M805 106 C851 87 903 107 927 118 C890 134 845 130 805 106 Z"/>
+<g stroke="url(#metal)" stroke-linecap="round" fill="none">
+ <path d="M29 93 C82 148 120 186 150 228 M174 90 C214 149 239 185 286 224" stroke-width="25"/>
+ <path d="M336 93 C371 163 401 170 440 199 M560 86 C542 153 499 184 478 235" stroke-width="23"/>
+ <path d="M701 85 C733 141 770 171 786 220 M838 95 C869 154 887 183 940 209" stroke-width="24"/>
+</g>
+<g stroke="#14231c" stroke-width="8" opacity=".7" stroke-linecap="round" fill="none">
+ <path d="M45 96 C93 138 119 168 137 206 M352 94 C387 144 401 167 430 185"/>
+ <path d="M698 87 C736 145 765 178 780 210 M851 99 C883 149 900 175 930 199"/>
+</g>
+<g stroke="url(#high)" fill="none" opacity=".89" stroke-linecap="round">
+ <path d="M-8 27 C98 17 201 16 277 21 S399 17 505 20 S727 15 811 16 S952 15 1011 27" stroke-width="9"/>
+ <path d="M10 110 C92 170 132 168 193 130 S275 94 346 144 M474 156 C525 104 558 104 605 129 S695 177 753 138 S864 75 937 104" stroke-width="7"/>
+</g>
+<path stroke="url(#acid)" stroke-width="5" fill="none" d="M25 119 C83 165 131 163 195 139 M608 119 C672 174 714 150 769 137 M808 81 C852 67 902 84 957 99"/>
+</svg>
