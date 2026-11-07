@@ -30,15 +30,22 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Importar y validar recorridos
+      - name: Importar y validar solo los ZIP nuevos o actualizados
         shell: bash
         run: |
-          shopt -s nullglob
-          if ! compgen -G "importar/*.zip" > /dev/null; then
-            echo "::error::No se encontraron ZIP en importar/"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            shopt -s nullglob
+            archivos=(importar/*.zip)
+          else
+            # Evitar reprocesar los ZIP anteriores cada vez que se publica
+            # una actualización del mismo recorrido.
+            mapfile -t archivos < <(git diff-tree --root --no-commit-id --name-only --diff-filter=AM -r "$GITHUB_SHA" -- 'importar/*.zip')
+          fi
+          if [ "${#archivos[@]}" -eq 0 ]; then
+            echo "::error::No hay ZIP nuevos o modificados en este commit."
             exit 1
           fi
-          python scripts/importar_recorrido.py importar/*.zip
+          python scripts/importar_recorrido.py --update "${archivos[@]}"
 
       - name: Guardar archivos publicados en main
         shell: bash
@@ -71,9 +78,5 @@ jobs:
         shell: bash
         run: |
           echo "## Importación de SLAM completada" >> "$GITHUB_STEP_SUMMARY"
-          for f in importar/*.zip; do
-            if [ -f "$f" ]; then
-              echo "- ZIP procesado: $f" >> "$GITHUB_STEP_SUMMARY"
-            fi
-          done
+          echo "Ver el paso de importación para identificar el ZIP nuevo o actualizado." >> "$GITHUB_STEP_SUMMARY"
           echo "Los archivos están en recorridos/ de la rama main." >> "$GITHUB_STEP_SUMMARY"
