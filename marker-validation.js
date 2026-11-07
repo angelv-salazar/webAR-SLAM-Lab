@@ -57,7 +57,7 @@ export async function inspectMarkerImage(file){
     let transparent=0;
     for(let i=3;i<pixels.length;i+=4)if(pixels[i]<250)transparent++;
     if(transparent/pixels.length*4>.01){
-      warnings.push('La imagen contiene transparencia. Se imprimirá sobre fondo blanco; revisá el resultado.');
+      warnings.push('La imagen contiene transparencia. Se imprimirá sobre fondo blanco; revisa el resultado.');
     }
     const sample=document.createElement('canvas');
     sample.width=16;sample.height=16;
@@ -84,10 +84,10 @@ export async function inspectMarkerImage(file){
       let sum=0;for(let i=0;i<256;i++)sum+=Math.abs(rv[i]-gray[i]);
       asym=Math.min(asym,sum/(256*255));
     }
-    if(contrast<65)warnings.push('Contraste bajo después de reducir a 16 × 16. Usá formas claras y oscuras más diferenciadas.');
-    if(dark/256<.055||bright/256<.055)warnings.push('Predomina casi un solo tono. Agregá zonas claras y oscuras bien definidas.');
-    if(asym<.055)warnings.push('Diseño demasiado simétrico: podría dificultar distinguir su orientación. Usá formas asimétricas.');
-    if(edgeDensity<.035)warnings.push('Muy poca estructura visible a baja resolución: agregá una forma distintiva.');
+    if(contrast<65)warnings.push('Contraste bajo después de reducir a 16 × 16. Usa formas claras y oscuras más diferenciadas.');
+    if(dark/256<.055||bright/256<.055)warnings.push('Predomina casi un solo tono. Agrega zonas claras y oscuras bien definidas.');
+    if(asym<.055)warnings.push('Diseño demasiado simétrico: podría dificultar distinguir su orientación. Usa formas asimétricas.');
+    if(edgeDensity<.035)warnings.push('Muy poca estructura visible a baja resolución: agrega una forma distintiva.');
     if(edgeDensity>.44)warnings.push('Demasiados cambios de detalle a baja resolución: simplificá la imagen.');
     tips.push('El marco negro, la franja blanca exterior y el QR se compondrán en el cartel final de 15 × 15 cm.');
     tips.push('Este análisis es orientativo: el patrón .patt debe generarse y probarse con la imagen impresa.');
