@@ -7,7 +7,7 @@
 import {buildTarget} from './image-targets.js?v=2';
 import {
   MARKER_GUARD,advanceCandidate,conflictsWithOtherAnchor,
-  largeCorrection,plausibleLiveUpdate
+  plausibleLiveUpdate
 } from './marker-guard.js';
 const $=id=>document.getElementById(id);
 const scene=$('scene'),instructions=$('instruction'),message=$('trackingMessage');
@@ -25,7 +25,7 @@ let manifestName='',configReady=false,engineStarted=false,xrReady=false;
 let currentId=null,showAll=true,lastError='',lastFrame=0,typingFrame=0,typingState=null;
 let descriptionId=null,descriptionCollapsed=false;
 let scanStarted=false,markerFoundCount=0,lastStatusUpdate=0,calibrationVisible=false;
-let suppressedEvents=0,identityConflicts=0,manualCorrections=0;
+let suppressedEvents=0,identityConflicts=0,autoCorrections=0;
 const PHYSICAL_PRINT_CM=15;
 let source='sin cargar';
 const log=[];
@@ -54,14 +54,12 @@ function refreshDiagnostic(){
     'Imágenes: '+rows.length+' | buscando: '+(scanStarted?'sí':'no'),
     'Detectados al menos una vez: '+rows.filter(r=>r.seen).length,
     'Confirmaciones: '+markerFoundCount+' | Detenciones breves: '+suppressedEvents,
-    'Conflictos de identidad: '+identityConflicts+' | Reanclajes confirmados: '+manualCorrections,
+    'Conflictos de identidad: '+identityConflicts+' | Reanclajes automáticos: '+autoCorrections,
     'Activos en imagen: '+(rows.filter(r=>r.targetVisible).map(r=>r.title).join(', ')||'ninguno'),
     'En pantalla: '+(rows.filter(r=>r.root?.object3D.visible).map(r=>r.title).join(', ')||'ninguno'),
     'Visualización: '+(showAll?'Todos los reconocidos':'Último reconocido'),
-    ...rows.filter(r=>r.candidate||r.pendingPose).map(r=>
-      r.title+': '+(r.pendingPose
-        ?'CORRECCIÓN PENDIENTE · '+Math.round(r.pendingDistanceM*100)+' cm'
-        :'verificando identidad ('+r.candidate.samples+' eventos)')
+    ...rows.filter(r=>r.candidate).map(r=>
+      r.title+': verificando identidad/corrección ('+r.candidate.samples+' eventos)'
     ),
     ...rows.filter(r=>r.seen).map(r=>{
       const physical=Number.isFinite(r.printSideWorld)?(r.printSideWorld*100).toFixed(1):'?';
@@ -108,7 +106,7 @@ function addRow(item,modelURL,targetData){
     rotationDeg:cleanTransform(item.rotationDeg),
     animation:['spin','float','pulse','embedded','none'].includes(item.animation)?item.animation:'none',
     targetData,seen:false,targetVisible:false,pose:null,lastTargetAt:0,loaded:false,
-    candidate:null,pendingPose:null,pendingDistanceM:0,rejected:0,
+    candidate:null,rejected:0,
     lastRejectionAt:0,confirmationCount:0,
     root:null,center:null,axis:null,pivot:null,model:null,mixer:null,loadError:'',recognitions:0,
     markerLocalSide:.15,engineScale:1,detectedWidth:null,printSideWorld:null,
@@ -334,23 +332,12 @@ function updateTargetMetrics(row,pose){
   if(row.calibrationSquare)row.calibrationSquare.scale.setScalar(row.markerLocalSide);
   if(Math.abs(previous-row.markerLocalSide)>1e-5)updateModelScale(row);
 }
-function updateReanchorButton(){
-  const row=rows.find(r=>r.id===currentId);
-  const actionable=Boolean(row?.targetVisible&&row.pendingPose);
-  const button=$('reanchor');
-  button.hidden=!actionable;
-  if(actionable){
-    const cm=Math.round(row.pendingDistanceM*100);
-    button.textContent='Reanclar '+row.title+' ('+cm+' cm)';
-  }
-}
 function chooseSpecimen(row){
   if(row.id!==currentId){
     currentId=row.id;
     selectDescription(row);
   }
   syncVisibility();
-  updateReanchorButton();
   splash.hidden=true;
   statusTop();
 }
@@ -359,54 +346,46 @@ function noteRejection(row,message){
   row.rejected++;
   suppressedEvents++;
   if(now-row.lastRejectionAt>2200){
-    note('Filtrada lectura de '+row.title+': '+message);
+    note('Lectura ignorada de '+row.title+': '+message);
     row.lastRejectionAt=now;
   }
 }
 function acceptConfirmedTarget(row,pose,now){
-  // No permitir que una detección de Rosi en el sitio donde ya se
-  // confirmó Susi cambie su identidad espacial o muestre otro GLB allí.
+  // Solo evitar una identidad falsa sobre OTRO marcador que también
+  // esté siendo visto ahora. Anclajes viejos pueden haber derivado.
   const conflict=conflictsWithOtherAnchor(row,pose,rows);
   if(conflict){
     identityConflicts++;
-    noteRejection(row,'coincide con el anclaje de '+conflict.title);
+    noteRejection(row,'lectura sobre '+conflict.title+' (ambos activos)');
     row.candidate=null;
     return;
   }
   const isNew=!row.seen;
+  const oldPosition=row.root.object3D.position.clone();
   row.candidate=null;
+  row.seen=true;
   row.targetVisible=true;
   row.lastTargetAt=now;
   updateTargetMetrics(row,pose);
+
+  // Reanclaje COMPLETAMENTE AUTOMÁTICO a la pose validada de SU propia
+  // imagen. Copiar directamente en una recuperación evita arrastrar el
+  // modelo desde una ubicación desplazada a través de toda la sala.
+  // Las actualizaciones normales posteriores sí se suavizan en updateFrame.
+  row.root.object3D.position.copy(pose.position);
+  row.root.object3D.quaternion.copy(pose.rotation);
+  row.root.object3D.scale.setScalar(pose.scale);
+  row.pose=pose;
+  row.recognitions++;
+  markerFoundCount++;
   if(isNew){
-    row.seen=true;
-    row.root.object3D.position.copy(pose.position);
-    row.root.object3D.quaternion.copy(pose.rotation);
-    row.root.object3D.scale.setScalar(pose.scale);
-    row.pose=pose;
-    row.pendingPose=null;
-    markerFoundCount++;
-    row.recognitions++;
-    note('Marcador CONFIRMADO: '+row.title+' · anclaje independiente');
-    say(row.title+' confirmado. Podés avanzar al siguiente marcador.');
+    note('Marcador confirmado: '+row.title+' · primer anclaje');
+    say(row.title+' colocado. Podés avanzar al siguiente marcador.');
   }else{
-    // Si la ubicación estimada es demasiado distinta, NO arrastrar
-    // automáticamente la obra. Solicitar confirmación del visitante.
-    const change=largeCorrection(row.root.object3D,pose);
-    if(change.needsApproval){
-      row.pendingPose=pose;
-      row.pendingDistanceM=change.distanceM;
-      row.pose=null;
-      note('Corrección grande detenida en '+row.title+
-        ' ('+Math.round(change.distanceM*100)+' cm). Necesita aprobación.');
-      say('Se reconoció '+row.title+', pero su posición cambió mucho. Revisá el marcador y tocá «Reanclar» solo si corresponde.');
-    }else{
-      row.pose=pose;row.pendingPose=null;row.pendingDistanceM=0;
-      note('Marcador confirmado otra vez: '+row.title+' · corrección suave');
-      say(row.title+' reconocido. Ajustando su propia posición.');
-    }
-    markerFoundCount++;
-    row.recognitions++;
+    autoCorrections++;
+    const cm=Math.round(oldPosition.distanceTo(pose.position)*100);
+    note('REANCLAJE AUTOMÁTICO: '+row.title+' · corrección '+cm+' cm');
+    say(row.title+' reanclado automáticamente a su marcador.');
   }
   row.confirmationCount++;
   chooseSpecimen(row);
@@ -415,74 +394,55 @@ function receiveTarget(event){
   const d=event.detail||{};
   const row=rowByTarget.get(d.name);
   if(!row)return;
-  const pose=poseFromEvent(d,row);
-  if(!pose)return;
+  const pose=poseFromEvent(d,row);if(!pose)return;
   const now=performance.now();
 
-  // Estado 1: DETECCIÓN NO CONFIRMADA. Varios eventos coherentes
-  // durante 400 ms antes de mostrar el GLB o cambiar de estación.
+  // Una imagen nueva o recuperada solo requiere una confirmación breve:
+  // 3 poses coherentes durante unos 180 ms. No pedir ningún botón.
   const trackingExpired=!row.targetVisible||
     now-row.lastTargetAt>MARKER_GUARD.staleTrackingMs;
   if(trackingExpired){
     if(row.targetVisible){
-      row.targetVisible=false;row.pose=null;row.pendingPose=null;
+      row.targetVisible=false;
+      row.pose=null;
+      row.candidate=null;
     }
     const result=advanceCandidate(row.candidate,pose,now);
     row.candidate=result.candidate;
-    if(!result.stable)return;
-    acceptConfirmedTarget(row,pose,now);
+    if(result.stable)acceptConfirmedTarget(row,pose,now);
     return;
   }
 
-  // Estado 2: TRACKING VALIDADO. Una actualización anómala no se
-  // incorpora a la pose. Una estación ajena tampoco puede tomar su sitio.
+  // Mientras seguimos viendo el MISMO marcador, las variaciones suaves
+  // se aplican sin esperar. Si hay un salto aislado, confirmarlo con
+  // varias muestras coherentes y REANCLAR AUTOMÁTICAMENTE.
   const conflict=conflictsWithOtherAnchor(row,pose,rows);
   if(conflict){
     identityConflicts++;
-    noteRejection(row,'pose sobre '+conflict.title);
+    noteRejection(row,'coincide con '+conflict.title);
     return;
   }
-  const baseline=row.pendingPose||row.pose;
-  if(baseline&&!plausibleLiveUpdate(baseline,pose)){
-    noteRejection(row,'salto incoherente en la pose');
+  if(row.pose&&!plausibleLiveUpdate(row.pose,pose)){
+    const result=advanceCandidate(row.candidate,pose,now);
+    row.candidate=result.candidate;
+    if(result.stable)acceptConfirmedTarget(row,pose,now);
     return;
   }
+  row.candidate=null;
   row.lastTargetAt=now;
   updateTargetMetrics(row,pose);
-  if(row.pendingPose){
-    row.pendingPose=pose;
-    row.pendingDistanceM=pose.position.distanceTo(row.root.object3D.position);
-    updateReanchorButton();
-    return;
-  }
-  const change=largeCorrection(row.root.object3D,pose);
-  if(change.needsApproval){
-    row.pose=null;
-    row.pendingPose=pose;
-    row.pendingDistanceM=change.distanceM;
-    note('Movimiento de '+row.title+' detenido: corrección de '+
-      Math.round(change.distanceM*100)+' cm.');
-    say('Posible desvío de '+row.title+'. Conservamos la posición original; confirmá solo si el marcador físico coincide.');
-    updateReanchorButton();
-    return;
-  }
   row.pose=pose;
 }
 function targetLost(event){
   const row=rowByTarget.get(event.detail?.name);
   if(!row)return;
-  // La pérdida de imagen nunca debe borrar los anclajes ya confirmados.
-  // Tampoco puede cambiar el espécimen activo.
-  const previouslyConfirmed=row.targetVisible;
+  const wasVisible=row.targetVisible;
   row.targetVisible=false;
   row.pose=null;
   row.candidate=null;
-  row.pendingPose=null;
-  row.pendingDistanceM=0;
-  updateReanchorButton();
-  if(previouslyConfirmed){
-    note('Marcador fuera de cámara: '+row.title+' · posición independiente conservada');
-    say('La estación de '+row.title+' conserva su lugar estimado por SLAM. Apuntá al siguiente marcador.');
+  if(wasVisible){
+    note('Marcador fuera de cámara: '+row.title+' · anclaje conservado por SLAM');
+    say(row.title+' mantiene su posición estimada. Al reenfocarlo, se reancla automáticamente.');
   }
 }
 function stopTyping(finish=false){
@@ -542,9 +502,9 @@ function updateFrame(now){
       row.root.object3D.scale.setScalar(next);
     }
     if(row.targetVisible&&now-row.lastTargetAt>MARKER_GUARD.staleTrackingMs){
-      row.targetVisible=false;row.pose=null;row.pendingPose=null;
-      row.pendingDistanceM=0;
-      updateReanchorButton();
+      row.targetVisible=false;
+      row.pose=null;
+      row.candidate=null;
     }
     const t=now/1000,rot=(row.rotationDeg*Math.PI)/180;
     const pivot=row.pivot.object3D;
@@ -586,27 +546,6 @@ function initEngine(){
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
 }
-$('reanchor').onclick=()=>{
-  const row=rows.find(r=>r.id===currentId);
-  if(!row?.pendingPose||!row.targetVisible)return;
-  const pose=row.pendingPose;
-  const conflict=conflictsWithOtherAnchor(row,pose,rows);
-  if(conflict){
-    note('Reanclaje de '+row.title+' rechazado: se superpone con '+conflict.title);
-    say('No se puede reanclar en el mismo lugar que otra estación.');
-    return;
-  }
-  // Acción EXPLÍCITA: se toma una pose del marcador nuevamente confirmado.
-  // No saltar a esa pose por una detección breve o durante el traslado.
-  row.root.object3D.position.copy(pose.position);
-  row.root.object3D.quaternion.copy(pose.rotation);
-  row.root.object3D.scale.setScalar(pose.scale);
-  row.pose=pose;row.pendingPose=null;row.pendingDistanceM=0;
-  manualCorrections++;
-  updateReanchorButton();
-  note('Reanclaje manual confirmado: '+row.title);
-  say('Reanclaste '+row.title+'. Su posición anterior fue reemplazada.');
-};
 $('framing').onclick=()=>{
   showAll=!showAll;syncVisibility();
   note(showAll?'Mostrando todos los anclajes':'Mostrando el último marcador reconocido');
@@ -645,7 +584,7 @@ scene.addEventListener('xrimagescanning',()=>{scanStarted=true;note('Escaneo de 
 scene.addEventListener('realityready',()=>{
   xrReady=true;splash.hidden=true;
   note('REALITY READY · SLAM funcionando');
-  say('Mantené cada marcador enfocado medio segundo. Los anclajes se conservan al pasar a la siguiente estación.');
+  say('Enfocá cada marcador brevemente. Cuando volvés a verlo, su obra se reancla sola.');
   statusTop();
 });
 scene.addEventListener('realityerror',e=>{
