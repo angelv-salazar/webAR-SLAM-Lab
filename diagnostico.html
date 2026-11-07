@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1b15">
+  <title>Diagnóstico SLAM · 8th Wall</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1b15;color:#fff;font-family:system-ui,-apple-system,sans-serif}
+    a-scene{position:fixed!important;inset:0!important;width:100%!important;height:100%!important}
+    #debugPanel{position:fixed;z-index:2147483647;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;max-width:560px;margin:auto;padding:14px 15px;background:rgba(9,21,18,.93);border:1px solid #73b48e;border-radius:13px;box-shadow:0 10px 28px rgba(0,0,0,.4);color:#f7fff9}
+    #debugPanel h1{font-size:15px;margin:0 0 6px;font-weight:750}
+    #debugPanel p{font-size:12px;color:#c7ddcf;line-height:1.4;margin:0 0 9px}
+    #status{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Consolas,monospace;color:#c6f9d9;max-height:35vh;overflow:auto}
+    #events{white-space:pre-wrap;word-break:break-word;font:11px/1.45 ui-monospace,Consolas,monospace;color:#d7d7d7;max-height:15vh;overflow:auto;margin-top:9px}
+    .buttons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0}
+    button,a.action{border:1px solid #7ca88c;background:#224e36;color:#fff;padding:10px 12px;border-radius:9px;font:600 12px system-ui;cursor:pointer;text-decoration:none}
+    #groundhint{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:10px;right:10px;text-align:center;font-size:12px;pointer-events:none;text-shadow:0 2px 3px #000;padding:9px;background:#153624b0;border-radius:8px;z-index:8}
+  </style>
+  <script>
+  // Registrar errores incluso si las bibliotecas fallan antes de comenzar el visor.
+  window.slamLogs=[];
+  window.slamLog=(m)=>{
+    window.slamLogs.push(new Date().toLocaleTimeString()+' · '+String(m));
+    if(window.slamLogs.length>18)window.slamLogs.shift();
+  };
+  window.addEventListener('error',e=>window.slamLog('ERROR: '+(e.message||'recurso bloqueado')+(e.filename?' @ '+e.filename.split('/').pop():'')),true);
+  window.addEventListener('unhandledrejection',e=>window.slamLog('PROMESA: '+String(e.reason?.message||e.reason)),true);
+  window.addEventListener('xrloaded',()=>window.slamLog('Motor XR8: evento xrloaded'),true);
+  window.addEventListener('xrextrasloaded',()=>window.slamLog('XRExtras: evento xrextrasloaded'),true);
+  </script>
+  <!-- Mismas dependencias 8th Wall que en el visor real, sin xrextras-loading. -->
+  <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
+  <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
+  <script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <div id="debugPanel">
+    <h1>SLAM · Diagnóstico de inicio</h1>
+    <p>Esta página utiliza el mismo motor, pero elimina el cargador que quedó bloqueado. Podés dejar visible este panel mientras probás la cámara.</p>
+    <div id="status">Iniciando pruebas…</div>
+    <div id="events"></div>
+    <div class="buttons">
+      <button type="button" id="cameraTest">Comprobar permiso de cámara</button>
+      <button type="button" id="copy">Copiar diagnóstico</button>
+      <button type="button" id="reload">Recargar</button>
+      <a class="action" href="visor.html">Visor original</a>
+    </div>
+  </div>
+  <div id="groundhint">Si aparece el vídeo, mové la cámara lentamente. Si no aparece, consultá el panel superior.</div>
+  <a-scene
+    id="testScene"
+    xrconfig
+    xrweb="allowedDevices: any"
+    renderer="colorManagement: true; antialias: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    <a-camera position="0 1.6 0"></a-camera>
+    <a-light type="ambient" intensity="1.1"></a-light>
+    <a-entity light="type: directional; intensity: 1.7" position="1 3 1"></a-entity>
+    <a-icosahedron id="specimen" position="0 0.85 -2" radius=".45" detail="2" material="color: #41c58f; metalness: .12; roughness: .45"></a-icosahedron>
+    <a-cylinder position="0 0.03 -2" radius=".5" height=".06" material="color: #dde8e0; roughness: 1"></a-cylinder>
+  </a-scene>
+  <script>
+    (function(){
+      'use strict';
+      const $=id=>document.getElementById(id);
+      const scene=$('testScene');
+      const flags={sceneLoaded:false,realityReady:false,realityError:'',permission:'desconocido',cameraCheck:'sin probar'};
+      const began=performance.now();
+      const browser=navigator.userAgent;
+      const events=[];
+      const log=(s)=>{events.push(s);window.slamLog(s);update();};
+      scene.addEventListener('loaded',()=>{flags.sceneLoaded=true;log('A-Frame: escena lista');});
+      scene.addEventListener('realityready',()=>{flags.realityReady=true;log('REALITY READY: seguimiento activo');});
+      scene.addEventListener('realityerror',e=>{flags.realityError=String(e.detail?.message||e.detail?.error||'error sin detalle');log('REALITY ERROR: '+flags.realityError);});
+      scene.addEventListener('camera-error',e=>log('CAMERA ERROR: '+String(e.detail?.message||e.detail||e)));
+      window.addEventListener('xrloaded',()=>log('XR loaded capturado en visor'));
+      window.addEventListener('xrextrasloaded',()=>log('XRExtras loaded capturado en visor'));
+      let resourcesTested=false;
+      async function checkPermission(){
+        if(!navigator.permissions?.query)return;
+        try{
+          const p=await navigator.permissions.query({name:'camera'});
+          flags.permission=p.state;p.onchange=()=>{flags.permission=p.state;update();};
+        }catch(e){flags.permission='no disponible en este navegador';}
+        update();
+      }
+      async function testCamera(){
+        $('cameraTest').disabled=true;
+        flags.cameraCheck='solicitando acceso';update();
+        try{
+          if(!navigator.mediaDevices?.getUserMedia)throw Error('getUserMedia no disponible');
+          const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+          const track=stream.getVideoTracks()[0];
+          flags.cameraCheck='OK · '+(track?.label||'cámara accesible');
+          stream.getTracks().forEach(t=>t.stop());
+          await checkPermission();
+          log('Acceso a cámara independiente: correcto');
+        }catch(e){
+          flags.cameraCheck='ERROR '+String(e.name||'')+': '+String(e.message||e);
+          log('Error de cámara: '+flags.cameraCheck);
+        }finally{$('cameraTest').disabled=false;update();}
+      }
+      function checkScripts(){
+        const scripts=[...document.scripts].filter(x=>x.src);
+        return scripts.map(s=>{
+          const p=s.src.split('/').pop().split('?')[0];
+          return p+': '+(performance.getEntriesByName(s.src).length?'solicitado':'sin registro');
+        }).join('\n');
+      }
+      function update(){
+        const video=[...document.querySelectorAll('video')].find(v=>v.videoWidth>0)||document.querySelector('video');
+        const seconds=Math.round((performance.now()-began)/1000);
+        $('status').textContent=[
+          'Transcurrido: '+seconds+' s',
+          'A-Frame: '+(window.AFRAME?'OK':'NO DISPONIBLE'),
+          'Motor XR8: '+(window.XR8?'OK':'SIN CARGAR'),
+          'XRExtras: '+(window.XRExtras?'OK':'SIN CARGAR'),
+          'Escena A-Frame: '+(flags.sceneLoaded||scene.hasLoaded?'lista':'esperando'),
+          'Seguimiento: '+(flags.realityReady?'REALITY READY':flags.realityError?'ERROR':'esperando'),
+          'Vídeo: '+(video?(video.videoWidth+' × '+video.videoHeight+' · listo='+video.readyState):'sin elemento'),
+          'Cámara/permiso: '+flags.permission,
+          'Prueba manual cámara: '+flags.cameraCheck,
+          'HTTPS: '+(window.isSecureContext?'sí':'NO'),
+          '--- Recursos ---',
+          checkScripts(),
+          '--- Navegador ---',
+          browser
+        ].join('\n');
+        $('events').textContent='EVENTOS Y ERRORES:\n'+(window.slamLogs.length?window.slamLogs.join('\n'):'sin mensajes aún');
+      }
+      $('cameraTest').onclick=testCamera;
+      $('reload').onclick=()=>location.reload();
+      $('copy').onclick=async()=>{
+        const text=$('status').textContent+'\n\n'+$('events').textContent;
+        try{await navigator.clipboard.writeText(text);$('copy').textContent='¡Copiado!';}
+        catch(e){$('copy').textContent='Seleccioná el texto en pantalla';}
+      };
+      checkPermission();
+      update();setInterval(update,1500);
+    })();
+  </script>
+</body>
+</html>
