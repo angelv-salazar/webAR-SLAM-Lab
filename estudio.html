@@ -279,7 +279,12 @@ main{
 <div><label for="posZ">Z · cm</label><input id="posZ" type="number" step=".5" min="-60" max="60" value="0"></div>
 </div>
 <label for="modelSize">Tamaño del objeto · dimensión máxima: <strong id="sizeValue">12 cm</strong></label>
-<input id="modelSize" type="range" min="1" max="60" step=".5" value="12">
+<div class="row" style="align-items:center;gap:10px">
+  <input id="modelSize" aria-label="Deslizador de tamaño del modelo" type="range" min="1" max="300" step=".5" value="12" style="flex:1;min-width:75px">
+  <input id="modelSizeNumber" aria-label="Tamaño en centímetros" type="number" min="1" max="300" step=".5" value="12" style="width:90px;flex:none">
+  <span class="muted">cm</span>
+</div>
+<p class="muted" style="font-size:11px;margin:5px 0 11px">De 1 a 300 cm (3 m). El marcador sigue midiendo 15 × 15 cm. Para objetos grandes usá «Encuadrar modelo» en la vista previa.</p>
 <label for="rotationY">Rotación vertical · grados</label>
 <input id="rotationY" type="range" min="-180" max="180" step="5" value="0">
 <div class="row" style="justify-content:space-between"><span class="muted">−180°</span><span id="rotValue" class="pill">0°</span><span class="muted">180°</span></div>
@@ -287,6 +292,7 @@ main{
 <select id="animation"><option value="none">Ninguna</option><option value="spin">Rotación continua</option><option value="float">Flotar suavemente</option><option value="pulse">Pulsación de escala</option><option value="embedded">Animación incluida en el GLB (si existe)</option></select>
 
       </div>
+      <button class="btn secondary" id="framePreview" type="button" style="width:100%;margin-top:9px">Encuadrar modelo 3D</button>
       <p class="dockFootnote">Los cambios se guardan cuando presionás «Guardar recorrido».</p>
     </aside>
   </div>
@@ -318,7 +324,7 @@ renderer.toneMappingExposure=1.25;
 $('preview').prepend(renderer.domElement);
 const controls=new OrbitControls(cam,renderer.domElement);
 controls.enableDamping=true;controls.target.set(0,.16,0);
-controls.minDistance=.35;controls.maxDistance=6;
+controls.minDistance=.35;controls.maxDistance=80;
 scene.add(new THREE.HemisphereLight(0xffffff,0x637a6d,2.6));
 const light=new THREE.DirectionalLight(0xffffff,2.4);light.position.set(1.5,3,2);scene.add(light);
 scene.add(new THREE.GridHelper(2,20,0x7b9a90,0xaac2ba));
@@ -466,7 +472,8 @@ $('modelFile').value='';$('pattFile').value='';$('markerImage').value='';
 $('fileName').textContent=e.modelName?('Cargado: '+e.modelName):'Sin archivo GLB. El visor muestra una figura de referencia.';
 describeMarkerQuality(e);
 void showMarkerResult(e);
-$('posX').value=e.x;$('posY').value=e.y;$('posZ').value=e.z;$('modelSize').value=e.size;
+$('posX').value=e.x;$('posY').value=e.y;$('posZ').value=e.z;
+$('modelSize').value=e.size;$('modelSizeNumber').value=e.size;
 $('rotationY').value=e.rotation;$('animation').value=e.animation;
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
 }
@@ -475,7 +482,10 @@ const e=selectedEntry();if(!e)return;
 e.name=$('entryName').value.trim()||'Sin nombre';
 e.kind=$('entryPattern').value;
 e.x=Number($('posX').value)||0;e.y=Number($('posY').value)||0;e.z=Number($('posZ').value)||0;
-e.size=Number($('modelSize').value)||12;e.rotation=Number($('rotationY').value)||0;e.animation=$('animation').value;
+e.size=Math.max(1,Math.min(300,Number($('modelSize').value)||12));
+$('modelSize').value=e.size;
+$('modelSizeNumber').value=e.size;
+e.rotation=Number($('rotationY').value)||0;e.animation=$('animation').value;
 $('customPattern').hidden=e.kind!=='custom';
 $('sizeValue').textContent=e.size+' cm';$('rotValue').textContent=e.rotation+'°';
 $('selectedHint').textContent='Configurando: '+e.name;
@@ -523,6 +533,15 @@ async function setMarkerTexture(entry){
  }finally{
    if(typeof source!=='string')URL.revokeObjectURL(url);
  }
+}
+function framePreviewObject(){
+ const e=selectedEntry();if(!e||!previewObject)return;
+ const sizeWorld=Math.max(1,e.size)/15;
+ const target=new THREE.Vector3(e.x/15,e.y/15+sizeWorld*.50,e.z/15);
+ const distance=Math.max(2.3,sizeWorld*2.1);
+ controls.target.copy(target);
+ cam.position.copy(target).add(new THREE.Vector3(distance*.65,distance*.42,distance*.77));
+ cam.updateProjectionMatrix();controls.update();
 }
 function applyTransform(){
 const e=selectedEntry();if(!e||!currentGroup)return;
@@ -677,6 +696,16 @@ markDirty();
 });
 }
 for(const id of ['entryName','entryPattern','posX','posY','posZ','modelSize','rotationY','animation'])$(id).addEventListener('input',changeFromControls);
+$('framePreview').addEventListener('click',framePreviewObject);
+$('modelSizeNumber').addEventListener('change',()=>{
+  const n=Number($('modelSizeNumber').value);
+  if(!Number.isFinite(n)){
+    $('modelSizeNumber').value=$('modelSize').value;
+    return;
+  }
+  $('modelSize').value=Math.max(1,Math.min(300,Math.round(n*2)/2));
+  changeFromControls();
+});
 $('entryDescription').addEventListener('input',()=>{
   const e=selectedEntry();if(!e)return;
   const text=$('entryDescription').value.slice(0,500);
