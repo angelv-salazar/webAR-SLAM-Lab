@@ -37,6 +37,16 @@ Para probarlas, elegí un marcador en **Vista previa y transformación → Anima
 
 Los controles de transformación llevan ahora solo las etiquetas **X, Y, Z**, sin texto junto a cada eje. Se retiró la explicación redundante bajo el control de tamaño. En el bloque del QR permanecen el título y la frase **«Se asigna automáticamente al crear el recorrido.»**; ya no se imprime la dirección web ni el estado borrador junto al código. Se mantiene intacto el pie de página de Estudio WebAR.
 
+## Rotaciones de dos ejes y textos neutros
+
+El panel **Transformar objeto** tiene ahora dos deslizadores independientes:
+- **Rotación horizontal:** giro alrededor del eje vertical de la escultura (Y en la escena 3D; conserva el campo histórico `rotation` y `rotationDeg`).
+- **Rotación vertical:** inclinación y volteo alrededor del eje X de la escultura, de −180° a +180° (nuevo campo `rotationVertical` y `verticalRotationDeg`).
+
+Las dos rotaciones se aplican tanto a la vista previa 3D como al visor del teléfono mediante la misma composición Euler `YXZ`, y se combinan con las animaciones existentes. La pose `root` del marcador y los límites de estabilidad SLAM **no cambian**. Los recorridos antiguos sin el nuevo campo se interpretan con rotación vertical de 0°. Para publicar un cambio, guarda el recorrido y sube el ZIP de publicación habitual; no necesitas imprimir marcadores nuevos.
+
+Se eliminó el aviso técnico sobre IndexedDB debajo de la lista de marcadores y se simplificó su descripción a: «Cada imagen activa un objeto independiente con 8th Wall. Todos los QR comparten la URL del recorrido.» La interfaz del Estudio y el visor, los mensajes de grabación y las validaciones utilizan español latinoamericano neutro.
+
 ## Crear un recorrido
 
 1. Abrir **estudio.html** desde una computadora.
