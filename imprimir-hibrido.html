@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marcador de prueba · SLAM híbrido</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#153629;background:#f3f6f2}
+    *{box-sizing:border-box}
+    body{margin:0}main{max-width:960px;margin:auto;padding:25px}
+    h1{font-size:clamp(24px,4vw,39px);letter-spacing:-.045em;margin:0 0 12px}
+    p{line-height:1.6;max-width:750px;color:#566f60}
+    .top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}
+    a{color:#286c4b}
+    .frame{padding:22px;background:#fff;border-radius:16px;border:1px solid #cfdfd1;width:fit-content;max-width:100%;margin:24px auto}
+    canvas{display:block;width:min(100%,450px);height:auto;background:white}
+    .bar{display:flex;gap:9px;flex-wrap:wrap}
+    button,.action{border:0;padding:13px 16px;border-radius:11px;background:#175f42;color:white;font:650 14px system-ui;text-decoration:none;cursor:pointer}
+    .action{display:inline-block;background:#e4f0e7;color:#1d583c}
+    .hint{font-size:13px;padding:16px;border-radius:13px;background:#e0f0e5;margin-top:23px}
+    @media print{
+      @page{size:A4 portrait;margin:10mm}
+      html,body{background:white!important;margin:0;padding:0}
+      main{padding:0}
+      main>*:not(.frame){display:none!important}
+      .frame{padding:0;margin:0;width:150mm;height:150mm;border:0;border-radius:0}
+      canvas{width:150mm!important;height:150mm!important;max-width:none!important}
+    }
+  </style>
+  <script src="marcador-hibrido.js"></script>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><small style="letter-spacing:.14em;color:#498165;font-weight:800">WEBAR SLAM LAB / EXPERIMENTO 01</small><h1>Marcador físico · 15 × 15 cm</h1></div>
+    <a href="./">← Inicio del laboratorio</a>
+  </div>
+  <p>Este marcador es un <strong>image target</strong> de 8th Wall, no un archivo .patt de AR.js. Nos servirá para comparar una escultura fijada inicialmente a la imagen con otra colocada solamente mediante SLAM.</p>
+  <div class="bar">
+    <button id="download" type="button">Descargar marcador PNG</button>
+    <button id="print" type="button">Imprimir a tamaño real</button>
+    <a class="action" href="hibrido.html?v=1">Abrir prueba híbrida en el celular</a>
+  </div>
+  <div class="frame"><canvas id="marker" width="1200" height="1200" aria-label="Imagen de reconocimiento SLAM Lab 01"></canvas></div>
+  <p class="hint">Imprimilo al <strong>100 % de escala, sin «ajustar a página»</strong>, preferentemente en papel mate. Medí el borde para comprobar que el cuadrado mida 15 × 15 cm. Colocalo plano sobre el piso, con buena luz, y abrí el visor híbrido desde el teléfono.</p>
+  <p>Para comparar la estabilidad, observá si el modelo permanece al salir el marcador del encuadre y si se corrige cuando volvés a apuntarlo.</p>
+</main>
+<script>
+(function(){
+  const canvas=document.getElementById('marker');
+  SlamLabMarker.draw(canvas);
+  document.getElementById('download').onclick=()=>{
+    const a=document.createElement('a');
+    a.download='marcador-slam-lab-15x15.png';
+    a.href=canvas.toDataURL('image/png');
+    a.click();
+  };
+  document.getElementById('print').onclick=()=>window.print();
+})();
+</script>
+</body>
+</html>
