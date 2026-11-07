@@ -58,6 +58,14 @@ El inicio del Estudio muestra la sección **1. Recorridos** de forma contextual:
 
 La tipografía permanece intacta hasta elegir una nueva fuente.
 
+## Prueba local de tipografía Klavika
+
+Se incorporó al final del Estudio SLAM un apartado plegable **«Tipografía de prueba · Klavika»**. Acepta el ZIP de Klavika de la persona usuaria, carga hasta siete variantes OTF mediante JSZip y la API FontFace y aplica la fuente al texto de la interfaz del **Estudio**, sin alterar su estructura, gráficos ni el visor AR del celular. También incluye **«Restaurar tipografía»**.
+
+Las fuentes se guardan **únicamente en IndexedDB de ese navegador**, usando una base de datos separada de la de los recorridos para no interferir con las pruebas de cámara. No se cargan a GitHub ni se incluyen en los ZIP de publicación. Si el usuario reabre el Estudio en el mismo navegador, puede recuperar automáticamente la fuente; en otro dispositivo debe seleccionarla de nuevo.
+
+**Licencias:** Klavika es una fuente comercial de Process Type Foundry. Los OTF suministrados no incluyen licencia web ni autorizan su redistribución en el repositorio público. Una integración pública permanente requeriría los archivos WOFF/WOFF2 y la licencia web correspondiente (o un proyecto alojado mediante Adobe Fonts). La prueba local no publica los archivos tipográficos.
+
 ## Crear un recorrido
 
 1. Abrir **estudio.html** desde una computadora.
