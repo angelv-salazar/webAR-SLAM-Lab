@@ -14,7 +14,7 @@
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
 <script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
-<script type="module" src="./recorrido-slam.js?v=11"></script>
+<script type="module" src="./recorrido-slam.js?v=15"></script>
 <style>
 *{box-sizing:border-box}
 html,body{height:100%;width:100%;margin:0;overflow:hidden;color:#fff;background:#0a1811;font-family:system-ui,-apple-system,sans-serif}
@@ -63,6 +63,7 @@ button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
 <div id="top">
   <div id="instruction">Iniciando el recorrido…</div>
   <button id="framing" type="button" hidden>Ver último</button>
+  <button id="safetyLimit" type="button" title="Límite de desplazamiento radial del teléfono desde el último reconocimiento de cada marcador">Zona +1 m</button>
   <button id="fullscreen" type="button">Pantalla completa</button>
   <button id="calibrate" type="button" aria-pressed="false">Contorno 15 cm</button>
   <button id="details" type="button">Detalles</button>
@@ -70,7 +71,7 @@ button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
 <div id="diagnostic" hidden>Iniciando diagnóstico…</div>
 <div id="splash"><strong>Recorrido SLAM</strong>Preparando los marcadores y los modelos del recorrido.</div>
 <div id="messages">
-  <div id="trackingMessage">Enfocá brevemente cada marcador. Al volver a reconocerlo, su obra se reancla automáticamente.</div>
+  <div id="trackingMessage">Al pasar de una estación a otra, cada obra se oculta si el teléfono sale de su zona de confianza. Volvé a enfocar su marcador para recuperarla.</div>
   <section id="specimenInfo" hidden data-collapsed="false" role="region" aria-label="Descripción del espécimen reconocido">
     <div id="infoHead">
       <div id="infoIdentity"><span id="infoEyebrow">Espécimen reconocido</span><strong id="infoTitle"></strong></div>
