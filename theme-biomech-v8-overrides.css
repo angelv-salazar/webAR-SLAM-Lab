@@ -1,0 +1,66 @@
+/* Estudio SLAM — V8: organic photo membranes, stable native proportions.
+   Loads AFTER v7. Four 3-piece assets already on GitHub.
+   This deliberately does not touch any of the WebAR application scripts. */
+:root{--bio-surface:#07140f;--bio-edge:#b9e997}
+main{column-gap:24px;row-gap:25px;padding-top:29px}
+/* Stop stretching/collapsing panel content into the membrane. */
+.card{padding:92px 40px 98px!important}
+#settingsCard{padding-left:42px!important;padding-right:42px!important}
+#viewerCard{padding:108px 43px 100px!important}
+/* Use the real 3-part raster assets only, without the old v4 border/image. */
+.card::before,#viewerCard::before,.transformDock::before{
+ border:0!important;border-image:none!important;
+ background-repeat:no-repeat,no-repeat,no-repeat!important;
+ background-position:center top,center bottom,center center!important;
+ background-size:100% auto,100% auto,100% 100%!important;
+ image-rendering:auto!important;
+ filter:drop-shadow(0 7px 9px rgba(0,0,0,.32))!important;
+}
+/* The void is a shaped negative space, NOT another rounded rectangle. */
+.card::after,#viewerCard::after{
+ inset:43px 29px 43px!important;
+ background:radial-gradient(ellipse at 83% 90%,rgba(56,95,59,.16),transparent 59%),
+   linear-gradient(145deg,#0e2117 0%,#06110d 54%,#102118 100%)!important;
+ clip-path:polygon(9% 1%,26% 2%,41% 0%,63% 2%,81% .5%,95% 6%,99% 20%,96.7% 41%,99% 63%,96% 86%,88% 99%,68% 97.5%,50% 99%,30% 98%,10% 99%,2% 89%,4% 68%,1% 46%,3% 23%)!important;
+}
+/* Top membrane can rise outside the panel, but the text begins below it. */
+.card h2{position:relative!important;z-index:3;font-size:clamp(16px,1.18vw,20px);line-height:1.27;
+  margin-bottom:19px;padding-bottom:12px;border-color:rgba(189,231,170,.13);
+  text-shadow:0 2px 8px #06120c,0 0 12px #06120c}
+.card label,.card p,.card small,.card h3{position:relative;z-index:3}
+/* Main preview frame: keep the real 3D canvas unmasked and fully interactive. */
+.viewerWorkspace{grid-template-columns:minmax(0,1.24fr) minmax(226px,.76fr);gap:18px}
+#preview{border-radius:29px 23px 33px 26px!important;overflow:hidden!important;clip-path:none!important}
+#preview::before{display:none!important;content:none!important}
+#preview::after{border:1px solid rgba(198,232,179,.19)!important}
+/* Dock has its own fully independent membrane. */
+.transformDock{padding:83px 30px 82px!important;overflow:visible!important}
+.transformDock::after{
+ inset:40px 25px!important;
+ background:linear-gradient(153deg,#102719 0%,#06160f 59%,#12251a 100%)!important;
+ clip-path:polygon(11% 1%,36% 2%,62% .5%,91% 4%,98% 18%,96% 37%,99% 61%,96% 84%,86% 97%,65% 98%,37% 97%,11% 99%,2% 85%,4% 64%,2% 37%,5% 17%)!important;
+}
+/* Internal form blocks should float rather than create white or gray slabs. */
+.sessionQRBox,.publishPanel,.markerMaker,.qualityBox,.note{
+ background:linear-gradient(145deg,rgba(22,44,30,.89),rgba(6,23,15,.91))!important;
+ border-color:rgba(151,196,148,.31)!important;
+ box-shadow:inset 0 1px rgba(222,251,215,.08)!important;
+}
+@media(max-width:1390px){
+ main{gap:17px;padding:22px 17px 42px}
+ #viewerCard{padding:100px 38px 91px!important}
+ .viewerWorkspace{grid-template-columns:minmax(0,1fr);gap:20px}
+ .transformDock{min-height:0;max-height:calc(100dvh - 455px)}
+}
+@media(max-width:880px){
+ main{display:flex;gap:21px;padding:20px 16px 41px}
+ .card{padding:94px 43px 96px!important}
+ #viewerCard{padding:100px 42px 100px!important;max-height:none;position:relative}
+ .transformDock{max-height:none;min-height:0}
+}
+@media(max-width:540px){
+ .card{padding:87px 32px 86px!important}
+ #viewerCard{padding:98px 34px 89px!important}
+ .transformDock{padding:81px 27px 78px!important}
+}
+@media print{.card::before,.card::after,.transformDock::before,.transformDock::after{display:none!important}}
