@@ -1,0 +1,105 @@
+/* ESTUDIO SLAM — Laboratorio biomecánico V9 / cabecera integrada
+ * Respeta los marcos de V7/V8 y la lógica de WebAR.
+ * La membrana superior es la fotografía ya usada en las tarjetas, sin estirarla
+ * en vertical: se escala conservando su proporción original. */
+header.lab-header{
+ position:relative;isolation:isolate;overflow:hidden;
+ min-height:182px;display:flex;align-items:center;
+ padding:22px max(24px,calc((100vw - 1710px)/2)) 25px;
+ border:0;border-bottom:1px solid rgba(185,219,177,.19);
+ background:
+  radial-gradient(ellipse 52% 96% at 80% 4%,rgba(99,137,98,.11),transparent 78%),
+  radial-gradient(ellipse 32% 66% at 8% 97%,rgba(116,157,106,.09),transparent 75%),
+  linear-gradient(100deg,#090e0c 0%,#060c09 42%,#0a100e 100%);
+ box-shadow:inset 0 -15px 24px -18px rgba(161,206,138,.15);
+}
+header.lab-header::before{
+ content:"";position:absolute;z-index:0;pointer-events:none;
+ top:-32px;right:-24px;bottom:auto;left:auto;
+ width:min(72vw,1150px);height:340px;
+ background:url('./assets/bio-v7-visor-top.webp') right top/100% auto no-repeat;
+ opacity:.84;
+ filter:saturate(.82) contrast(1.06) drop-shadow(0 8px 22px rgba(0,0,0,.5));
+ -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.35) 20%,#000 44%);
+ mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.35) 20%,#000 44%);
+}
+header.lab-header::after{
+ content:"";position:absolute;z-index:1;pointer-events:none;
+ top:0;right:0;bottom:0;left:0;width:auto;height:auto;
+ opacity:1;filter:none;
+ background:
+  radial-gradient(ellipse 29% 36% at 81% 91%,rgba(181,246,117,.065),transparent),
+  repeating-linear-gradient(0deg,transparent 0 3px,rgba(224,255,216,.018) 3px 4px),
+  linear-gradient(180deg,transparent 68%,rgba(4,9,7,.68) 100%);
+ -webkit-mask-image:none;mask-image:none;
+}
+header.lab-header .lab-brand{
+ display:flex;align-items:center;gap:24px;
+ position:relative;z-index:3;min-width:0;flex:0 1 auto;
+}
+header.lab-header .lab-emblem{
+ width:91px;height:91px;flex:0 0 91px;
+ background:url('./assets/biomech-emblem-v9.svg') center/contain no-repeat;
+ filter:drop-shadow(0 0 12px rgba(190,235,165,.18));
+}
+header.lab-header .lab-wordmark{min-width:0}
+header.lab-header h1{
+ margin:0;color:#c3e49a;
+ font:700 clamp(32px,3.1vw,49px)/1.06 var(--font-title);
+ letter-spacing:.048em;text-transform:uppercase;white-space:nowrap;
+ text-shadow:0 2px 7px rgba(0,0,0,.58),0 0 15px rgba(184,230,137,.08);
+}
+header.lab-header .lab-kicker{
+ display:block;width:fit-content;margin-top:5px;
+ font:500 clamp(9px,.83vw,11px)/1.5 var(--font-title);
+ letter-spacing:.46em;text-transform:uppercase;color:#d4ded0;
+}
+header.lab-header p{
+ margin:11px 0 0;color:#d3dfd3;font-size:12px;line-height:1.5;
+ max-width:650px;text-shadow:0 1px 5px #07110b;
+}
+header.lab-header .lab-index{
+ position:absolute;z-index:3;top:24px;
+ right:clamp(285px,24vw,450px);
+ color:#d4ddd1;
+ font:500 11px/1.2 var(--font-title);
+ letter-spacing:.23em;white-space:nowrap;
+ text-shadow:0 1px 5px rgba(0,0,0,.9);
+}
+header.lab-header .lab-index span{color:#a8cf87}
+/* A very low-contrast transition links the header to the organic cards. */
+main{position:relative}
+main::before{
+ content:"";position:absolute;z-index:0;pointer-events:none;
+ top:-14px;left:0;right:0;height:100px;
+ background:
+  radial-gradient(ellipse 55% 42% at 86% 0%,rgba(132,176,120,.07),transparent 84%),
+  linear-gradient(to bottom,rgba(39,65,46,.045),transparent 75%);
+}
+main>.card{z-index:1}
+@media(max-width:1250px){
+ header.lab-header .lab-index{display:none}
+ header.lab-header::before{width:min(73vw,960px);opacity:.64}
+}
+@media(max-width:880px){
+ header.lab-header{min-height:149px;padding:17px 18px 20px}
+ header.lab-header .lab-brand{gap:13px}
+ header.lab-header .lab-emblem{width:59px;height:59px;flex-basis:59px}
+ header.lab-header h1{font-size:clamp(27px,4.5vw,38px)}
+ header.lab-header .lab-kicker{font-size:9px;letter-spacing:.31em}
+ header.lab-header p{font-size:11px;max-width:490px}
+ header.lab-header::before{top:-13px;right:-130px;width:90vw;height:220px;opacity:.36}
+}
+@media(max-width:540px){
+ header.lab-header{min-height:126px;padding:18px 13px 20px}
+ header.lab-header .lab-brand{gap:8px;align-items:flex-start}
+ header.lab-header .lab-emblem{width:40px;height:48px;flex-basis:40px;margin-top:2px}
+ header.lab-header h1{font-size:clamp(26px,7.5vw,34px);letter-spacing:.026em}
+ header.lab-header .lab-kicker{font-size:8px;letter-spacing:.19em}
+ header.lab-header p{font-size:10px;line-height:1.35;margin-top:7px}
+ header.lab-header::before{right:-130px;top:-5px;width:110vw;opacity:.22}
+ main::before{height:65px}
+}
+@media print{
+ header.lab-header::before,header.lab-header::after,main::before{display:none!important}
+}
