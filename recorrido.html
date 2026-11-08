@@ -17,7 +17,7 @@
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/gh/8thwall/8frame@master/dist/aframe-v1.5.0.min.js"></script>
 <script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"></script>
 <script crossorigin="anonymous" async src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js" data-preload-chunks="slam"></script>
-<script type="module" src="./recorrido-slam.js?v=50"></script>
+<script type="module" src="./recorrido-slam.js?v=51"></script>
 <style>
 :root{--font-ui:"Saira",system-ui,-apple-system,"Segoe UI",sans-serif;--font-title:"Chakra Petch","Saira",sans-serif}
 *{box-sizing:border-box}
@@ -33,11 +33,9 @@ button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
 #recordVideo:disabled{opacity:.64;cursor:default}
 #recordVideo[data-recording="true"]{background:#d72b37;border-color:#ffb7b7;box-shadow:0 0 0 2px rgba(215,43,55,.35)}
 #recordVideo[data-saving="true"]{background:#4c4c4c}
-#diagnostic{position:fixed;z-index:35;top:76px;left:12px;right:12px;max-height:44dvh;overflow:auto;padding:12px 13px;background:rgba(9,20,15,.93);border:1px solid #7caf89;border-radius:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+#diagnostic{display:none!important}
 #diagnostic[hidden]{display:none}
 #messages{position:fixed;z-index:26;bottom:max(14px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;align-items:center;flex-direction:column;gap:8px;pointer-events:none}
-#trackingMessage{width:min(100%,470px);background:rgba(7,30,21,.83);padding:9px 13px;border-radius:11px;text-align:center;font:12px/1.45 var(--font-ui)}
-#trackingMessage[hidden]{display:none}
 #specimenInfo{width:min(100%,470px);pointer-events:auto;color:#000;background:linear-gradient(180deg,rgba(247,251,249,.60) 0%,rgba(247,251,249,.36) 45%,rgba(247,251,249,0) 100%);border:0;border-radius:18px 18px 0 0;overflow:hidden;max-height:38dvh}
 #specimenInfo[hidden]{display:none}
 #specimenInfo.entering{animation:floatIn .42s cubic-bezier(.2,.8,.2,1) both}
@@ -72,15 +70,11 @@ button:focus-visible{outline:2px solid #a8e7be;outline-offset:2px}
   <div id="instruction">Iniciando el recorrido…</div>
   <button id="recordVideo" type="button" aria-pressed="false" disabled title="Grabar o detener video MP4 del recorrido">● Grabar</button>
   <button id="framing" type="button" hidden>Ver último</button>
-  <button id="safetyLimit" type="button" title="Límite de desplazamiento radial del teléfono desde el último reconocimiento de cada marcador">Zona +1 m</button>
   <button id="fullscreen" type="button">Pantalla completa</button>
-  <button id="calibrate" type="button" aria-pressed="false">Contorno 15 cm</button>
-  <button id="details" type="button">Detalles</button>
 </div>
-<div id="diagnostic" hidden>Iniciando diagnóstico…</div>
+<div id="diagnostic" hidden aria-hidden="true"></div>
 <div id="splash"><strong>Recorrido SLAM</strong>Preparando los marcadores y los modelos del recorrido.</div>
 <div id="messages">
-  <div id="trackingMessage">Seguimiento equilibrado: puedes explorar la obra unos segundos sin ver el marcador. Si el seguimiento se aleja demasiado, se oculta; al reenfocarlo, se reancla automáticamente.</div>
   <section id="specimenInfo" hidden data-collapsed="false" role="region" aria-label="Descripción del espécimen reconocido">
     <div id="infoHead">
       <div id="infoIdentity"><span id="infoEyebrow">Espécimen reconocido</span><strong id="infoTitle"></strong></div>

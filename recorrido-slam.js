@@ -17,14 +17,14 @@ import {
 } from './marker-stability.js';
 import {
   ANCHOR_SAFE_LIMITS_M,DEFAULT_ANCHOR_SAFE_LIMIT_M,
-  cameraRangeFromMarkerM,isOutsideSafeRadius,nextSafeLimit,limitLabel
+  cameraRangeFromMarkerM,isOutsideSafeRadius,limitLabel
 } from './anchor-safety.js';
 import {
   MARKER_GUARD,advanceCandidate,conflictsWithOtherAnchor,
   plausibleLiveUpdate
 } from './marker-guard.js';
 const $=id=>document.getElementById(id);
-const scene=$('scene'),instructions=$('instruction'),message=$('trackingMessage');
+const scene=$('scene'),instructions=$('instruction');
 const diag=$('diagnostic'),info=$('specimenInfo'),infoTitle=$('infoTitle');
 const infoText=$('infoText'),infoAccessible=$('accessibleText');
 const infoToggle=$('infoToggle'),splash=$('splash'),fatalPanel=$('fatal');
@@ -50,7 +50,7 @@ const videoRecorder=setupArVideoRecorder({
 });
 let source='sin cargar';
 const log=[];
-function say(m){message.textContent=m;}
+function say(_message){/* Los avisos técnicos de seguimiento no se muestran al visitante. */}
 function note(m){log.push(new Date().toLocaleTimeString()+' · '+m);if(log.length>18)log.shift();refreshDiagnostic();}
 function fail(m){
   lastError=String(m?.message||m);
@@ -726,25 +726,7 @@ function initEngine(){
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
 }
-$('safetyLimit').onclick=()=>{
-  safetyLimitM=nextSafeLimit(safetyLimitM);
-  $('safetyLimit').textContent=limitLabel(safetyLimitM);
-  $('safetyLimit').setAttribute('aria-label','Límite radial adicional: '+limitLabel(safetyLimitM));
-  // Si el visitante desactiva la protección, recuperar la modalidad
-  // original para permitir comparar su comportamiento A/B.
-  if(safetyLimitM===0){
-    for(const row of rows){row.safetyHidden=false;row.lastSafetyExcessM=0;}
-    syncVisibility();
-    note('Zona de seguridad desactivada para comparación: todas las obras confirmadas pueden mostrarse.');
-    say('Límite desactivado: SLAM conservará las obras sin protección de distancia.');
-  }else{
-    note('Límite de zona de confianza ajustado a +'+safetyLimitM+' m.');
-    say('Nueva zona de confianza: +'+safetyLimitM+' m desde la última detección de cada marcador. Las obras ya ocultas reaparecen al reenfocarlas.');
-  }
-  refreshDiagnostic();
-};
-$('safetyLimit').textContent=limitLabel(safetyLimitM);
-$('safetyLimit').hidden=stabilityMode!=='legacy';
+
 $('framing').onclick=()=>{
   showAll=!showAll;syncVisibility();
   note(showAll?'Mostrando todos los anclajes':'Mostrando el último marcador reconocido');
@@ -755,14 +737,6 @@ $('fullscreen').onclick=async()=>{
     else await document.exitFullscreen?.();
   }catch(e){note('Pantalla completa no disponible: '+e.message);}
 };
-$('details').onclick=()=>{diag.hidden=!diag.hidden;refreshDiagnostic();};
-$('calibrate').onclick=()=>{
-  calibrationVisible=!calibrationVisible;
-  $('calibrate').setAttribute('aria-pressed',calibrationVisible?'true':'false');
-  $('calibrate').textContent=calibrationVisible?'Ocultar contorno':'Contorno 15 cm';
-  syncVisibility();
-  note(calibrationVisible?'Mostrando contorno físico 15×15 cm':'Contorno de calibración oculto');
-};
 $('retry').onclick=()=>location.reload();
 infoToggle.onclick=()=>{
   descriptionCollapsed=!descriptionCollapsed;
@@ -771,10 +745,10 @@ infoToggle.onclick=()=>{
   infoToggle.setAttribute('aria-expanded',descriptionCollapsed?'false':'true');
   if(descriptionCollapsed)stopTyping(true);
 };
-window.addEventListener('error',e=>{lastError=String(e.message||e);diag.hidden=false;refreshDiagnostic();});
+window.addEventListener('error',e=>{lastError=String(e.message||e);refreshDiagnostic();});
 window.addEventListener('unhandledrejection',e=>{
   lastError='Promesa: '+String(e.reason?.message||e.reason);
-  diag.hidden=false;refreshDiagnostic();
+  refreshDiagnostic();
 });
 scene.addEventListener('xrimagefound',receiveTarget);
 scene.addEventListener('xrimageupdated',receiveTarget);
@@ -793,7 +767,7 @@ scene.addEventListener('realityready',()=>{
 });
 scene.addEventListener('realityerror',e=>{
   lastError='Error SLAM: '+String(e.detail?.message||e.detail?.error||'no especificado');
-  diag.hidden=false;refreshDiagnostic();
+  refreshDiagnostic();
 });
 scene.addEventListener('loaded',initEngine);
 window.addEventListener('xrloaded',()=>setTimeout(initEngine,0));
@@ -803,7 +777,7 @@ const poll=setInterval(()=>{
 },450);
 setTimeout(()=>{
   if(xrReady||!configReady)return;
-  diag.hidden=false;note('El seguimiento todavía no comenzó. Revisa permisos y navegador.');
+  note('El seguimiento todavía no comenzó. Revisa permisos y navegador.');
 },18000);
 window.addEventListener('pagehide',()=>{
   stopTyping();
