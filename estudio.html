@@ -162,6 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=1">
 </head>
 <body>
 <header class="lab-header">
@@ -172,6 +173,63 @@ main{
 </div></div>
 <div class="lab-index" aria-hidden="true">[ <span>OBJETOS 3D</span> &nbsp; / &nbsp; MARCADORES &nbsp; / &nbsp; SLAM ]</div>
 </header>
+
+<section id="slamCollab" class="slam-collab" aria-label="Colaboración de recorridos">
+<details id="collabDetails">
+  <summary>Colaboración · crear o sumarte a un recorrido compartido</summary>
+  <div class="collab-body">
+    <p class="collab-note">Sin cuentas para participantes. Cada persona crea su marcador y modelo en el editor, y los guarda en un espacio compartido. Solo el organizador prepara la publicación.</p>
+    <div class="collab-columns">
+      <div class="collab-section">
+        <h3>Crear recorrido</h3>
+        <label for="collabProjectName">Nombre del recorrido colectivo</label>
+        <input id="collabProjectName" maxlength="100" placeholder="Ej.: Ensamblajes colectivos">
+        <button id="collabCreate" type="button">Crear espacio compartido</button>
+      </div>
+      <div class="collab-section">
+        <h3>Unirme por invitación</h3>
+        <label for="collabName">Nombre de participante</label>
+        <input id="collabName" maxlength="80" placeholder="Nombre para identificar tu obra">
+        <label for="collabInvite">Enlace o código recibido</label>
+        <input id="collabInvite" autocomplete="off" placeholder="Pegá el enlace de invitación">
+        <button id="collabJoin" type="button">Unirme al recorrido</button>
+      </div>
+    </div>
+    <label for="collabProjectPicker">Recorridos a los que tenés acceso</label>
+    <select id="collabProjectPicker"><option value="">Todavía no hay recorridos vinculados</option></select>
+    <div id="collabWorkspace" hidden>
+      <strong id="collabHeading"></strong><span id="collabRole"></span>
+      <div id="collabInviteTools" hidden>
+        <button id="collabCopy" type="button">Copiar invitación para artistas</button>
+        <p class="collab-note">Guardá el enlace de invitación: quien lo tenga podrá sumarse. La organización queda asociada a este navegador mientras conserve su sesión anónima.</p>
+      </div>
+      <div class="collab-columns">
+        <div class="collab-section">
+          <h3>Enviar mi obra</h3>
+          <p class="collab-note">Trabajá primero con los controles de imagen, GLB y transformación del editor. El marcador y el QR definitivos se generan para este recorrido compartido.</p>
+          <label for="collabLocalPicker">Marcador local a compartir</label>
+          <select id="collabLocalPicker"></select>
+          <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
+          <button id="collabSend" type="button">Guardar esta obra en la nube</button>
+        </div>
+        <div class="collab-section">
+          <h3>Aportaciones en la nube</h3>
+          <div id="collabEntries" aria-live="polite"></div>
+          <button id="collabRefresh" class="secondary" type="button">Actualizar aportaciones</button>
+        </div>
+      </div>
+      <div id="collabPublishHelp" hidden>
+        <h3>Organización y publicación</h3>
+        <p class="collab-note">Reuní las obras en el editor para revisarlas. Luego usá «Preparar publicación», subí el ZIP a la carpeta importar/ del repositorio y GitHub Actions actualizará el recorrido y sus QR.</p>
+        <button id="collabSync" type="button">Reunir todas las obras en el editor</button>
+        <button id="collabLock" class="secondary" type="button">Cerrar aportaciones</button>
+      </div>
+    </div>
+    <p id="collabStatus" class="collab-status" role="status">Abrí esta sección para conectar con Supabase.</p>
+  </div>
+</details>
+</section>
+
 <main>
 <section class="card" id="markerCard">
 <h2>1. Recorridos</h2>
@@ -1051,6 +1109,47 @@ $('sessionName').value='';$('sessionDesc').value='';
 updateSessionFieldsVisibility();$('existingSessionChooser').hidden=true;
 drawList();populate();void showPreview();}
 })();
+
+/* Puente aislado entre los recorridos locales y la colaboración.
+   No modifica el visor móvil ni el motor de reconocimiento. */
+window.SLAM_COLLAB_BRIDGE={
+ list:()=>session?.entries.map(e=>({id:e.id,name:e.name,ready:!!(e.modelBlob&&e.markerImageBlob&&e.markerValidation?.ok)}))||[],
+ get:id=>session?.entries.find(e=>e.id===id)||null,
+ importAll:async(project,files)=>{
+   if(!files.length||files.length>20)throw Error('El recorrido debe tener entre 1 y 20 obras.');
+   const next={id:project.route_id,name:project.title,description:'Recorrido colaborativo',
+      createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),entries:[]};
+   const fingerprints=[];
+   for(const [i,{row,model,image,print,pattText}] of files.entries()){
+     const v=await inspectMarkerImage(image);
+     if(!v.ok)throw Error('Imagen de «'+row.title+'» no supera la validación: '+(v.errors||[]).join('; '));
+     for(const f of fingerprints){
+       const dist=compareFingerprints(f,v.info.fingerprint);
+       if(dist!==null&&dist<.055)throw Error('Hay imágenes de reconocimiento demasiado similares. Resolvé la duplicación antes de publicar.');
+     }
+     fingerprints.push(v.info.fingerprint);
+     const e=newEntry(i);
+     e.id=row.source_entry_id;e.name=row.title;e.description=row.description;
+     e.markerImageBlob=image;e.markerValidation=v;
+     e.modelBlob=model;e.modelName=row.title+'.glb';
+     e.finalMarkerBlob=print;e.pattText=pattText;e.markerRatio=MARKER_RATIO;
+     e.finalForURL=routeURL(project.route_id);
+     e.x=Number(row.x_cm);e.y=Number(row.y_cm);e.z=Number(row.z_cm);
+     e.size=Number(row.size_cm);e.rotation=Number(row.rotation_deg);
+     e.rotationVertical=Number(row.rotation_vertical_deg);
+     e.animation=row.animation;
+     next.entries.push(e);
+   }
+   if(dirty&&!confirm('Hay cambios locales sin guardar. ¿Reemplazar la vista actual con el recorrido colaborativo?'))
+     throw Error('Se canceló la importación para proteger los cambios locales.');
+   setSession(next,{isNew:false});
+   await sessionSave();
+   await refreshSessions();
+   inform('Importadas '+next.entries.length+' obras colaborativas. Comprobá la vista previa y prepará el ZIP.');
+ }
+};
+
 </script>
+<script type="module" src="./colaboracion-slam.js?v=1"></script>
 </body>
 </html>

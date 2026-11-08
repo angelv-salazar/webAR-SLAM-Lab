@@ -1,0 +1,26 @@
+/* Estudio SLAM — colaboración privada en Supabase (editor V9 preservado) */
+.slam-collab{position:relative;z-index:2;max-width:1810px;margin:17px auto -3px;padding:0 23px;color:#dbead9;font-family:var(--font-ui)}
+.slam-collab details{background:linear-gradient(125deg,rgba(16,38,26,.96),rgba(5,17,13,.97));border:1px solid rgba(162,215,137,.33);border-radius:20px 15px 23px 17px;box-shadow:0 12px 32px rgba(0,0,0,.2)}
+.slam-collab summary{cursor:pointer;padding:14px 21px;color:#c3f18e;font:700 13px var(--font-title);letter-spacing:.035em}
+.slam-collab summary::marker{color:#99d865}
+.slam-collab .collab-body{border-top:1px solid rgba(186,228,166,.15);padding:17px 21px 24px}
+.slam-collab .collab-note{font-size:12px;color:#aec4b0;line-height:1.6;margin:0 0 13px}
+.slam-collab h3{color:#c3f18e;font:700 14px var(--font-title);margin:6px 0}
+.slam-collab label{color:#d9e9d0;margin:8px 0 4px;font-size:12px}
+.slam-collab .collab-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.slam-collab .collab-section{min-width:0;border:1px solid rgba(183,232,178,.15);background:rgba(12,27,18,.56);padding:13px 16px;border-radius:17px 12px 19px 14px}
+.slam-collab input,.slam-collab select{width:100%;min-height:40px;padding:9px 11px;background:#061811!important;border:1px solid rgba(183,217,161,.48)!important;border-radius:11px!important;color:#f0f7ee!important}
+.slam-collab button{cursor:pointer;min-height:38px;margin:10px 7px 3px 0;border-radius:14px 11px 16px 10px;border:1px solid rgba(183,237,151,.66);background:#b8e989;color:#0b210e;padding:9px 14px;font:700 12px var(--font-ui)}
+.slam-collab button.secondary{color:#dbf0d4;background:#173c29;border-color:#6e9a79}
+.slam-collab button:disabled{opacity:.5;cursor:default}
+.slam-collab .collab-status{min-height:30px;margin:8px 0 0;padding:8px 12px;color:#c5dfb9;background:rgba(33,66,40,.44);border-radius:10px;font-size:12px;line-height:1.5}
+.slam-collab .collab-status[data-error=true]{color:#ffd3c8;background:rgba(112,38,27,.36)}
+.slam-collab #collabWorkspace{margin-top:15px;padding:14px 16px;border-top:1px solid rgba(180,218,160,.25)}
+.slam-collab #collabHeading{font:700 17px var(--font-title);color:#e3f6c8}
+.slam-collab #collabRole{font-size:11px;color:#93cb8c;margin-left:12px}
+.slam-collab .collab-entry{display:flex;gap:8px;flex-direction:column;border-bottom:1px solid rgba(167,205,147,.15);padding:8px 0}
+.slam-collab .collab-entry strong{font-size:12px;color:#e5f0e0}
+.slam-collab .collab-entry span{font-size:11px;color:#acc4ac}
+.slam-collab #collabEntries{max-height:230px;overflow:auto;margin-top:10px}
+.slam-collab [hidden]{display:none!important}
+@media(max-width:800px){.slam-collab{padding:0 13px;margin:13px auto 0}.slam-collab .collab-columns{grid-template-columns:1fr}.slam-collab summary{padding:12px 14px}.slam-collab .collab-body{padding:13px}}
