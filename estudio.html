@@ -162,7 +162,12 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=1">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=2">
+<script>
+if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
+  document.documentElement.classList.add('slam-invite-pending');
+}
+</script>
 </head>
 <body>
 <header class="lab-header">
@@ -176,27 +181,39 @@ main{
 
 <section id="slamCollab" class="slam-collab" aria-label="Colaboración de recorridos">
 <details id="collabDetails">
-  <summary>Colaboración · crear o sumarte a un recorrido compartido</summary>
+  <summary id="collabSummary">Colaboración · recorridos compartidos</summary>
   <div class="collab-body">
-    <p class="collab-note">Sin cuentas para participantes. Cada persona crea su marcador y modelo en el editor, y los guarda en un espacio compartido. Solo el organizador prepara la publicación.</p>
-    <div class="collab-columns">
-      <div class="collab-section">
-        <h3>Crear recorrido</h3>
-        <label for="collabProjectName">Nombre del recorrido colectivo</label>
-        <input id="collabProjectName" maxlength="100" placeholder="Ej.: Ensamblajes colectivos">
-        <button id="collabCreate" type="button">Crear espacio compartido</button>
+    <p id="collabOverview" class="collab-note">Los participantes aportan sus obras al recorrido creado por coordinación. No necesitan cuentas ni acceso a GitHub.</p>
+    <div id="collabCoordinatorBox" class="collab-section">
+      <div id="collabCoordinatorLogin">
+        <h3>Acceso de coordinación</h3>
+        <p class="collab-note">Solo la persona organizadora puede crear recorridos y publicar las aportaciones. Verificá tu correo mediante un enlace de acceso.</p>
+        <label for="collabAdminEmail">Correo de coordinación</label>
+        <input id="collabAdminEmail" type="email" autocomplete="email" placeholder="Tu correo de Supabase">
+        <button id="collabAdminSignIn" type="button">Recibir enlace por correo</button>
+        <p class="collab-note">El enlace de acceso llega a tu correo. Si es la primera vez, configurá la URL de retorno autorizada en Supabase.</p>
       </div>
-      <div class="collab-section">
-        <h3>Unirme por invitación</h3>
-        <label for="collabName">Nombre de participante</label>
-        <input id="collabName" maxlength="80" placeholder="Nombre para identificar tu obra">
-        <label for="collabInvite">Enlace o código recibido</label>
-        <input id="collabInvite" autocomplete="off" placeholder="Pegá el enlace de invitación">
-        <button id="collabJoin" type="button">Unirme al recorrido</button>
+      <div id="collabCreateFields" hidden>
+        <h3>Administración de recorridos</h3>
+        <label for="collabProjectName">Nombre del nuevo recorrido colectivo</label>
+        <input id="collabProjectName" maxlength="100" placeholder="Ej.: Ensamblajes colectivos">
+        <button id="collabCreate" type="button">Crear recorrido e invitación</button>
+        <button id="collabAdminSignOut" class="secondary" type="button">Cerrar acceso de coordinación</button>
       </div>
     </div>
-    <label for="collabProjectPicker">Recorridos a los que tenés acceso</label>
-    <select id="collabProjectPicker"><option value="">Todavía no hay recorridos vinculados</option></select>
+    <div class="collab-section" id="collabParticipantBox" hidden>
+      <h3 id="collabGuestHeading">Invitación a un recorrido</h3>
+      <p class="collab-note">Te invitaron a participar en un recorrido. Solo necesitás indicar tu nombre: no hace falta registrarte.</p>
+      <label for="collabName">Tu nombre</label>
+      <input id="collabName" maxlength="80" placeholder="Nombre para identificar tu obra">
+      <label for="collabInvite" id="collabInviteLabel" hidden>Enlace o código recibido</label>
+      <input id="collabInvite" type="hidden" autocomplete="off">
+      <button id="collabJoin" type="button">Unirme y crear mi marcador</button>
+    </div>
+    <div id="collabProjectSelector" hidden>
+      <label for="collabProjectPicker">Mis recorridos como coordinador</label>
+      <select id="collabProjectPicker"><option value="">Todavía no hay recorridos creados</option></select>
+    </div>
     <div id="collabWorkspace" hidden>
       <strong id="collabHeading"></strong><span id="collabRole"></span>
       <div id="collabInviteTools" hidden>
@@ -1113,6 +1130,27 @@ drawList();populate();void showPreview();}
 /* Puente aislado entre los recorridos locales y la colaboración.
    No modifica el visor móvil ni el motor de reconocimiento. */
 window.SLAM_COLLAB_BRIDGE={
+ activateGuest:async(project)=>{
+   // This local draft uses the already-created shared route ID.
+   // It never creates an independent route for the invited participant.
+   if(!project?.route_id)throw Error('No se recibió el recorrido colectivo.');
+   if(session?.id!==project.route_id){
+     const saved=await txn('readonly',s=>s.get(project.route_id));
+     const next=saved||{
+       ...newSession(),id:project.route_id,name:project.title,
+       description:'Borrador de aportación para '+project.title,
+       updatedAt:new Date().toISOString()
+     };
+     setSession(next,{isNew:false});
+     if(!saved)await sessionSave();
+   }
+   document.documentElement.classList.add('slam-guest-active');
+   const heading=$('markerCard').querySelector('h2');
+   if(heading?.firstChild)heading.firstChild.nodeValue='1. Mi aportación al recorrido ';
+   const message=$('sessionQRBox').querySelector('.sessionQRInfo .muted');
+   if(message)message.textContent='QR común del recorrido «'+project.title+'». Se activará para visitantes cuando el coordinador publique las obras.';
+   $('saveSession').textContent='Guardar mi borrador';
+ },
  list:()=>session?.entries.map(e=>({id:e.id,name:e.name,ready:!!(e.modelBlob&&e.markerImageBlob&&e.markerValidation?.ok)}))||[],
  get:id=>session?.entries.find(e=>e.id===id)||null,
  importAll:async(project,files)=>{
@@ -1150,6 +1188,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=1"></script>
+<script type="module" src="./colaboracion-slam.js?v=2"></script>
 </body>
 </html>

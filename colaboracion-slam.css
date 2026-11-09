@@ -24,3 +24,19 @@
 .slam-collab #collabEntries{max-height:230px;overflow:auto;margin-top:10px}
 .slam-collab [hidden]{display:none!important}
 @media(max-width:800px){.slam-collab{padding:0 13px;margin:13px auto 0}.slam-collab .collab-columns{grid-template-columns:1fr}.slam-collab summary{padding:12px 14px}.slam-collab .collab-body{padding:13px}}
+
+/* Distinct coordinator and invite-only visitor modes */
+html.slam-invite-pending main{display:none!important}
+.slam-collab #collabCoordinatorBox{max-width:590px}
+.slam-collab #collabParticipantBox{max-width:590px}
+.slam-collab .collab-section h3{line-height:1.45}
+.slam-collab #collabAdminEmail{max-width:440px}
+.slam-collab #collabParticipantBox input[type=hidden]{display:none}
+.slam-collab #collabCoordinatorLogin .collab-note{max-width:540px}
+
+html.slam-guest-active #existingSessionChooser,
+html.slam-guest-active #newSessionFields,
+html.slam-guest-active #newSession,
+html.slam-guest-active #deleteSession,
+html.slam-guest-active #exportSession,
+html.slam-guest-active .publishPanel{display:none!important}

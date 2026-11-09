@@ -19,9 +19,17 @@ const elements={
  projectHeading:$('collabHeading'),role:$('collabRole'),inviteTools:$('collabInviteTools'),
  localPicker:$('collabLocalPicker'),sendBtn:$('collabSend'),refreshBtn:$('collabRefresh'),
  entries:$('collabEntries'),syncBtn:$('collabSync'),lockBtn:$('collabLock'),
- copyBtn:$('collabCopy'),listBtn:$('collabRefreshLocal'),publishHelp:$('collabPublishHelp')
+ copyBtn:$('collabCopy'),listBtn:$('collabRefreshLocal'),publishHelp:$('collabPublishHelp'),
+  summary:$('collabSummary'),overview:$('collabOverview'),
+  coordinatorBox:$('collabCoordinatorBox'),coordinatorLogin:$('collabCoordinatorLogin'),
+  createFields:$('collabCreateFields'),participantBox:$('collabParticipantBox'),
+  pickerBox:$('collabProjectSelector'),adminEmail:$('collabAdminEmail'),
+  adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut')
 };
 let client=null,person=null,ready=false,active=null,role='',projects=[],contributions=[];
+const invitation=new URLSearchParams(location.hash.slice(1)).get('slam-invite')||'';
+const invited=!!invitation;
+let verifiedCoordinator=false,joinedProjectId=null;
 
 function status(m,err=false){elements.status.textContent=m;elements.status.dataset.error=err?'true':'false';}
 function checked(result){if(result.error)throw result.error;return result.data;}
@@ -63,42 +71,124 @@ function projectOption(p){
  return opt;
 }
 function nameOrDefault(){return elements.joinName.value.trim();}
+
+function setupScreen(){
+ elements.coordinatorBox.hidden=invited;
+ elements.participantBox.hidden=!invited || !!joinedProjectId;
+ elements.pickerBox.hidden=invited || !verifiedCoordinator;
+ elements.coordinatorLogin.hidden=invited || verifiedCoordinator;
+ elements.createFields.hidden=invited || !verifiedCoordinator;
+ if(invited){
+   elements.summary.textContent='Recorrido compartido · invitación para artistas';
+   elements.overview.textContent='Sumate al recorrido de la invitación. No necesitás cuenta, correo ni crear un proyecto.';
+   elements.invite.value=invitation;
+ }else{
+   elements.summary.textContent='Colaboración · panel de coordinación';
+   elements.overview.textContent='Creá y administrá recorridos. Cada artista entra por su propio enlace, sin elegir proyectos ni tener acceso a GitHub.';
+ }
+}
+function keyForInvitation(){
+ return 'slam-colab-joined-'+invitation.slice(0,24);
+}
+async function claimPreviousProjects(){
+ // Protect the pre-existing test project created under the old anonymous model.
+ const tokens=[];
+ try{
+   for(let i=0;i<localStorage.length;i++){
+     const key=localStorage.key(i);
+     if(key?.startsWith('slam-colab-invite-')){
+       const token=localStorage.getItem(key);
+       if(token)tokens.push(token);
+     }
+   }
+ }catch(error){console.warn('No se pudo leer la lista anterior de invitaciones',error)}
+ for(const token of tokens.slice(0,10)){
+   const result=await client.rpc('slam_claim_legacy_project',{p_invite_token:token});
+   if(result.error)console.info('Recorrido anterior no transferido:',result.error.message);
+ }
+}
 async function init(){
  if(ready)return;
  status('Conectando con Supabase…');
  client=createClient(URL_SUPABASE,CLAVE_PUBLICA,{
-   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
-   global:{headers:{'X-Client-Info':'estudio-slam-colaborativo/1'}}
+   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+   global:{headers:{'X-Client-Info':'estudio-slam-colaborativo/2'}}
  });
- let session=checked(await client.auth.getSession())?.session;
- if(!session)session=checked(await client.auth.signInAnonymously())?.session;
- if(!session?.user)throw Error('No fue posible crear una sesión anónima.');
- person=session.user;
- ready=true;
- await refreshProjects();
- const hash=new URLSearchParams(location.hash.slice(1));
- if(hash.get('slam-invite')){
-   elements.invite.value=hash.get('slam-invite');
-   elements.joinName.focus();
-   status('Invitación detectada. Escribí tu nombre y elegí «Unirme».');
- }else status('Conectado. Podés crear un recorrido o unirte mediante un enlace.');
+ let authSession=checked(await client.auth.getSession())?.session;
+ if(invited){
+   if(!authSession)authSession=checked(await client.auth.signInAnonymously())?.session;
+   if(!authSession?.user)throw Error('No fue posible iniciar el acceso anónimo.');
+   person=authSession.user;
+   const stored=localStorage.getItem(keyForInvitation());
+   if(stored && /^[0-9a-f-]{36}$/i.test(stored))joinedProjectId=stored;
+   ready=true;
+   setupScreen();
+   await refreshProjects();
+   if(joinedProjectId && active){
+     await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
+     document.documentElement.classList.remove('slam-invite-pending');
+     status('Ya estás dentro de «'+active.title+'». Podés continuar editando tu aporte.');
+   }else status('Invitación detectada. Escribí tu nombre y pulsá «Unirme y crear mi marcador».');
+ }else{
+   person=authSession?.user||null;
+   if(person?.email){
+     verifiedCoordinator=checked(await client.rpc('slam_is_coordinator'))===true;
+     if(verifiedCoordinator){
+       await claimPreviousProjects();
+       status('Coordinador verificado. Elegí un recorrido o creá uno nuevo.');
+     }else status('Este correo no está autorizado como coordinador. Verificá que uses tu correo de administración.',true);
+   }else status('Acceso de coordinación: solicitá un enlace de verificación a tu correo.');
+   ready=true;
+   setupScreen();
+   if(verifiedCoordinator)await refreshProjects();
+ }
 }
+async function requestCoordinatorEmail(){
+ if(invited)throw Error('Los artistas no necesitan correo ni cuentan con permisos de coordinación.');
+ const email=elements.adminEmail.value.trim();
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw Error('Escribí un correo electrónico válido.');
+ const callback=new URL('./estudio.html',location.href);
+ checked(await client.auth.signInWithOtp({
+   email,
+   options:{emailRedirectTo:callback.href,shouldCreateUser:true}
+ }));
+ status('Enviamos un enlace de acceso a tu correo. Abrilo en este navegador y luego desplegá «Colaboración». Si el enlace no vuelve al editor, agregá su URL en Supabase → Authentication → URL Configuration.');
+}
+async function coordinatorSignOut(){
+ if(invited)return;
+ checked(await client.auth.signOut());
+ person=null;verifiedCoordinator=false;active=null;role='';projects=[];contributions=[];
+ elements.workspace.hidden=true;
+ setupScreen();
+ status('Sesión de coordinación cerrada.');
+}
+
+
 async function refreshProjects(){
- const members=checked(await client.from('slam_members').select('project_id,role,display_name').eq('user_id',person.id))||[];
+ if(!person)return;
+ const members=checked(await client.from('slam_members')
+   .select('project_id,role,display_name').eq('user_id',person.id))||[];
  const ids=members.map(m=>m.project_id);
- const rows=ids.length?checked(await client.from('slam_projects').select('id,title,route_id,state,created_by').in('id',ids)):[];
+ const rows=ids.length?checked(await client.from('slam_projects')
+   .select('id,title,route_id,state,created_by').in('id',ids)):[];
  projects=(rows||[]).map(p=>({...p,member:members.find(m=>m.project_id===p.id)}));
- const old=active?.id||elements.projectPicker.value;
+ const old=invited?joinedProjectId:active?.id||elements.projectPicker.value;
  elements.projectPicker.replaceChildren();
- const blank=document.createElement('option');blank.value='';blank.textContent='Elegí un recorrido compartido';elements.projectPicker.add(blank);
- for(const p of projects)elements.projectPicker.add(projectOption(p));
- if(projects.some(p=>p.id===old))await chooseProject(old);
- else if(projects.length===1)await chooseProject(projects[0].id);
- else{active=null;role='';elements.workspace.hidden=true;}
+ const blank=document.createElement('option');
+ blank.value='';blank.textContent='Elegí un recorrido a administrar';
+ elements.projectPicker.add(blank);
+ for(const p of projects.filter(p=>p.member.role==='owner' || invited))elements.projectPicker.add(projectOption(p));
+ if(old && projects.some(p=>p.id===old))await chooseProject(old);
+ else if(!invited && projects.filter(p=>p.member.role==='owner').length===1)
+   await chooseProject(projects.find(p=>p.member.role==='owner').id);
+ else{active=null;role='';elements.workspace.hidden=true;joinedProjectId=invited?null:joinedProjectId;}
 }
+
 async function chooseProject(id){
  const p=projects.find(row=>row.id===id);
- if(!p){active=null;role='';elements.workspace.hidden=true;return;}
+ if(!p || (!invited&&p.member.role!=='owner') || (invited&&p.id!==joinedProjectId)){
+   active=null;role='';elements.workspace.hidden=true;return;
+ }
  active=p;role=p.member.role;
  elements.projectPicker.value=id;elements.workspace.hidden=false;
  elements.projectHeading.textContent=p.title;
@@ -217,6 +307,7 @@ async function importProject(){
 }
 async function createProject(){
  const title=elements.projectName.value.trim();
+ if(!verifiedCoordinator||invited)throw Error('Solo el coordinador verificado puede crear recorridos.');
  if(!title)throw Error('Escribí el título del recorrido compartido.');
  const token=randomToken(),routeId=newRouteId();
  const id=checked(await client.rpc('slam_create_project',{p_title:title,p_route_id:routeId,p_invite_token:token}));
@@ -232,8 +323,13 @@ async function joinProject(){
  const match=token.match(/(?:#|[?&])slam-invite=([0-9a-f]+)/i);
  const clean=match?match[1]:token;
  const id=checked(await client.rpc('slam_join_project',{p_invite_token:clean,p_display_name:displayName}));
- await refreshProjects();await chooseProject(id);
- if(location.hash.includes('slam-invite'))history.replaceState(null,'',location.pathname+location.search);
+ joinedProjectId=id;
+ localStorage.setItem(keyForInvitation(),id);
+ await refreshProjects();
+ setupScreen();
+ if(!active)await chooseProject(id);
+ await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
+ document.documentElement.classList.remove('slam-invite-pending');
  status('Te sumaste al recorrido «'+active.title+'». Creá un marcador en el editor y enviá tu aporte.');
 }
 async function copyInvite(){
@@ -262,6 +358,8 @@ function busy(btn,fn){
  };
 }
 elements.newBtn.onclick=busy(elements.newBtn,createProject);
+elements.adminLogin.onclick=busy(elements.adminLogin,requestCoordinatorEmail);
+elements.adminSignOut.onclick=busy(elements.adminSignOut,coordinatorSignOut);
 elements.joinBtn.onclick=busy(elements.joinBtn,joinProject);
 elements.sendBtn.onclick=busy(elements.sendBtn,submitContribution);
 elements.copyBtn.onclick=busy(elements.copyBtn,copyInvite);
@@ -278,5 +376,6 @@ const hash=new URLSearchParams(location.hash.slice(1));
 if(hash.has('slam-invite')){
  details.open=true;
  elements.invite.value=hash.get('slam-invite');
- status('Invitación detectada. Escribí tu nombre y pulsá «Unirme».');
+ status('Invitación detectada. Escribí tu nombre y pulsá «Unirme y crear mi marcador».');
 }
+
