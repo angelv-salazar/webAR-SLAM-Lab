@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=6">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=7">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -253,10 +253,32 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
         </div>
       </div>
       <div id="collabPublishHelp" hidden>
-        <h3>Organización y publicación</h3>
-        <p class="collab-note">Reuní las obras en el editor para revisarlas. Luego usá «Preparar publicación», subí el ZIP a la carpeta importar/ del repositorio y GitHub Actions actualizará el recorrido y sus QR.</p>
-        <button id="collabSync" type="button">Reunir todas las obras en el editor</button>
+        <h3>Publicación del recorrido colectivo</h3>
+        <p class="collab-note">Cuando todas las obras estén guardadas en la nube, publicá el recorrido completo con un clic. Se activarán automáticamente su URL y los QR de los marcadores, sin subir archivos a GitHub.</p>
+        <button id="collabPublishNow" type="button" class="collab-publish-button">Publicar recorrido</button>
         <button id="collabLock" class="secondary" type="button">Cerrar aportaciones</button>
+        <p id="collabPublishedState" class="collab-note" aria-live="polite">Este recorrido aún no fue publicado automáticamente.</p>
+        <div id="collabPublishedResult" class="collab-published-result" hidden>
+          <h3>Recorrido publicado · listo para visitantes</h3>
+          <div class="collab-published-top">
+            <canvas id="collabPublishedQR" width="210" height="210" aria-label="QR definitivo del recorrido"></canvas>
+            <div class="collab-published-actions">
+              <label for="collabPublishedURL">Enlace público WebAR</label>
+              <input id="collabPublishedURL" type="text" readonly>
+              <button id="collabPublishedOpen" type="button" class="secondary">Abrir recorrido WebAR</button>
+              <button id="collabPublishedCopy" type="button" class="secondary">Copiar enlace</button>
+              <button id="collabPublishedAllMarkers" type="button">Descargar todos los marcadores (.zip)</button>
+            </div>
+          </div>
+          <div id="collabPublishedMarkers"></div>
+          <p class="collab-note">Imprimí cada marcador PNG a 15 × 15 cm, escala 100 %. Todos los QR integrados abren este mismo recorrido. Para actualizar modelos o textos, reabrí aportaciones, guardá los cambios y volvé a pulsar «Publicar recorrido».</p>
+        </div>
+        <details class="collab-legacy">
+          <summary>Opcional · revisar obras o preparar copia para GitHub</summary>
+          <p class="collab-note">Podés reunir las obras en el editor y crear un ZIP de respaldo para el repositorio. Este paso ya no es necesario para la publicación automática.</p>
+          <button id="collabSync" class="secondary" type="button">Reunir todas las obras en el editor</button>
+          <p class="collab-note">Una vez reunidas, utilizá «Preparar publicación» en la columna Recorridos si querés guardar una versión independiente en GitHub.</p>
+        </details>
       </div>
     </div>
     <p id="collabStatus" class="collab-status" role="status">Abrí esta sección para conectar con Supabase.</p>
@@ -1205,6 +1227,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=3"></script>
+<script type="module" src="./colaboracion-slam.js?v=4"></script>
 </body>
 </html>

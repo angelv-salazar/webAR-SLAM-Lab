@@ -159,7 +159,66 @@ function addRow(item,modelURL,targetData){
   rowByTarget.set(targetName,row);rows.push(row);
   return row;
 }
+
+/*
+ * Publicaciones automáticas desde Supabase:
+ * GitHub Pages conserva la URL y el motor WebAR, pero el manifiesto y los GLB
+ * definitivos se leen de un bucket público, sin ZIP ni credenciales GitHub.
+ * Los recorridos históricos de GitHub Pages siguen como alternativa.
+ */
+const CLOUD_PUBLIC_BASE='https://kflgqbqbpzhxmiyovsvg.supabase.co/storage/v1/object/public/slam-publicaciones/';
+function cloudFile(path,type){
+  if(typeof path!=='string' ||
+     !/^v[a-z0-9-]{8,48}\/(modelos|imprimir)\/[a-z0-9_.-]+$/.test(path) ||
+     path.includes('..') || !path.includes('/'+type+'/'))
+    throw Error('Ruta pública de recurso inválida.');
+  return path;
+}
+async function readCloudPublished(){
+  const base=CLOUD_PUBLIC_BASE+requestedId+'/';
+  let response;
+  try{
+    response=await fetch(base+'manifest.json?v='+Date.now(),{cache:'no-store',referrerPolicy:'no-referrer'});
+  }catch(error){
+    // Preserve support for legacy tours hosted entirely in the GitHub repo.
+    note('No se pudo consultar almacenamiento en nube: '+String(error));
+    return false;
+  }
+  if(response.status===404)return false;
+  if(!response.ok)
+    throw Error('Almacenamiento público no disponible (HTTP '+response.status+').');
+  const data=await response.json();
+  if(data.format!=='estudio-slam-cloud-v1' || data.id!==requestedId ||
+     !Array.isArray(data.items)||data.items.length<1||data.items.length>20)
+    throw Error('El manifiesto colaborativo publicado no es válido.');
+
+  source='Publicado automáticamente · Estudio SLAM';
+  manifestName=String(data.name||'Recorrido colaborativo');
+  for(let i=0;i<data.items.length;i++){
+    const item=data.items[i];
+    const modelPath=cloudFile(item.model,'modelos');
+    const printPath=cloudFile(item.print,'imprimir');
+    if(!isId(item.id))throw Error('Identificador de marcador publicado inválido.');
+    const modelURL=new URL(modelPath,base).href;
+    const printURL=new URL(printPath,base).href;
+    const printResponse=await fetch(printURL,{cache:'force-cache',referrerPolicy:'no-referrer'});
+    if(!printResponse.ok)
+      throw Error('Falta el marcador publicado: '+String(item.title||item.id));
+
+    const marker=await buildTarget(
+      await printResponse.blob(),
+      String(item.imageTargetName||'slam-'+String(i+1).padStart(2,'0')+'-'+item.id),
+      {mode:useUniqueCrop?'unique':'legacy'}
+    );
+    addRow(item,modelURL,{
+      ...marker.data,imagePath:blobUrl(marker.blob)
+    });
+  }
+  return true;
+}
+
 async function readPublished(){
+  if(await readCloudPublished())return;
   source='Publicado en GitHub Pages';
   const url=new URL('./recorridos/'+encodeURIComponent(requestedId)+'/manifest.json',location.href);
   const response=await fetch(url,{cache:'no-store'});

@@ -204,3 +204,52 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
 .slam-collab #collabPreviewUrl{
   font:12px ui-monospace,monospace;color:#c5f9b6!important;
 }
+
+
+/* Publicación automática: controles del coordinador y descargas de marcadores */
+.slam-collab .collab-publish-button{
+  display:block;width:100%;font-size:14px;margin:13px 0;
+  padding:13px 18px;border-color:#d7ff9d;
+  background:linear-gradient(110deg,#dcffa8,#9dd56a);
+  border-radius:18px 11px 23px 13px;
+}
+.slam-collab #collabPublishedState{
+  color:#bfdcb2;padding:10px 3px;margin-top:7px;
+}
+.slam-collab .collab-published-result{
+  padding:15px;margin:13px 0;
+  background:linear-gradient(135deg,#163325,#071c13);
+  border:1px solid rgba(175,223,131,.45);
+  border-radius:22px 14px 22px 15px;
+}
+.slam-collab .collab-published-top{
+  display:grid;grid-template-columns:210px minmax(0,1fr);
+  gap:18px;align-items:center;margin:12px 0;
+}
+.slam-collab #collabPublishedQR{
+  display:block;background:white;padding:6px;
+  width:min(210px,100%);height:auto;border-radius:9px;
+}
+.slam-collab .collab-published-actions{min-width:0}
+.slam-collab .collab-published-actions button{
+  width:100%;margin:7px 0 0;
+}
+.slam-collab .collab-published-entry{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:9px;padding:7px 0;
+  border-bottom:1px solid rgba(188,226,174,.16);
+}
+.slam-collab .collab-published-entry span{
+  color:#e3eddb;font-size:12px;overflow-wrap:anywhere;
+}
+.slam-collab .collab-legacy{
+  margin:14px 0 0;padding:9px 12px;
+  border:1px solid rgba(175,218,145,.22);border-radius:11px;
+}
+.slam-collab .collab-legacy summary{
+  font-size:12px;padding:7px;color:#bfd5b9;letter-spacing:0;
+}
+@media(max-width:560px){
+  .slam-collab .collab-published-top{grid-template-columns:1fr}
+  .slam-collab #collabPublishedQR{margin:0 auto}
+}

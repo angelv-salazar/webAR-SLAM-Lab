@@ -25,6 +25,12 @@ const elements={
   createFields:$('collabCreateFields'),participantBox:$('collabParticipantBox'),
   pickerBox:$('collabProjectSelector'),adminEmail:$('collabAdminEmail'),
   adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut'),
+  publishBtn:$('collabPublishNow'),publishedState:$('collabPublishedState'),
+  publishedResult:$('collabPublishedResult'),publishedQR:$('collabPublishedQR'),
+  publishedURL:$('collabPublishedURL'),publishedOpen:$('collabPublishedOpen'),
+  publishedCopy:$('collabPublishedCopy'),
+  publishedAllMarkers:$('collabPublishedAllMarkers'),
+  publishedMarkers:$('collabPublishedMarkers'),
   previewBtn:$('collabPreviewCreate'),printBtn:$('collabMarkerDownload'),
   previewResult:$('collabPreviewResult'),previewQR:$('collabPreviewQR'),
   previewUrlInput:$('collabPreviewUrl'),previewCopy:$('collabPreviewCopy'),
@@ -34,7 +40,8 @@ let client=null,person=null,ready=false,active=null,role='',projects=[],contribu
 const invitation=new URLSearchParams(location.hash.slice(1)).get('slam-invite')||'';
 const invited=!!invitation;
 let verifiedCoordinator=false,joinedProjectId=null;
-let currentPreviewUrl='';
+let currentPreviewUrl='',publishedManifest=null;
+const PUBLIC_BUCKET_URL=URL_SUPABASE+'/storage/v1/object/public/slam-publicaciones/';
 
 function status(m,err=false){elements.status.textContent=m;elements.status.dataset.error=err?'true':'false';}
 function checked(result){if(result.error)throw result.error;return result.data;}
@@ -212,6 +219,7 @@ async function chooseProject(id){
  refreshLocal();
  elements.previewResult.hidden=true;currentPreviewUrl='';
  await reloadContributions();
+ await refreshPublishedInfo();
 }
 async function reloadContributions(){
  if(!active)return;
@@ -232,6 +240,7 @@ async function reloadContributions(){
    }
  }
  updatePreviewAvailability();
+ elements.publishBtn.disabled=contributions.length===0;
  status(contributions.length+' obra(s) compartida(s). '+(active.state==='locked'?'Aportaciones cerradas.':'Se pueden agregar o actualizar obras.'));
 }
 
@@ -418,6 +427,141 @@ async function copyInvite(){
  await navigator.clipboard.writeText(url.href);
  status('Enlace de invitación copiado. Las personas no necesitarán cuenta de GitHub.');
 }
+
+/* Organizador: una copia pública y versionada de las aportaciones cloud.
+ * El backend verifica identidad y publica el manifiesto SOLO cuando
+ * todos los GLB y PNG están copiados en el bucket público.
+ */
+function publishedTourURL(){
+ if(!active)throw Error('Elegí un recorrido.');
+ return routeURL(active.route_id);
+}
+function publicFileURL(path){
+ if(!active || !/^v[a-z0-9-]{8,48}\/imprimir\/[a-z0-9_.-]+$/.test(path)||
+    path.includes('..'))throw Error('Ruta de impresión no válida.');
+ return PUBLIC_BUCKET_URL+active.route_id+'/'+path;
+}
+async function renderPublished(manifest){
+ if(!active||manifest.id!==active.route_id||
+    manifest.format!=='estudio-slam-cloud-v1'||
+    !Array.isArray(manifest.items)||!manifest.items.length)
+      throw Error('Publicación no válida.');
+ publishedManifest=manifest;
+ const url=publishedTourURL();
+ elements.publishedURL.value=url;
+ elements.publishedResult.hidden=false;
+ elements.publishedState.textContent='Publicado el '+
+   new Date(manifest.publishedAt).toLocaleString('es-AR',{dateStyle:'long',timeStyle:'short'})+
+   ' · '+manifest.items.length+' obra(s) disponibles para visitantes.';
+ const qr=await makeQR(url,210),canvas=elements.publishedQR;
+ const ctx=canvas.getContext('2d');
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.drawImage(qr,0,0,canvas.width,canvas.height);
+ elements.publishedMarkers.replaceChildren();
+ for(const [i,item] of manifest.items.entries()){
+   const row=document.createElement('div');
+   row.className='collab-published-entry';
+   const title=document.createElement('span');
+   title.textContent=(i+1)+'. '+String(item.title||'Marcador');
+   const button=document.createElement('button');
+   button.className='secondary';button.type='button';
+   button.textContent='Descargar PNG · 15 cm';
+   button.onclick=busy(button,()=>downloadPublishedMarker(item,i));
+   row.append(title,button);elements.publishedMarkers.append(row);
+ }
+}
+async function refreshPublishedInfo(){
+ publishedManifest=null;
+ elements.publishedResult.hidden=true;
+ elements.publishedState.textContent='Todavía no está publicado automáticamente.';
+ if(role!=='owner'||!active)return;
+ try{
+   const url=PUBLIC_BUCKET_URL+active.route_id+'/manifest.json?v='+Date.now();
+   const resp=await fetch(url,{cache:'no-store',referrerPolicy:'no-referrer'});
+   if(resp.status===404)return;
+   if(!resp.ok)throw Error('HTTP '+resp.status);
+   await renderPublished(await resp.json());
+ }catch(e){
+   console.warn('No se pudo consultar la publicación:',e);
+   elements.publishedState.textContent='No se pudo comprobar la publicación; actualizá el panel.';
+ }
+}
+async function publishNow(){
+ if(role!=='owner'||!verifiedCoordinator)
+   throw Error('Solo coordinación puede publicar.');
+ await reloadContributions();
+ if(!contributions.length)throw Error('No hay obras guardadas en la nube.');
+ if(!confirm('¿Publicar '+contributions.length+' obra(s) del recorrido «'+active.title+
+   '»? Se harán públicas las versiones guardadas en la nube, se cerrarán las aportaciones y podrás reabrirlas para corregir y volver a publicar.'))return;
+ status('Publicando '+contributions.length+' obras… Se conservará el mismo enlace QR.');
+ elements.publishBtn.textContent='Publicando recorrido…';
+ try{
+   const session=checked(await client.auth.getSession())?.session;
+   if(!session?.access_token)throw Error('Ingresá nuevamente con tu correo de coordinación.');
+   const resp=await fetch(URL_SUPABASE+'/functions/v1/slam-publicar',{
+     method:'POST',cache:'no-store',referrerPolicy:'no-referrer',
+     headers:{
+       'Content-Type':'application/json',apikey:CLAVE_PUBLICA,
+       Authorization:'Bearer '+session.access_token
+     },
+     body:JSON.stringify({projectId:active.id})
+   });
+   const data=await resp.json().catch(()=>null);
+   if(!resp.ok||!data?.ok)throw Error(data?.error||'Error al publicar; intentá nuevamente.');
+   await refreshProjects();
+   if(!active||active.route_id!==data.routeId)
+     throw Error('Se publicó, pero no se pudo actualizar la vista del recorrido.');
+   await renderPublished(data.manifest);
+   status('Recorrido publicado: '+data.count+' obras. El enlace y todos los QR están activos. Descargá los marcadores PNG e imprimilos a 15 × 15 cm.');
+ }finally{elements.publishBtn.textContent='Publicar recorrido';}
+}
+function downloadFileBlob(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),18000);
+}
+async function fetchPublishedMarker(item){
+ const r=await fetch(publicFileURL(item.print),{
+   cache:'force-cache',referrerPolicy:'no-referrer'
+ });
+ if(!r.ok)throw Error('No se pudo obtener el marcador «'+item.title+'».');
+ return r.blob();
+}
+async function downloadPublishedMarker(item,i){
+ status('Descargando marcador de «'+item.title+'»…');
+ downloadFileBlob(await fetchPublishedMarker(item),
+   'marcador-'+String(i+1).padStart(2,'0')+'-'+printableFilename(item.title)+'-15x15cm.png');
+ status('Marcador descargado. Imprimilo a 15 × 15 cm, tamaño real, escala 100%.');
+}
+async function downloadAllPublishedMarkers(){
+ if(!publishedManifest)throw Error('Primero publicá el recorrido.');
+ if(typeof JSZip==='undefined')throw Error('No se cargó el generador ZIP.');
+ status('Preparando '+publishedManifest.items.length+' marcadores para imprimir…');
+ const zip=new JSZip();
+ for(const [i,item] of publishedManifest.items.entries()){
+   zip.file('marcador-'+String(i+1).padStart(2,'0')+'-'+printableFilename(item.title)+'-15x15cm.png',
+     await fetchPublishedMarker(item));
+ }
+ zip.file('LEEME-IMPRESION.txt',
+   'ESTUDIO SLAM - MARCADORES DEFINITIVOS\n'+
+   'Recorrido: '+active.title+'\nURL: '+publishedTourURL()+'\n\n'+
+   'Imprimir cada PNG a 15 x 15 cm, escala 100 %, sin ajustar a página.\n'+
+   'El QR incluido en cada marcador abre el mismo recorrido publicado.\n');
+ downloadFileBlob(await zip.generateAsync({type:'blob',compression:'STORE'}),
+   'marcadores-'+printableFilename(active.title)+'.zip');
+ status('ZIP con '+publishedManifest.items.length+' marcadores listo para imprimir.');
+}
+async function copyPublishedURL(){
+ if(!publishedManifest)throw Error('Todavía no está publicado.');
+ await navigator.clipboard.writeText(publishedTourURL());
+ status('Enlace público copiado. Ya podés compartirlo con visitantes.');
+}
+function openPublishedTour(){
+ if(!publishedManifest)throw Error('Todavía no está publicado.');
+ window.open(publishedTourURL(),'_blank','noopener');
+ status('Se abrió el recorrido público en otra pestaña.');
+}
+
 async function toggleLock(){
  if(role!=='owner')return;
  const next=active.state==='locked'?'draft':'locked';
@@ -441,6 +585,10 @@ elements.joinBtn.onclick=busy(elements.joinBtn,joinProject);
 elements.sendBtn.onclick=busy(elements.sendBtn,submitContribution);
 elements.copyBtn.onclick=busy(elements.copyBtn,copyInvite);
 elements.syncBtn.onclick=busy(elements.syncBtn,importProject);
+elements.publishBtn.onclick=busy(elements.publishBtn,publishNow);
+elements.publishedAllMarkers.onclick=busy(elements.publishedAllMarkers,downloadAllPublishedMarkers);
+elements.publishedCopy.onclick=busy(elements.publishedCopy,copyPublishedURL);
+elements.publishedOpen.onclick=busy(elements.publishedOpen,openPublishedTour);
 elements.lockBtn.onclick=busy(elements.lockBtn,toggleLock);
 elements.refreshBtn.onclick=busy(elements.refreshBtn,reloadContributions);
 elements.listBtn.onclick=()=>refreshLocal();
