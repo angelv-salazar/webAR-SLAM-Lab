@@ -83,6 +83,9 @@ async function useEditorMode(next){
  if(invited)return;
  if(modeChangePending)return;
  if(next!=='individual'&&next!=='collective')return;
+ // Clicking the already selected Individual tab must never replace an
+ // unsaved independent draft with a different local session.
+ if(next==='individual'&&editorMode==='individual')return;
  modeChangePending=true;
  modeIndividualBtn.disabled=true;modeCollectiveBtn.disabled=true;
  try{
