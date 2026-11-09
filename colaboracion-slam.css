@@ -123,3 +123,60 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
     top:auto;
   }
 }
+
+
+/*
+ * Vista de escritorio compacta: mostrar SIEMPRE las tres tarjetas
+ * Recorridos | Imagen / GLB | Vista previa + transformación en una fila.
+ * Los estilos anteriores de V7/V8 fuerzan 2 columnas bajo 1390px;
+ * se corrige aquí, manteniendo el editor del coordinador y los invitados
+ * con el mismo comportamiento. El breakpoint pequeño sigue intacto.
+ */
+@media screen and (min-width:1160px) and (max-width:1390px) {
+  main {
+    display:grid;
+    grid-template-columns:minmax(245px,.88fr) minmax(250px,.94fr) minmax(0,2.05fr);
+    column-gap:11px;
+    row-gap:18px;
+    padding:20px 12px 42px;
+    align-items:start;
+  }
+  main > #markerCard {
+    grid-column:1;
+    grid-row:1;
+  }
+  main > #settingsCard {
+    grid-column:2;
+    grid-row:1;
+  }
+  main > #viewerCard {
+    grid-column:3;
+    grid-row:1;
+    min-width:0;
+    padding-left:24px!important;
+    padding-right:24px!important;
+  }
+  main > #markerCard,
+  main > #settingsCard {
+    min-width:0;
+    padding-left:21px!important;
+    padding-right:21px!important;
+  }
+  #viewerCard .viewerWorkspace {
+    grid-template-columns:minmax(0,1.14fr) minmax(220px,.86fr);
+    gap:9px;
+  }
+  #viewerCard .transformDock {
+    padding:77px 16px 77px!important;
+  }
+  #viewerCard .transformDock .metrics {
+    gap:4px;
+  }
+  #viewerCard .transformDock .metrics input {
+    min-width:0;
+    width:100%;
+  }
+  #viewerCard #preview {
+    height:clamp(240px,42dvh,385px);
+  }
+}
