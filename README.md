@@ -43,7 +43,7 @@ Los marcadores imprimibles están diseñados para **15 × 15 cm**. La aplicació
 3. Configura los dos datos públicos en **[studio-config.js](studio-config.js)**.
 4. Elige **Colectivo → Administración de recorridos** y crea un recorrido con invitaciones.
 5. Cada artista agrega sus GLB y marcadores. Como coordinador, revisás y publicás.
-6. El QR del recorrido se abre desde cualquier móvil compatible, **sin cuentas de visitante**.
+6. El QR del recorrido se abre desde cualquier celular compatible, **sin cuentas de visitante**.
 
 **Importante:** al clonar, no heredás la base de datos ni las obras privadas del proyecto original. Un Fork de GitHub solo copia código; **Supabase se configura por separado**.
 
