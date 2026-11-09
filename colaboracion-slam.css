@@ -409,3 +409,14 @@ html.slam-individual-active #legacyLocalPublish button{
  background:linear-gradient(120deg,rgba(80,50,22,.55),rgba(47,39,24,.58));
  border-color:rgba(233,182,109,.60);color:#ffe2b4;
 }
+
+
+/* v13: los invitados trabajan exclusivamente en el proyecto colectivo.
+   El editor conserva los controles individuales en el DOM para no romper
+   los handlers, pero no los presenta en la experiencia de invitación. */
+html.slam-invite-pending #legacyLocalPublish,
+html.slam-guest-active #legacyLocalPublish,
+html.slam-invite-pending #editorModeStrip,
+html.slam-guest-active #editorModeStrip{
+  display:none!important;
+}
