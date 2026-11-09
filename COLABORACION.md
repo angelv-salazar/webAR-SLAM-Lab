@@ -9,6 +9,42 @@ Este documento describe la integración de **Estudio SLAM** alojada en GitHub Pa
 - Proyecto Supabase: https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg
 - Visor de un recorrido publicado: \`recorrido.html?id=<id-del-recorrido>\`
 
+## Prueba individual de AR (sin publicar)
+
+Los participantes pueden probar **cada obra individualmente desde otro celular** sin
+publicar todavía el recorrido colectivo ni acceder a GitHub.
+
+1. En el editor de invitado, terminar el modelo, validar la imagen y generar el marcador.
+2. Guardar la aportación en el navegador y usar **Colaboración → Guardar esta obra en la nube**.
+3. En el panel **Prueba individual · realidad aumentada**, seleccionar esa obra, pulsar
+   **Descargar marcador PNG · 15 × 15 cm** y abrir el PNG en otra pantalla
+   o imprimirlo en papel de **15 × 15 cm, escala 100%**.
+4. Pulsar **Generar enlace de prueba AR**.
+5. Aparece un **QR temporal y un enlace** para escanearlo con el celular.
+   Abrirlo desde el celular, autorizar la cámara y apuntar al marcador
+   visible en papel o en otra pantalla.
+6. Si hay cambios en escala, posición, rotación o modelo, guardar la nueva
+   versión en la nube y volver a probar. El enlace temporal lee los archivos
+   más recientes guardados.
+   
+**Diferencia importante entre QR:** el QR **integrado dentro del marcador**
+apunta al recorrido definitivo, que se abrirá después de la publicación.
+El **QR temporal mostrado en la sección de colaboración** abre únicamente
+la prueba individual y no reemplaza el QR impreso del marcador.
+
+La URL temporal vence en **7 días**. Generar otra URL para la misma obra
+invalida la anterior. Se basa en un token aleatorio de alta entropía:
+solo su hash SHA-256 se almacena en PostgreSQL. Una Edge Function verifica
+el token y emite enlaces firmados de **una hora** a un único GLB y PNG,
+sin exponer claves privadas de Supabase. No se cargan las demás obras.
+Los archivos siguen almacenados en el bucket privado.
+
+La experiencia de cámara requiere un navegador compatible, permiso de cámara,
+conexión y buena luz. Conviene realizar la primera prueba en dos dispositivos:
+uno muestra el PNG y el otro lo reconoce con la cámara. Aún no se realizó
+una prueba física del motor AR en un teléfono externo; el despliegue confirmado
+de GitHub Pages y Supabase no sustituye esa comprobación.
+
 ## Acceso de coordinación y artistas — v2
 
 La interfaz **se separa según el enlace que abra cada persona**.
