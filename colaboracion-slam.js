@@ -14,6 +14,7 @@ const panel=$('slamCollab');
 if(!panel)throw new Error('Falta el panel de colaboración.');
 const elements={
  status:$('collabStatus'), joinName:$('collabName'),projectName:$('collabProjectName'),
+ projectDescription:$('collabProjectDescription'),
  invite:$('collabInvite'),newBtn:$('collabCreate'),joinBtn:$('collabJoin'),
  projectPicker:$('collabProjectPicker'),workspace:$('collabWorkspace'),
  projectHeading:$('collabHeading'),role:$('collabRole'),inviteTools:$('collabInviteTools'),
@@ -29,6 +30,7 @@ const elements={
   duplicateNotice:$('collabDuplicateNotice'),duplicateRows:$('collabDuplicateRows'),
   ownerSaveBtn:$('collabOwnerSave'),legacyPublishBtn:$('collabLegacyPublish'),
   adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut'),
+  deleteZone:$('collabDeleteZone'),deleteProjectBtn:$('collabDeleteProject'),
   publishBtn:$('collabPublishNow'),publishedState:$('collabPublishedState'),
   publishedResult:$('collabPublishedResult'),publishedQR:$('collabPublishedQR'),
   publishedURL:$('collabPublishedURL'),publishedOpen:$('collabPublishedOpen'),
@@ -192,7 +194,7 @@ async function refreshProjects(){
    .select('project_id,role,display_name').eq('user_id',person.id))||[];
  const ids=members.map(m=>m.project_id);
  const rows=ids.length?checked(await client.from('slam_projects')
-   .select('id,title,route_id,state,created_by').in('id',ids)):[];
+   .select('id,title,description,route_id,state,created_by').in('id',ids)):[];
  projects=(rows||[]).map(p=>({...p,member:members.find(m=>m.project_id===p.id)}));
  const old=invited?joinedProjectId:active?.id||elements.projectPicker.value;
  elements.projectPicker.replaceChildren();
@@ -224,6 +226,7 @@ async function chooseProject(id){
  elements.lockBtn.textContent=p.state==='locked'?'Reabrir aportaciones':'Cerrar aportaciones';
  elements.sendBtn.disabled=p.state!=='draft';
  elements.publishHelp.hidden=role!=='owner';
+ elements.deleteZone.hidden=role!=='owner'||!verifiedCoordinator;
  elements.organizerEditorTools.hidden=role!=='owner';
  elements.editHeading.textContent=role==='owner'?'Editar y guardar obras':'Enviar mi obra';
  refreshLocal();
@@ -664,13 +667,22 @@ async function importProject(){
 }
 async function createProject(){
  const title=elements.projectName.value.trim();
+ const description=elements.projectDescription.value.trim();
  if(!verifiedCoordinator||invited)throw Error('Solo el coordinador verificado puede crear recorridos.');
  if(!title)throw Error('Escribí el título del recorrido compartido.');
+ if(description.length>500)throw Error('La descripción puede tener hasta 500 caracteres.');
  const token=randomToken(),routeId=newRouteId();
  const id=checked(await client.rpc('slam_create_project',{p_title:title,p_route_id:routeId,p_invite_token:token}));
  localStorage.setItem('slam-colab-invite-'+id,token);
+ let descriptionWarning='';
+ if(description){
+   const saved=await client.from('slam_projects').update({description})
+     .eq('id',id).eq('created_by',person.id).select('id').single();
+   if(saved.error)descriptionWarning=' La descripción no pudo guardarse: '+friendly(saved.error);
+ }
+ elements.projectName.value='';elements.projectDescription.value='';
  await refreshProjects();await chooseProject(id);
- status('Recorrido creado. Copiá el enlace de invitación para tus participantes.');
+ status('Recorrido colectivo creado. Copiá el enlace de invitación para los artistas.'+descriptionWarning);
 }
 async function joinProject(){
  const token=elements.invite.value.trim();
@@ -843,6 +855,59 @@ async function toggleLock(){
  await refreshProjects();await chooseProject(active.id);
  status(next==='locked'?'Aportaciones cerradas. Ya podés preparar la publicación.':'Aportaciones reabiertas.');
 }
+
+/*
+ * Deleting a collective is unrelated to "Eliminar borrador" (IndexedDB).
+ * A dedicated backend verifies the JWT and creator, then deletes
+ * both private/public Supabase Storage trees and the cascade DB records.
+ * A typed title and an additional confirmation avoid accidental deletion.
+ */
+async function deleteCollectiveProject(){
+ if(invited||role!=='owner'||!verifiedCoordinator||!active)
+   throw Error('Solo la persona coordinadora puede eliminar un recorrido colectivo.');
+ const target={id:active.id,title:active.title,routeId:active.route_id};
+ const typed=prompt('ELIMINAR RECORRIDO COLECTIVO\n\n'+
+   'Se borrarán las obras, las invitaciones, los archivos privados y la publicación pública. Sus QR dejarán de funcionar.\n\n'+
+   'Para continuar, escribí el nombre exacto:\n'+target.title);
+ if(typed===null)return;
+ if(typed!==target.title)
+   throw Error('El nombre no coincide. No se eliminó nada. Escribí exactamente «'+target.title+'».');
+ if(!confirm('Última confirmación:\n\n¿Eliminar DEFINITIVAMENTE «'+target.title+
+   '» y todas sus obras y archivos de Supabase?\n\nLa acción no se puede deshacer.'))return;
+ const access=checked(await client.auth.getSession())?.session?.access_token;
+ if(!access)throw Error('Ingresá nuevamente con el correo verificado de coordinación.');
+ status('Eliminando el recorrido colectivo «'+target.title+'»…');
+ const response=await fetch(URL_SUPABASE+'/functions/v1/slam-borrar-recorrido',{
+   method:'POST',cache:'no-store',referrerPolicy:'no-referrer',
+   headers:{
+     'Content-Type':'application/json',
+     apikey:CLAVE_PUBLICA,
+     Authorization:'Bearer '+access
+   },
+   body:JSON.stringify({projectId:target.id,confirmTitle:typed})
+ });
+ const result=await response.json().catch(()=>null);
+ if(!response.ok||!result?.ok||
+    result.deletedProjectId!==target.id||
+    result.deletedRouteId!==target.routeId)
+   throw Error(result?.error||'No se pudo completar la eliminación del recorrido.');
+ // Only after successful server deletion do we erase local state.
+ // Saved drafts in other people's browsers cannot be erased remotely.
+ localStorage.removeItem('slam-colab-invite-'+target.id);
+ let localWarning='';
+ try{
+   await window.SLAM_COLLAB_BRIDGE?.removeLocalCopy?.(target.routeId);
+ }catch(error){
+   localWarning=' No se pudo borrar el borrador de este navegador: '+friendly(error)+'.';
+ }
+ active=null;role='';contributions=[];publishedManifest=null;currentPreviewUrl='';
+ elements.workspace.hidden=true;
+ elements.deleteZone.hidden=true;
+ elements.publishedResult.hidden=true;
+ await refreshProjects();
+ status('Recorrido «'+target.title+'» eliminado de Supabase, incluidas sus obras, invitaciones y archivos publicados. Los otros recorridos permanecen disponibles.'+localWarning);
+}
+
 function busy(btn,fn){
  return async()=>{
   if(btn.disabled)return;
@@ -856,6 +921,7 @@ function busy(btn,fn){
  };
 }
 elements.newBtn.onclick=busy(elements.newBtn,createProject);
+elements.deleteProjectBtn.onclick=busy(elements.deleteProjectBtn,deleteCollectiveProject);
 elements.adminLogin.onclick=busy(elements.adminLogin,requestCoordinatorEmail);
 elements.adminSignOut.onclick=busy(elements.adminSignOut,coordinatorSignOut);
 elements.joinBtn.onclick=busy(elements.joinBtn,joinProject);

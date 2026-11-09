@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=9">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=10">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -197,7 +197,10 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
         <h3>Administración de recorridos</h3>
         <label for="collabProjectName">Nombre del nuevo recorrido colectivo</label>
         <input id="collabProjectName" maxlength="100" placeholder="Ej.: Ensamblajes colectivos">
-        <button id="collabCreate" type="button">Crear recorrido e invitación</button>
+        <label for="collabProjectDescription">Descripción del recorrido colectivo (opcional)</label>
+        <textarea id="collabProjectDescription" rows="2" maxlength="500" placeholder="Ej.: Experiencias de artistas invitados para una exposición WebAR"></textarea>
+        <p class="collab-note">Creá el recorrido colectivo una sola vez aquí. Este botón genera la invitación para artistas. No necesitás crearlo de nuevo en «1. Recorridos».</p>
+        <button id="collabCreate" type="button">Crear recorrido colectivo e invitación</button>
         <button id="collabAdminSignOut" class="secondary" type="button">Cerrar acceso de coordinación</button>
       </div>
     </div>
@@ -213,6 +216,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
     <div id="collabProjectSelector" hidden>
       <label for="collabProjectPicker">Mis recorridos como coordinador</label>
       <select id="collabProjectPicker"><option value="">Todavía no hay recorridos creados</option></select>
+      <p class="collab-note">Estos son tus recorridos colectivos guardados en Supabase, distintos de los borradores locales del apartado 1.</p>
     </div>
     <div id="collabWorkspace" hidden>
       <strong id="collabHeading"></strong><span id="collabRole"></span>
@@ -293,6 +297,11 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
           <p class="collab-note">Opcional: después de cargar las obras en el editor, este botón prepara un ZIP para guardar una copia independiente en GitHub.</p>
         </details>
       </div>
+      <div id="collabDeleteZone" class="collab-delete-zone" hidden>
+        <h3>Administración del recorrido colectivo</h3>
+        <p class="collab-note">Para borrar un proyecto que ya no necesitás, podés eliminarlo de Supabase junto con sus invitaciones, obras y archivos publicados. Es irreversible y no afecta otros recorridos.</p>
+        <button id="collabDeleteProject" class="collab-delete-button" type="button">Eliminar recorrido colectivo definitivamente</button>
+      </div>
     </div>
     <p id="collabStatus" class="collab-status" role="status">Abrí esta sección para conectar con Supabase.</p>
   </div>
@@ -301,7 +310,8 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 
 <main>
 <section class="card" id="markerCard">
-<h2>1. Recorridos</h2>
+<h2>1. Recorridos · borradores locales</h2>
+<p id="localDraftExplanation" class="muted">Esta sección administra borradores guardados en este navegador. Para iniciar un recorrido colectivo e invitar artistas, utilizá «Colaboración → Administración de recorridos» arriba.</p>
 <div id="existingSessionChooser" hidden>
   <label for="sessionSelect">Elegir recorrido</label>
   <select id="sessionSelect"><option value="">+ Nuevo recorrido</option></select>
@@ -326,7 +336,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 </div>
 <div class="row stretch" style="margin-top:8px">
 <button class="btn secondary" id="exportSession">Respaldo ZIP</button>
-<button class="btn warn" id="deleteSession">Eliminar</button>
+<button class="btn warn" id="deleteSession" title="Borra únicamente el borrador de este navegador, no el recorrido colectivo de Supabase">Eliminar borrador</button>
 </div>
 <!-- Herramientas heredadas: se conservan sin mostrar el panel obsoleto.
      El coordinador puede generar un ZIP opcional desde Colaboración. -->
@@ -1194,7 +1204,7 @@ window.SLAM_COLLAB_BRIDGE={
      const saved=await txn('readonly',s=>s.get(project.route_id));
      const next=saved||{
        ...newSession(),id:project.route_id,name:project.title,
-       description:'Borrador de aportación para '+project.title,
+       description:project.description||'Borrador de aportación para '+project.title,
        updatedAt:new Date().toISOString()
      };
      setSession(next,{isNew:false});
@@ -1207,6 +1217,15 @@ window.SLAM_COLLAB_BRIDGE={
    if(message)message.textContent='QR común del recorrido «'+project.title+'». Se activará para visitantes cuando el coordinador publique las obras.';
    $('saveSession').textContent='Guardar mi borrador';
  },
+ removeLocalCopy:async(routeId)=>{
+   if(!routeId)return;
+   await sessionRemove(routeId);
+   if(session?.id===routeId){
+     setSession(newSession(),{isNew:true});
+     inform('Se eliminó el borrador local del recorrido colectivo.');
+   }
+   await refreshSessions();
+ },
  list:()=>session?.entries.map(e=>({id:e.id,name:e.name,ready:!!(e.modelBlob&&e.markerImageBlob&&e.markerValidation?.ok)}))||[],
  sessionId:()=>session?.id||null,
  selectedId:()=>activeId,
@@ -1217,7 +1236,7 @@ window.SLAM_COLLAB_BRIDGE={
  get:id=>session?.entries.find(e=>e.id===id)||null,
  importAll:async(project,files)=>{
    if(!files.length||files.length>20)throw Error('El recorrido debe tener entre 1 y 20 obras.');
-   const next={id:project.route_id,name:project.title,description:'Recorrido colaborativo',
+   const next={id:project.route_id,name:project.title,description:project.description||'Recorrido colaborativo',
       createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),entries:[]};
    const fingerprints=[];
    for(const [i,{row,model,image,print,pattText}] of files.entries()){
@@ -1250,6 +1269,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=7"></script>
+<script type="module" src="./colaboracion-slam.js?v=8"></script>
 </body>
 </html>

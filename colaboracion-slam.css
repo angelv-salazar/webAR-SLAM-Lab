@@ -293,3 +293,31 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
 .slam-collab .collab-duplicate-row span{
   font-size:12px;color:#f0d5b7;overflow-wrap:anywhere;
 }
+
+
+/* collective deletion zone UI v10: visible to verified coordinators only */
+.slam-collab .collab-delete-zone{
+  margin-top:22px;padding:15px;
+  border-top:1px solid rgba(218,167,117,.35);
+  border-radius:15px;
+  background:linear-gradient(135deg,rgba(58,31,26,.35),rgba(17,29,21,.52));
+}
+.slam-collab .collab-delete-zone h3{
+  color:#ecc8a8!important;margin:0 0 8px;
+}
+.slam-collab .collab-delete-zone .collab-note{
+  color:#c8b9aa;
+}
+.slam-collab .collab-delete-button{
+  width:100%;margin-top:8px;min-height:42px;
+  color:#f5c8be!important;
+  background:rgba(73,30,27,.55)!important;
+  border:1px solid rgba(225,150,134,.55)!important;
+  border-radius:16px 10px 18px 11px;
+}
+.slam-collab .collab-delete-button:hover:not(:disabled){
+  background:rgba(112,43,35,.75)!important;
+}
+html.slam-guest-active #localDraftExplanation{
+  display:none!important;
+}

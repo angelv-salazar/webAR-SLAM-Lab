@@ -4,6 +4,50 @@
 **Proyecto de Supabase:** https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg  
 **Código:** https://github.com/angelv-salazar/webAR-SLAM-Lab
 
+## Crear un recorrido colectivo (procedimiento principal)
+
+**Un recorrido colectivo se crea únicamente en la parte superior del Estudio:**
+
+1. Abrir **Colaboración → Administración de recorridos** con el correo de
+   coordinador verificado.
+2. Escribir el **nombre del nuevo recorrido colectivo** y, si se desea,
+   una **descripción** de hasta 500 caracteres.
+3. Pulsar **Crear recorrido colectivo e invitación**.
+4. En **Mis recorridos como coordinador**, seleccionar el proyecto creado.
+5. Pulsar **Copiar invitación para artistas**, compartir el enlace y esperar
+   sus aportaciones. Cada artista participa sin cuenta GitHub.
+6. Verificar las obras en la nube y pulsar **Publicar recorrido**. Después
+   descargar los PNG e imprimirlos a 15 × 15 cm, escala 100 %.
+
+**No se necesita crear el mismo recorrido en «1. Recorridos».** Esa sección
+gestiona borradores en el navegador actual (IndexedDB), útiles para pruebas
+individuales, ajustes o importar obras del colectivo. El botón
+**Eliminar borrador** solo afecta a la copia local, no a Supabase.
+
+## Eliminar un recorrido colectivo completo
+
+Solo aparece para un coordinador verificado que haya seleccionado uno de
+**Mis recorridos como coordinador**. El botón está en **Colaboración →
+Administración del recorrido colectivo → Eliminar recorrido colectivo
+definitivamente**.
+
+- La persona coordinadora debe escribir **el nombre exacto del recorrido** y
+  confirmar la eliminación una segunda vez.
+- El backend verifica la sesión de correo y la propiedad del proyecto,
+  antes de eliminar archivos.
+- Se borran las aportaciones, los miembros, la invitación, los enlaces de
+  prueba individual, los archivos privados y los archivos publicados en
+  Supabase. La eliminación se hace mediante Storage API y cascadas de DB.
+- Los otros proyectos del coordinador no se modifican. Los borradores de
+  otros navegadores no se pueden borrar remotamente.
+- Tras eliminarlo, el QR público dejará de funcionar (puede persistir
+  una copia temporal en cachés). Los materiales descargados por terceros
+  no pueden revocarse. Si el recorrido se publicó también manualmente
+  en GitHub usando un ZIP, ese paquete GitHub debe eliminarse por separado.
+
+**Advertencia:** la eliminación es irreversible. Descargar previamente un
+respaldo de los GLB y marcadores si se quieren conservar.
+
 ## Edición curatorial de obras invitadas (sin duplicarlas)
 
 El coordinador puede corregir una obra original de un invitado: GLB, imagen,
