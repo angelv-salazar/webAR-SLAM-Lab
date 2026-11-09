@@ -253,3 +253,25 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
   .slam-collab .collab-published-top{grid-template-columns:1fr}
   .slam-collab #collabPublishedQR{margin:0 auto}
 }
+
+
+/* Edición curatorial de aportaciones: identidad original preservada. */
+.slam-collab .collab-coordinator-edit{
+  margin:14px 0;padding:13px 17px;
+  border:1px solid rgba(183,232,178,.32);
+  border-radius:19px 12px 18px 13px;
+  background:linear-gradient(120deg,rgba(24,53,34,.68),rgba(8,25,18,.80));
+}
+.slam-collab #collabOwnerSave{
+  background:linear-gradient(120deg,#daffa4,#9bcc65);
+  border:1px solid #c5f79f;
+  color:#11280e;
+  font-size:13px;
+}
+.slam-collab #collabEditHint{
+  margin:9px 0 5px;
+  color:#d9eccf;
+}
+.slam-collab #collabEditHint[data-warning="true"]{
+  color:#ffceaa;
+}

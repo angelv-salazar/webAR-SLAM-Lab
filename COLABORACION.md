@@ -4,6 +4,51 @@
 **Proyecto de Supabase:** https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg  
 **Código:** https://github.com/angelv-salazar/webAR-SLAM-Lab
 
+## Edición curatorial de obras invitadas (sin duplicarlas)
+
+El coordinador puede corregir una obra original de un invitado: GLB, imagen,
+posición, escala, rotación, animación o descripción, sin perder el nombre del
+autor ni generar un nuevo identificador.
+
+1. Abrir **Colaboración**, entrar como coordinador y elegir el recorrido.
+2. Si ya se publicó y está cerrado, pulsar **Reabrir aportaciones**.
+3. Pulsar **Cargar obras del recorrido para editar**. Este paso importa
+   todos los archivos desde Supabase a un borrador del editor local. Si hay
+   cambios locales sin guardar, la aplicación solicitará confirmación
+   antes de reemplazarlos.
+4. En el listado **2. Marcadores del recorrido**, seleccionar la obra
+   deseada. El selector **Obra del editor a guardar** de Colaboración
+   acompaña esa selección.
+5. Ajustar modelo, imagen, descripción o controles de transformación,
+   y utilizar **Guardar recorrido** para conservar la copia local.
+6. En Colaboración, pulsar **Guardar cambios en la nube**. El botón aparece
+   para una obra ya existente en el recorrido y actualiza **la fila original**
+   en la base de datos; mantiene el mismo \`user_id\`, \`project_id\`,
+   \`source_entry_id\`, nombre de autor y rutas de archivos originales.
+   No inserta una aportación nueva.
+7. **Generar enlace de prueba AR** para comprobar los cambios desde el celular.
+   Cuando esté listo todo el recorrido, **Publicar recorrido** nuevamente.
+   El enlace público y los QR conservan su identidad.
+
+El botón **Guardar esta obra en la nube** sigue sirviendo para el primer envío
+de una obra propia. El editor evita utilizarlo sobre una obra de otro autor,
+porque eso anteriormente podía generar una copia bajo la cuenta del coordinador.
+
+**Permisos:** los artistas invitados siguen sin poder editar aportaciones de
+otras personas. El coordinador puede sobreescribir archivos de un invitado solo
+mientras el recorrido está abierto; una protección adicional de PostgreSQL
+impide transferir la autoría o los identificadores originales. Los archivos
+de trabajo permanecen en el bucket privado.
+
+**Observación:** si el invitado mantiene una versión local anterior y la vuelve
+a enviar después, puede sobrescribir la corrección del coordinador. Conviene
+coordinar las revisiones y republicar una vez aprobadas las obras.
+
+La sección antigua **«Pruebas y publicación»** ya no se muestra en la columna
+Recorridos, para ninguno de los modos. Las pruebas individuales y la
+publicación colectiva están reunidas en **Colaboración**. El ZIP para GitHub
+sigue disponible dentro de la opción desplegable de respaldo.
+
 ## Publicación definitiva con un clic (coordinador)
 
 **Esta es ahora la forma principal de publicar.** La página del visor WebAR

@@ -24,6 +24,9 @@ const elements={
   coordinatorBox:$('collabCoordinatorBox'),coordinatorLogin:$('collabCoordinatorLogin'),
   createFields:$('collabCreateFields'),participantBox:$('collabParticipantBox'),
   pickerBox:$('collabProjectSelector'),adminEmail:$('collabAdminEmail'),
+  organizerEditorTools:$('collabOrganizerEditorTools'),
+  editHeading:$('collabEditHeading'),editHint:$('collabEditHint'),
+  ownerSaveBtn:$('collabOwnerSave'),legacyPublishBtn:$('collabLegacyPublish'),
   adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut'),
   publishBtn:$('collabPublishNow'),publishedState:$('collabPublishedState'),
   publishedResult:$('collabPublishedResult'),publishedQR:$('collabPublishedQR'),
@@ -69,13 +72,16 @@ function localEntries(){
 }
 function refreshLocal(){
  const selected=elements.localPicker.value;
+ const current=window.SLAM_COLLAB_BRIDGE?.selectedId?.();
  elements.localPicker.replaceChildren();
  for(const entry of localEntries()){
    const option=document.createElement('option');option.value=entry.id;
    option.textContent=entry.name+(entry.ready?' · listo':' · faltan archivos');
    elements.localPicker.add(option);
  }
- if(Array.from(elements.localPicker.options).some(opt=>opt.value===selected))elements.localPicker.value=selected;
+ const available=id=>Array.from(elements.localPicker.options).some(opt=>opt.value===id);
+ if(current&&available(current))elements.localPicker.value=current;
+ else if(selected&&available(selected))elements.localPicker.value=selected;
  updatePreviewAvailability();
 }
 function projectOption(p){
@@ -140,6 +146,7 @@ async function init(){
    setupScreen(); // Restore the invitation form if an old anonymous session was lost.
    if(joinedProjectId && active){
      await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
+     refreshLocal();
      document.documentElement.classList.remove('slam-invite-pending');
      status('Ya estás dentro de «'+active.title+'». Podés continuar editando tu aporte.');
    }else status('Invitación detectada. Escribí tu nombre y pulsá «Unirme y crear mi marcador».');
@@ -203,7 +210,7 @@ async function chooseProject(id){
  if(!p || (!invited&&p.member.role!=='owner') || (invited&&p.id!==joinedProjectId)){
    active=null;role='';elements.workspace.hidden=true;return;
  }
- active=p;role=p.member.role;
+ active=p;role=p.member.role;contributions=[];
  elements.projectPicker.value=id;elements.workspace.hidden=false;
  elements.projectHeading.textContent=p.title;
  elements.role.textContent=role==='owner'?'Organización y publicación':'Participación';
@@ -216,6 +223,8 @@ async function chooseProject(id){
  elements.lockBtn.textContent=p.state==='locked'?'Reabrir aportaciones':'Cerrar aportaciones';
  elements.sendBtn.disabled=p.state!=='draft';
  elements.publishHelp.hidden=role!=='owner';
+ elements.organizerEditorTools.hidden=role!=='owner';
+ elements.editHeading.textContent=role==='owner'?'Editar y guardar obras':'Enviar mi obra';
  refreshLocal();
  elements.previewResult.hidden=true;currentPreviewUrl='';
  await reloadContributions();
@@ -249,18 +258,58 @@ async function reloadContributions(){
  * A server-side Edge Function issues short-lived signed URLs to a single GLB
  * and its printable marker, keeping other artists' uploads private.
  */
+function localWorkspaceMatches(){
+ return !!(active && window.SLAM_COLLAB_BRIDGE?.sessionId?.()===active.route_id);
+}
+function cloudMatchesForSelection(){
+ if(!active||!localWorkspaceMatches())return [];
+ return contributions.filter(row=>row.source_entry_id===elements.localPicker.value);
+}
 function selectedSavedContribution(){
- if(!active || !person)return null;
- const selected=elements.localPicker.value;
- return contributions.find(row=>
-   row.source_entry_id===selected &&
-   (row.user_id===person.id || role==='owner')
- ) || null;
+ if(!person)return null;
+ const matching=cloudMatchesForSelection().filter(row=>
+   row.user_id===person.id || role==='owner'
+ );
+ return matching.length===1?matching[0]:null;
 }
 function updatePreviewAvailability(){
+ const local=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
+ const matching=cloudMatchesForSelection();
  const saved=selectedSavedContribution();
+ const ready=!!(local?.modelBlob && local?.markerImageBlob && local?.markerValidation?.ok);
+ const editable=active?.state==='draft';
+ const coordinatorEditing=role==='owner'&&matching.length===1;
+ const sameAuthor=matching.length===1&&matching[0].user_id===person?.id;
  elements.previewBtn.disabled=!saved;
  elements.printBtn.disabled=!saved;
+ elements.ownerSaveBtn.hidden=!coordinatorEditing;
+ elements.ownerSaveBtn.disabled=!coordinatorEditing||!ready||!editable;
+ elements.sendBtn.hidden=coordinatorEditing;
+ elements.sendBtn.disabled=coordinatorEditing||!ready||!editable||!localWorkspaceMatches()||
+   matching.length>1||(matching.length===1&&!sameAuthor);
+ const hint=elements.editHint;
+ hint.dataset.warning='false';
+ if(!active){hint.textContent='Elegí un recorrido compartido.';return;}
+ if(!localWorkspaceMatches()){
+   hint.textContent=role==='owner'
+     ? 'Primero pulsá «Cargar obras del recorrido para editar». Así evitamos guardar en un proyecto equivocado.'
+     : 'Prepará tu aportación en el editor antes de enviarla.';
+   hint.dataset.warning='true';
+ }else if(matching.length>1){
+   hint.textContent='Se encontraron varias aportaciones con el mismo identificador. No se guardará otra copia; consultá esta incidencia antes de seguir.';
+   hint.dataset.warning='true';
+ }else if(coordinatorEditing){
+   const row=matching[0];
+   hint.textContent='Obra original de «'+row.author_label+'». «Guardar cambios en la nube» actualizará ESTA MISMA aportación y conservará su autoría y su QR.';
+   if(!ready)hint.textContent+=' Primero cargá un GLB válido y una imagen de marcador validada.';
+   if(!editable){hint.textContent+=' Reabrí las aportaciones antes de guardar.';hint.dataset.warning='true';}
+ }else if(matching.length===1&&!sameAuthor){
+   hint.textContent='Esta obra pertenece a otra persona. No podés sobreescribirla con tu cuenta de artista.';
+   hint.dataset.warning='true';
+ }else{
+   hint.textContent='Esta obra se guarda con tu identidad. El guardado local no sincroniza automáticamente con la nube.';
+   if(!editable){hint.textContent+=' El recorrido está cerrado; pedí a coordinación que lo reabra.';hint.dataset.warning='true';}
+ }
 }
 function printableFilename(name){
  return (name||'marcador').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -372,8 +421,13 @@ async function toPng(blob){
 }
 async function submitContribution(){
  if(!active||active.state!=='draft')throw Error('El recorrido no admite nuevos aportes.');
+ if(!localWorkspaceMatches())throw Error('El editor local no corresponde al recorrido elegido. Cargá el recorrido correcto antes de guardar.');
  const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
  if(!e)throw Error('Seleccioná un marcador del editor.');
+ const matching=cloudMatchesForSelection();
+ if(matching.length>1)throw Error('Hay varias aportaciones con este identificador. No crearé otra copia.');
+ if(matching.some(row=>row.user_id!==person.id))
+   throw Error('Esta obra pertenece a un invitado. Usá «Guardar cambios en la nube» como coordinador para evitar duplicarla.');
  if(!e.modelBlob||!e.markerImageBlob||!e.markerValidation?.ok)throw Error('Primero cargá un GLB, una imagen admitida y completá la validación del marcador en el editor.');
  if(!/^id-[a-z0-9-]{8,60}$/i.test(e.id))throw Error('Identificador de marcador no admitido.');
  fileSizeOk(e.modelBlob,'Modelo GLB');
@@ -408,6 +462,78 @@ async function submitContribution(){
  await reloadContributions();
  status('«'+e.name+'» guardado en la nube. Los demás integrantes ya pueden verlo.');
 }
+
+/*
+ * Coordinator revisions deliberately UPDATE an existing slam_entries row.
+ * The media stay at project/original-author/original-entry (not in a new
+ * coordinator-owned folder). All attribution and route identifiers stay
+ * unchanged. Supabase RLS allows only the coordinator to overwrite this
+ * member's media while the project is open.
+ */
+async function saveExistingContributionAsCoordinator(){
+ if(!active || role!=='owner'||!verifiedCoordinator)
+   throw Error('Solo coordinación puede editar las aportaciones de invitados.');
+ if(active.state!=='draft')
+   throw Error('Primero pulsá «Reabrir aportaciones» en este recorrido publicado.');
+ if(!localWorkspaceMatches())
+   throw Error('Primero cargá el recorrido compartido en el editor.');
+ const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
+ if(!e)throw Error('Elegí un marcador para actualizar.');
+ const matches=cloudMatchesForSelection();
+ if(matches.length!==1)
+   throw Error('La obra debe existir una sola vez en la nube. No se creó ninguna copia.');
+ const original=matches[0];
+ if(original.project_id!==active.id || original.source_entry_id!==e.id)
+   throw Error('No coincide la identidad original del marcador.');
+ if(!e.modelBlob||!e.markerImageBlob||!e.markerValidation?.ok)
+   throw Error('Este marcador necesita un GLB y una imagen de reconocimiento validada.');
+ if(!/^id-[a-z0-9-]{8,60}$/i.test(e.id))
+   throw Error('Identificador de marcador inválido.');
+ fileSizeOk(e.modelBlob,'Modelo GLB');
+ const head=new Uint8Array(await e.modelBlob.slice(0,4).arrayBuffer());
+ if(String.fromCharCode(...head)!=='glTF')
+   throw Error('El archivo seleccionado no es un GLB válido.');
+
+ // Keep the author's exact original bucket paths. The DB attribution guard
+ // prevents rewriting user_id, project_id or source_entry_id.
+ const originalPath=entryPaths(original.project_id,original.user_id,original.source_entry_id);
+ if(original.model_path!==originalPath.model ||
+    original.marker_image_path!==originalPath.art ||
+    original.marker_print_path!==originalPath.print ||
+    original.patt_path!==originalPath.patt)
+   throw Error('Las rutas originales de esta obra no coinciden. No se modificó nada.');
+
+ status('Actualizando «'+original.title+'» y conservando la autoría de «'+original.author_label+'»…');
+ const {finalBlob,pattern}=await composeMarker({
+   imageBlob:e.markerImageBlob,sessionId:active.route_id
+ });
+ const art=await toPng(e.markerImageBlob);
+ const patt=new Blob([pattern],{type:'text/plain'});
+
+ // Upload the changed files without creating an extra row or new identity.
+ await upload(originalPath.model,e.modelBlob,'model/gltf-binary');
+ await upload(originalPath.art,art,'image/png');
+ await upload(originalPath.print,finalBlob,'image/png');
+ await upload(originalPath.patt,patt,'text/plain');
+
+ const changed={
+   title:(e.name||'Marcador').slice(0,100),
+   description:String(e.description||'').slice(0,500),
+   x_cm:e.x||0,y_cm:e.y||0,z_cm:e.z||0,size_cm:e.size||12,
+   rotation_deg:e.rotation||0,rotation_vertical_deg:e.rotationVertical||0,
+   animation:e.animation||'none',updated_at:new Date().toISOString()
+ };
+ const saved=checked(await client.from('slam_entries')
+   .update(changed).eq('id',original.id).eq('project_id',active.id)
+   .select('id,user_id,source_entry_id,author_label').single());
+ if(saved.user_id!==original.user_id ||
+    saved.source_entry_id!==original.source_entry_id)
+   throw Error('La identidad de la obra cambió inesperadamente; revisá los permisos.');
+ await reloadContributions();
+ status('Cambios de «'+e.name+'» guardados en la nube sin duplicar el marcador. Autor original: '+
+   original.author_label+'. La prueba AR ya puede cargar la versión corregida. Para actualizar el recorrido público, pulsá «Publicar recorrido».');
+}
+
 async function getBlob(path){
  const data=checked(await client.storage.from(BUCKET).download(path));
  if(!(data instanceof Blob))throw Error('No se pudo obtener '+path);
@@ -428,7 +554,8 @@ async function importProject(){
    files.push({row,model,image,print,pattText:await patt.text()});
  }
  await window.SLAM_COLLAB_BRIDGE.importAll(active,files);
- status('Recorrido reunido en el editor: '+files.length+' obras. Revisá la vista 3D y pulsá «Preparar publicación» para descargar el ZIP definitivo.');
+ refreshLocal();
+ status('Cargadas '+files.length+' obras en el editor. Elegí la que querés modificar y pulsá «Guardar cambios en la nube» cuando termines. No se crearán copias.');
  window.scrollTo({top:0,behavior:'smooth'});
 }
 async function createProject(){
@@ -455,6 +582,7 @@ async function joinProject(){
  setupScreen();
  if(!active)await chooseProject(id);
  await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
+ refreshLocal();
  document.documentElement.classList.remove('slam-invite-pending');
  status('Te sumaste al recorrido «'+active.title+'». Creá un marcador en el editor y enviá tu aporte.');
 }
@@ -615,7 +743,10 @@ function busy(btn,fn){
   btn.disabled=true;
   try{await init();await fn();}
   catch(e){console.error('[Estudio SLAM colaborativo]',e);status(friendly(e),true);}
-  finally{btn.disabled=false;if(active?.state==='locked'&&btn===elements.sendBtn)btn.disabled=true;}
+  finally{
+    btn.disabled=false;
+    if(btn===elements.sendBtn||btn===elements.ownerSaveBtn)updatePreviewAvailability();
+  }
  };
 }
 elements.newBtn.onclick=busy(elements.newBtn,createProject);
@@ -623,6 +754,8 @@ elements.adminLogin.onclick=busy(elements.adminLogin,requestCoordinatorEmail);
 elements.adminSignOut.onclick=busy(elements.adminSignOut,coordinatorSignOut);
 elements.joinBtn.onclick=busy(elements.joinBtn,joinProject);
 elements.sendBtn.onclick=busy(elements.sendBtn,submitContribution);
+elements.ownerSaveBtn.onclick=busy(elements.ownerSaveBtn,saveExistingContributionAsCoordinator);
+elements.legacyPublishBtn.onclick=()=>document.getElementById('preparePublish')?.click();
 elements.copyBtn.onclick=busy(elements.copyBtn,copyInvite);
 elements.syncBtn.onclick=busy(elements.syncBtn,importProject);
 elements.publishBtn.onclick=busy(elements.publishBtn,publishNow);
@@ -637,6 +770,17 @@ elements.printBtn.onclick=busy(elements.printBtn,downloadPreviewMarker);
 elements.previewCopy.onclick=busy(elements.previewCopy,copyIndividualPreview);
 elements.previewOpen.onclick=busy(elements.previewOpen,openIndividualPreview);
 elements.localPicker.addEventListener('change',()=>{
+  currentPreviewUrl='';elements.previewResult.hidden=true;
+  window.SLAM_COLLAB_BRIDGE?.selectEntry?.(elements.localPicker.value);
+  updatePreviewAvailability();
+});
+window.addEventListener('slam-entry-selected',event=>{
+  const selected=event.detail?.id;
+  if(!selected)return;
+  if(!Array.from(elements.localPicker.options).some(o=>o.value===selected))
+    refreshLocal();
+  if(Array.from(elements.localPicker.options).some(o=>o.value===selected))
+    elements.localPicker.value=selected;
   currentPreviewUrl='';elements.previewResult.hidden=true;
   updatePreviewAvailability();
 });

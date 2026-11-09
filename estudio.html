@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=7">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=8">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -220,15 +220,22 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
         <button id="collabCopy" type="button">Copiar invitación para artistas</button>
         <p class="collab-note">Guardá el enlace de invitación: quien lo tenga podrá sumarse. La organización queda asociada a este navegador mientras conserve su sesión anónima.</p>
       </div>
+      <div id="collabOrganizerEditorTools" class="collab-coordinator-edit" hidden>
+        <h3>Editar aportaciones del recorrido</h3>
+        <p class="collab-note">Cargá las obras recibidas en el editor, elegí el marcador de cualquier participante y ajustá su modelo o transformación. Podrás actualizar su aportación original sin duplicarla.</p>
+        <button id="collabSync" type="button" class="secondary">Cargar obras del recorrido para editar</button>
+      </div>
       <div class="collab-columns">
         <div class="collab-section">
-          <h3>Enviar mi obra</h3>
-          <p class="collab-note">Trabajá primero con los controles de imagen, GLB y transformación del editor. El marcador y el QR definitivos se generan para este recorrido compartido.</p>
-          <label for="collabLocalPicker">Marcador local a compartir</label>
+          <h3 id="collabEditHeading">Enviar mi obra</h3>
+          <p class="collab-note">Configurá imagen, modelo GLB, posición y animación en el editor. Guardá el borrador local y después sincronizá la obra en la nube.</p>
+          <label for="collabLocalPicker">Obra del editor a guardar</label>
           <select id="collabLocalPicker"></select>
           <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
+          <p id="collabEditHint" class="collab-note" aria-live="polite"></p>
           <button id="collabSend" type="button">Guardar esta obra en la nube</button>
-          <p class="collab-note">«Guardar recorrido» conserva el borrador en tu navegador. Para que la prueba AR cargue los cambios, también debés usar este botón. Si el recorrido ya está publicado y cerrado, el coordinador primero debe pulsar «Reabrir aportaciones».</p>
+          <button id="collabOwnerSave" class="collab-owner-save" type="button" hidden>Guardar cambios en la nube</button>
+          <p class="collab-note">«Guardar recorrido» guarda el borrador en este navegador. Para actualizar la prueba AR y una futura publicación, usá el botón de guardado en la nube. Si el recorrido está cerrado, reabrí primero las aportaciones.</p>
           <div id="collabIndividualPreview" class="collab-preview">
             <h3>Prueba individual · realidad aumentada</h3>
             <p class="collab-note">Después de guardar la obra en la nube, descargá su marcador y generá un enlace de prueba. Abrilo con otro celular para ver únicamente este GLB con la cámara, sin publicar todavía el recorrido.</p>
@@ -277,8 +284,8 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
         <details class="collab-legacy">
           <summary>Opcional · revisar obras o preparar copia para GitHub</summary>
           <p class="collab-note">Podés reunir las obras en el editor y crear un ZIP de respaldo para el repositorio. Este paso ya no es necesario para la publicación automática.</p>
-          <button id="collabSync" class="secondary" type="button">Reunir todas las obras en el editor</button>
-          <p class="collab-note">Una vez reunidas, utilizá «Preparar publicación» en la columna Recorridos si querés guardar una versión independiente en GitHub.</p>
+          <button id="collabLegacyPublish" class="secondary" type="button">Preparar ZIP para GitHub</button>
+          <p class="collab-note">Opcional: después de cargar las obras en el editor, este botón prepara un ZIP para guardar una copia independiente en GitHub.</p>
         </details>
       </div>
     </div>
@@ -316,14 +323,11 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 <button class="btn secondary" id="exportSession">Respaldo ZIP</button>
 <button class="btn warn" id="deleteSession">Eliminar</button>
 </div>
-<div class="publishPanel">
-<h3>Pruebas y publicación</h3>
-<p class="muted">Genera cada imagen y su QR, carga un GLB y guarda. Después prepara el ZIP que incluye automáticamente los Image Targets de 8th Wall.</p>
-<div class="row stretch">
-<button class="btn secondary" id="testSession" type="button" title="Abre una prueba AR en otra pestaña usando la cámara y los archivos guardados en este dispositivo">Vista previa AR (este dispositivo)</button>
-<button class="btn" id="preparePublish">Preparar publicación</button>
-</div>
-<p class="muted" style="margin-top:8px">La vista previa AR abre otra pestaña y utiliza la cámara de este dispositivo y el recorrido guardado en este navegador. Para probarlo en otro celular, usa «Preparar publicación» y sube el ZIP a GitHub.</p>
+<!-- Herramientas heredadas: se conservan sin mostrar el panel obsoleto.
+     El coordinador puede generar un ZIP opcional desde Colaboración. -->
+<div id="legacyLocalPublish" hidden>
+  <button id="testSession" type="button">Prueba local heredada</button>
+  <button id="preparePublish" type="button">Preparar ZIP heredado</button>
 </div>
 <div class="divider"></div>
 <h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
@@ -585,7 +589,10 @@ button.className='entry'+(entry.id===activeId?' active':'');
 const title=document.createElement('strong');title.textContent=(i+1)+'. '+entry.name;
 const sub=document.createElement('span');sub.textContent=(entry.kind==='custom'?'Patrón propio':entry.kind==='hiro'?'Hiro':'Kanji')+' · '+(entry.modelName||'GLB pendiente')+(entry.finalMarkerBlob?' · diseño generado':'');
 button.append(title,sub);
-button.onclick=()=>{activeId=entry.id;drawList();populate();void showPreview()};
+button.onclick=()=>{
+  activeId=entry.id;drawList();populate();void showPreview();
+  window.dispatchEvent(new CustomEvent('slam-entry-selected',{detail:{id:activeId}}));
+};
 root.appendChild(button);
 });
 $('count').textContent=session.entries.length+' marcador(es)';
@@ -1196,6 +1203,12 @@ window.SLAM_COLLAB_BRIDGE={
    $('saveSession').textContent='Guardar mi borrador';
  },
  list:()=>session?.entries.map(e=>({id:e.id,name:e.name,ready:!!(e.modelBlob&&e.markerImageBlob&&e.markerValidation?.ok)}))||[],
+ sessionId:()=>session?.id||null,
+ selectedId:()=>activeId,
+ selectEntry:id=>{
+   if(!session?.entries.some(e=>e.id===id)||id===activeId)return;
+   activeId=id;drawList();populate();void showPreview();
+ },
  get:id=>session?.entries.find(e=>e.id===id)||null,
  importAll:async(project,files)=>{
    if(!files.length||files.length>20)throw Error('El recorrido debe tener entre 1 y 20 obras.');
@@ -1232,6 +1245,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=5"></script>
+<script type="module" src="./colaboracion-slam.js?v=6"></script>
 </body>
 </html>
