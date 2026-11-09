@@ -479,8 +479,8 @@ return {id:uid(),name:'',description:'',createdAt:new Date().toISOString(),updat
 }
 function selectedEntry(){return session?.entries.find(x=>x.id===activeId)||null}
 function inform(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error)}
-function markDirty(){dirty=true;$('saveSession').textContent='Guardar cambios ●';}
-function clean(){dirty=false;$('saveSession').textContent='Guardar recorrido'}
+function markDirty(){dirty=true;$('saveSession').textContent=document.documentElement.classList.contains('slam-guest-active')?'Guardar mi borrador ●':'Guardar cambios ●';}
+function clean(){dirty=false;$('saveSession').textContent=document.documentElement.classList.contains('slam-guest-active')?'Guardar mi borrador':'Guardar recorrido'}
 function updateSessionFieldsVisibility(){
   // El nombre y la descripción solo se editan durante la creación.
   // Los recorridos guardados se identifican por el selector.

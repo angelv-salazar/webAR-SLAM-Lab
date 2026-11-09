@@ -40,3 +40,5 @@ html.slam-guest-active #newSession,
 html.slam-guest-active #deleteSession,
 html.slam-guest-active #exportSession,
 html.slam-guest-active .publishPanel{display:none!important}
+
+html.slam-invite-pending #collabCoordinatorBox{display:none!important}

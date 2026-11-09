@@ -124,6 +124,7 @@ async function init(){
    ready=true;
    setupScreen();
    await refreshProjects();
+   setupScreen(); // Restore the invitation form if an old anonymous session was lost.
    if(joinedProjectId && active){
      await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
      document.documentElement.classList.remove('slam-invite-pending');
