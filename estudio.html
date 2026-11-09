@@ -1199,7 +1199,17 @@ $('resetView').onclick=()=>{cam.position.set(1.35,1.2,1.55);controls.target.set(
 $('playToggle').onclick=()=>{play=!play;$('playToggle').textContent=play?'Pausar animación':'Reproducir animación';if(!play)applyTransform()};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 const editorStartup=(async()=>{
-try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession(),{isNew:saved.length===0});inform('Editor listo. Crea tu recorrido y carga un modelo GLB.');}
+try{
+  db=await dbOpen();
+  const saved=(await listSessions()).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const isGuestLink=new URLSearchParams(location.hash.slice(1)).has('slam-invite');
+  const isSoloPreferred=!isGuestLink && localStorage.getItem('slam-editor-mode')!=='collective';
+  const preferredId=isSoloPreferred?localStorage.getItem('slam-last-individual-session'):null;
+  const previousSolo=preferredId?saved.find(s=>s.id===preferredId):null;
+  const selected=previousSolo||saved[0]||newSession();
+  setSession(selected,{isNew:!selected.name});
+  inform('Editor listo. Elegí Individual o Colectivo y continuá con tus marcadores.');
+}
 catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();isNewSession=true;activeId=session.entries[0].id;
 $('sessionName').value='';$('sessionDesc').value='';
 updateSessionFieldsVisibility();$('existingSessionChooser').hidden=true;
@@ -1297,6 +1307,10 @@ window.SLAM_COLLAB_BRIDGE={
    if(!saved && !wasCollective && session)saved=session;
    if(!saved)saved=newSession();
    setSession(saved,{isNew:!saved.name});
+   localStorage.setItem('slam-last-individual-session',saved.id);
+   // Make the restored independent draft the default at the next load.
+   session.updatedAt=new Date().toISOString();
+   await sessionSave();
    document.documentElement.classList.remove('slam-collective-active');
    document.documentElement.classList.add('slam-individual-active');
    $('editorRouteTitle').textContent='1. Recorridos · individuales';
