@@ -42,3 +42,58 @@ html.slam-guest-active #exportSession,
 html.slam-guest-active .publishPanel{display:none!important}
 
 html.slam-invite-pending #collabCoordinatorBox{display:none!important}
+
+
+/*
+ * Invitados: adaptar los controles de transformación al zoom 100%.
+ * En la maqueta V7/V8, @media(max-width:1390px) apila el dock debajo
+ * del canvas, pero el visor conserva un máximo de 100dvh. Al reducir
+ * el zoom a 90% deja de aplicar ese breakpoint y vuelve a mostrarse.
+ * Este override afecta ÚNICAMENTE al editor de artistas invitados.
+ */
+@media (min-width:1081px) and (max-width:1390px) {
+  html.slam-guest-active #viewerCard {
+    position:relative;
+    top:auto;
+    max-height:none;
+    padding-left:29px!important;
+    padding-right:29px!important;
+  }
+  html.slam-guest-active #viewerCard .viewerWorkspace {
+    grid-template-columns:minmax(0,1.12fr) minmax(250px,.88fr);
+    gap:10px;
+    align-items:start;
+  }
+  html.slam-guest-active #viewerCard #preview {
+    height:clamp(245px,41dvh,370px);
+  }
+  html.slam-guest-active #viewerCard .transformDock {
+    max-height:clamp(390px,65dvh,650px);
+    min-height:330px;
+    padding:77px 22px 74px!important;
+  }
+  html.slam-guest-active #viewerCard .transformScroll {
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    min-height:0;
+  }
+}
+/* Pantallas más estrechas: visor y controles en una columna, sin recorte.
+   Se puede desplazarse normalmente hasta el último campo del panel. */
+@media (max-width:1080px) {
+  html.slam-guest-active #viewerCard {
+    position:relative;
+    top:auto;
+    max-height:none;
+  }
+  html.slam-guest-active #viewerCard .viewerWorkspace {
+    grid-template-columns:minmax(0,1fr);
+  }
+  html.slam-guest-active #viewerCard .transformDock {
+    max-height:none;
+    min-height:0;
+  }
+  html.slam-guest-active #viewerCard .transformScroll {
+    overflow:visible;
+  }
+}
