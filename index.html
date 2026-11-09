@@ -1,60 +1,67 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#10251e">
-  <title>WebAR · SLAM Lab</title>
-  <style>
-    :root{font-family:Inter,system-ui,-apple-system,sans-serif;color:#173025;background:#f5f7f4}
-    *{box-sizing:border-box}body{margin:0}
-    header{padding:24px max(24px,calc((100vw - 1100px)/2));background:#10251e;color:#e6f5eb;display:flex;justify-content:space-between;align-items:center;gap:20px}
-    header small{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#86d9b5}
-    header strong{font-size:17px}a{color:inherit}
-    main{max-width:1100px;margin:0 auto;padding:clamp(28px,6vw,70px) 24px}
-    h1{font-size:clamp(40px,6.5vw,75px);letter-spacing:-.065em;line-height:1.04;margin:0 0 20px;max-width:850px}
-    .lead{max-width:720px;font-size:18px;line-height:1.7;color:#52665b;margin:0 0 46px}
-    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-    article{background:white;border:1px solid #dbe5df;padding:29px;border-radius:22px;min-height:275px;display:flex;flex-direction:column}
-    .eyebrow{font-size:11px;font-weight:750;letter-spacing:.15em;color:#327c5b;text-transform:uppercase;margin-bottom:25px}
-    h2{font-size:25px;letter-spacing:-.045em;margin:0 0 10px}
-    p{line-height:1.65}article p{font-size:14px;color:#62776a;margin:0 0 27px}
-    .button{display:inline-flex;justify-content:center;align-items:center;text-decoration:none;border-radius:11px;background:#175c43;color:white;padding:13px 17px;font-size:14px;font-weight:700;margin-top:auto;width:fit-content}
-    .button.secondary{background:#e8f4ec;color:#174b39}
-    aside{margin-top:35px;border-left:3px solid #74aa89;padding:4px 0 4px 19px;color:#516b5b;font-size:14px;max-width:750px}
-    footer{font-size:12px;color:#6b7c72;margin-top:60px}
-    @media(max-width:670px){.grid{grid-template-columns:1fr}header{padding:20px 24px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1c15">
+<title>Estudio SLAM · Recorridos WebAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{font-family:"Saira",system-ui,sans-serif;color:#e8f3e7;background:#07140e}
+*{box-sizing:border-box}
+body{min-height:100vh;margin:0;background:radial-gradient(ellipse 70% 60% at 10% 10%,#1c4228 0%,transparent 65%),radial-gradient(ellipse 70% 55% at 95% 95%,#223a29 0%,transparent 65%),#07140e}
+.wrap{max-width:1130px;margin:auto;padding:28px 26px 55px}
+nav{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+nav a{color:#addb9d;text-decoration:none;font-size:13px}
+.brand{font:600 17px "Chakra Petch",sans-serif;letter-spacing:.1em}
+.brand i{display:inline-block;width:16px;height:16px;border:2px solid #bedf8f;border-radius:47% 32% 61% 26%;transform:rotate(25deg);margin-right:9px}
+.hero{padding:90px 0 52px;max-width:870px}
+.eyebrow{font:600 11px "Chakra Petch",sans-serif;text-transform:uppercase;letter-spacing:.18em;color:#a7cd95}
+h1{font:600 clamp(52px,9vw,116px)/.95 "Chakra Petch",sans-serif;letter-spacing:-.06em;margin:20px 0 26px}
+h1 em{color:#c3e69d;font-style:normal}
+.lead{font-size:clamp(15px,2.4vw,20px);line-height:1.65;color:#bed2bd;max-width:710px}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:31px 0}
+.action{display:inline-block;text-decoration:none;border:1px solid #bedb9e;border-radius:16px 9px 17px 10px;padding:13px 20px;font-size:13px;font-weight:650;color:#0c2418;background:#c6e99e}
+.action.secondary{background:transparent;color:#d1e7c4;border-color:#6d9674}
+.section-head{font:600 22px "Chakra Petch",sans-serif;letter-spacing:-.025em;margin:7px 0 22px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.card{padding:25px 23px;background:linear-gradient(150deg,rgba(38,77,47,.76),rgba(9,32,22,.88));border:1px solid rgba(175,218,152,.29);border-radius:25px 13px 27px 16px;min-height:210px}
+.card small{font:600 11px "Chakra Petch",sans-serif;letter-spacing:.14em;color:#c4e1a5}
+h2{font:600 22px "Chakra Petch",sans-serif;margin:15px 0 10px}
+.card p{font-size:13px;line-height:1.75;color:#c5d8c1}
+a:focus-visible{outline:2px solid #d0faad;outline-offset:4px}
+.foot{border-top:1px solid #405e48;margin-top:52px;padding-top:20px;color:#9eb69e;font-size:12px;line-height:1.8}
+.foot a{color:#bce298}
+@media(max-width:790px){.grid{grid-template-columns:1fr}.hero{padding:65px 0 35px}.wrap{padding:20px 18px 35px}.card{min-height:0}}
+</style>
 </head>
 <body>
-  <header><div><small>Laboratorio experimental</small><br><strong>WebAR · SLAM</strong></div><span style="font-size:12px;color:#b0d0bc">8th Wall · seguimiento espacial</span></header>
-  <main>
-    <h1>Recorridos de arte con marcadores y seguimiento espacial.</h1>
-    <p class="lead">Editor de múltiples obras y marcadores con QR, modelos GLB, descripciones y seguimiento híbrido de 8th Wall. El marcador fija la escultura y SLAM intenta conservarla mientras te alejás.</p>
-    <div class="grid">
-      <article>
-        <div class="eyebrow">01 / Editor de recorridos</div>
-        <h2>Estudio SLAM</h2>
-        <p>Creá recorridos con varios marcadores de 15 × 15 cm, QR, imágenes propias, GLB, vista previa 3D, animaciones y textos. Exportá el paquete completo para GitHub Pages.</p>
-        <a class="button" href="estudio.html">Abrir editor</a>
-      </article>
-      <article>
-        <div class="eyebrow">02 / Seguimiento libre</div>
-        <h2>Modo sin marcadores</h2>
-        <p>Conservamos el primer experimento: posicioná una obra tocando el piso sin imágenes impresas. Ideal para comparar su deriva con el modo híbrido.</p>
-        <a class="button secondary" href="estudio-libre.html">Abrir editor libre</a>
-        <a href="visor.html" style="font-size:12px;color:#246549;margin-top:11px">Probar colocación libre</a>
-      </article>
-      <article>
-        <div class="eyebrow">03 / Comparar tecnologías</div>
-        <h2>Marcador + SLAM</h2>
-        <p>Prueba híbrida: reconocé una imagen impresa, fijá la escultura y caminá a su alrededor. Al volver a enfocar el marcador, el sistema intenta corregir su posición.</p>
-        <a class="button secondary" href="imprimir-hibrido.html">Imprimir marcador</a>
-        <a href="hibrido.html" style="font-size:12px;color:#246549;margin-top:11px">Abrir prueba híbrida</a>
-      </article>
-    </div>
-    <aside><strong>Importante:</strong> 8th Wall + SLAM permite conservar temporalmente los objetos sin ver el marcador, pero puede presentar deriva. Este sistema de recorridos múltiples necesita pruebas reales antes de usarlo en una exposición. El repositorio original webAR-QR no se modifica.</aside>
-    <footer><a href="https://github.com/angelv-salazar/webAR-SLAM-Lab">Código del laboratorio en GitHub</a> · Proyecto experimental</footer>
-  </main>
+<div class="wrap">
+<nav><div class="brand"><i aria-hidden="true"></i> ESTUDIO SLAM</div><a href="./README.md">Código y documentación</a></nav>
+<main>
+<section class="hero">
+<p class="eyebrow">LABORATORIO DE REALIDAD AUMENTADA · WEBAR</p>
+<h1>Estudio <em>SLAM</em></h1>
+<p class="lead">Construí recorridos de realidad aumentada con marcadores personalizados, modelos 3D, textos y animaciones. Creá por tu cuenta o reuní aportaciones de varios artistas en una exposición compartida.</p>
+<div class="actions">
+  <a class="action" href="./estudio.html">Abrir el editor</a>
+  <a class="action secondary" href="./docs/INSTALACION-PASO-A-PASO.md">Crear tu propia copia</a>
+</div>
+</section>
+<h2 class="section-head">Dos maneras de crear</h2>
+<div class="grid">
+  <article class="card"><small>01 / INDIVIDUAL</small><h2>Tu propio recorrido</h2><p>Diseñá y probá obras WebAR, guardá borradores en el navegador y prepará un ZIP para publicar en tu web.</p></article>
+  <article class="card"><small>02 / COLECTIVO</small><h2>Crear en conjunto</h2><p>Invitá artistas, recibí marcadores y GLB en un proyecto compartido, probá y publicá el recorrido con un clic.</p></article>
+  <article class="card"><small>03 / EXHIBICIÓN</small><h2>Recorrer el espacio</h2><p>Un QR final abre la cámara del visitante. Cada imagen impresa activa una obra 3D; no requiere instalar aplicaciones.</p></article>
+</div>
+</main>
+<footer class="foot">Estudio SLAM · Proyecto abierto para reutilización del código original.
+<a href="./docs/USO-DEL-ESTUDIO.md">Guía de uso</a> ·
+<a href="./docs/ARQUITECTURA.md">Arquitectura y licencias</a> ·
+<a href="https://github.com/angelv-salazar/webAR-SLAM-Lab">Repositorio original</a>.
+El motor binario 8th Wall conserva su licencia independiente.</footer>
+</div>
 </body>
 </html>

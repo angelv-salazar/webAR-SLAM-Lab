@@ -42,8 +42,10 @@ jobs:
             mapfile -t archivos < <(git diff-tree --root --no-commit-id --name-only --diff-filter=AM -r "$GITHUB_SHA" -- 'importar/*.zip')
           fi
           if [ "${#archivos[@]}" -eq 0 ]; then
-            echo "::error::No hay ZIP nuevos o modificados en este commit."
-            exit 1
+            # La limpieza del repositorio puede eliminar antiguos ZIP.
+            # En ese caso no hay nada que publicar; esto no es un error.
+            echo "No hay ZIP añadidos o actualizados en este commit."
+            exit 0
           fi
           python scripts/importar_recorrido.py --update "${archivos[@]}"
 

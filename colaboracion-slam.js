@@ -5,9 +5,10 @@
  */
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
 import {composeMarker,routeURL,makeQR} from './marker-composer.js?v=7';
+import {STUDIO_CONFIG} from './studio-config.js?v=1';
 
-const URL_SUPABASE='https://kflgqbqbpzhxmiyovsvg.supabase.co';
-const CLAVE_PUBLICA='sb_publishable_sECvt4oXZdOkZQVFpth6XA_oG3fA5Vh';
+const URL_SUPABASE=STUDIO_CONFIG.supabaseUrl;
+const CLAVE_PUBLICA=STUDIO_CONFIG.supabasePublishableKey;
 const BUCKET='slam-colaboraciones';
 const $=id=>document.getElementById(id);
 const panel=$('slamCollab');
@@ -261,6 +262,8 @@ async function claimPreviousProjects(){
 }
 async function init(){
  if(ready)return;
+ if(!STUDIO_CONFIG.supabaseConfigured)
+   throw Error('Para usar Colectivo en tu propia copia, primero configurá studio-config.js con la URL y la clave pública de TU proyecto Supabase. El modo Individual funciona sin esa configuración.');
  status('Conectando con Supabase…');
  client=createClient(URL_SUPABASE,CLAVE_PUBLICA,{
    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import os
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
@@ -170,7 +171,12 @@ if __name__ == "__main__":
         for path in files:
             route_id, markers, created = import_zip(path, allow_update=allow_update)
             print(f"PUBLICADO: {route_id} | marcadores: {markers} | archivos: {created}")
-            print("URL: https://angelv-salazar.github.io/webAR-SLAM-Lab/recorrido.html?id=" + route_id)
+            repository = os.getenv("GITHUB_REPOSITORY", "")
+            if "/" in repository:
+                owner, name = repository.split("/", 1)
+                print(f"URL: https://{owner}.github.io/{name}/recorrido.html?id={route_id}")
+            else:
+                print("Abrí recorrido.html?id=" + route_id + " en la web de GitHub Pages de tu copia.")
     except Exception as exc:
         print("Error de importación: " + str(exc), file=sys.stderr)
         raise SystemExit(1)

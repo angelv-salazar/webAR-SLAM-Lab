@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+supabase/.env*
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# The importer intentionally accepts imported ZIP files.

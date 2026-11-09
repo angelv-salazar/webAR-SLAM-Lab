@@ -5,6 +5,7 @@
  * del encuadre y se corrige suavemente al reenfocarlo.
  */
 import {buildTarget} from './image-targets.js?v=2';
+import {STUDIO_CONFIG} from './studio-config.js?v=1';
 import {attachObjectGestures,applyTouchTransform} from './touch-objects.js';
 import {setupArVideoRecorder} from './record-clip.js';
 import {sampleObjectMotion,OBJECT_ANIMATION_TYPES} from './object-animations.js';
@@ -166,7 +167,9 @@ function addRow(item,modelURL,targetData){
  * definitivos se leen de un bucket público, sin ZIP ni credenciales GitHub.
  * Los recorridos históricos de GitHub Pages siguen como alternativa.
  */
-const CLOUD_PUBLIC_BASE='https://kflgqbqbpzhxmiyovsvg.supabase.co/storage/v1/object/public/slam-publicaciones/';
+const CLOUD_PUBLIC_BASE=STUDIO_CONFIG.supabaseConfigured
+  ? STUDIO_CONFIG.supabaseUrl+'/storage/v1/object/public/slam-publicaciones/'
+  : '';
 function cloudFile(path,type){
   if(typeof path!=='string' ||
      !/^v[a-z0-9-]{8,48}\/(modelos|imprimir)\/[a-z0-9_.-]+$/.test(path) ||
@@ -175,6 +178,7 @@ function cloudFile(path,type){
   return path;
 }
 async function readCloudPublished(){
+  if(!CLOUD_PUBLIC_BASE)return false; // Solo: paquetes publicados en GitHub.
   const base=CLOUD_PUBLIC_BASE+requestedId+'/';
   let response;
   try{
@@ -261,15 +265,17 @@ async function readPublished(){
 }
 
 async function readIndividualPreview(){
+  if(!STUDIO_CONFIG.supabaseConfigured)
+    throw Error('La prueba colaborativa requiere configurar TU Supabase en studio-config.js.');
   source='Prueba individual temporal · Supabase';
   if(!/^[0-9a-f]{64,128}$/.test(individualPreviewToken))
     throw Error('El enlace de prueba no es válido.');
   const response=await fetch(
-    'https://kflgqbqbpzhxmiyovsvg.supabase.co/functions/v1/slam-preview',{
+    STUDIO_CONFIG.supabaseUrl+'/functions/v1/slam-preview',{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
-      'apikey':'sb_publishable_sECvt4oXZdOkZQVFpth6XA_oG3fA5Vh'
+      'apikey':STUDIO_CONFIG.supabasePublishableKey
     },
     body:JSON.stringify({token:individualPreviewToken,routeId:requestedId}),
     cache:'no-store',referrerPolicy:'no-referrer'
@@ -282,7 +288,7 @@ async function readIndividualPreview(){
   const item=data.item;
   const modelUrl=new URL(item.modelUrl);
   const markerUrl=new URL(item.printUrl);
-  const allowedOrigin='https://kflgqbqbpzhxmiyovsvg.supabase.co';
+  const allowedOrigin=new URL(STUDIO_CONFIG.supabaseUrl).origin;
   if(modelUrl.origin!==allowedOrigin||markerUrl.origin!==allowedOrigin ||
      !modelUrl.pathname.includes('/storage/v1/object/sign/') ||
      !markerUrl.pathname.includes('/storage/v1/object/sign/'))
