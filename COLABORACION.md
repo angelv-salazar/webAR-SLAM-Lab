@@ -4,6 +4,54 @@
 **Proyecto de Supabase:** https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg  
 **Código:** https://github.com/angelv-salazar/webAR-SLAM-Lab
 
+## Elegir entre recorrido individual y colectivo · v11
+
+La portada de Estudio SLAM ahora muestra dos modos claramente separados:
+
+**Individual**
+- No exige iniciar sesión, Supabase ni invitar a otras personas.
+- «1. Recorridos · individuales»: crear un nombre, escribir una descripción,
+  añadir marcadores, GLB, animaciones y guardar en este navegador.
+- «Vista previa AR (este dispositivo)» utiliza el borrador guardado en
+  IndexedDB. El botón «Preparar ZIP para publicar en GitHub» produce la
+  versión independiente; ese ZIP aún se sube a GitHub manualmente.
+- Los proyectos individuales se mantienen al pasar a Colectivo.
+
+**Colectivo**
+- En «Colaboración → Administración de recorridos», crear una sola vez
+  el proyecto compartido (nombre, descripción, invitación).
+- Al seleccionar «Mis recorridos como coordinador» se conecta
+  automáticamente un borrador local al **mismo identificador del proyecto
+  Supabase**. No es necesario volver a nombrar ni crear el recorrido en
+  «1. Recorridos».
+- Un organizador puede crear marcadores propios con «+ Agregar marcador»
+  y guardarlos con «Guardar esta obra en la nube». También puede recibir
+  marcadores de invitados. Las obras propias aparecen en «Aportaciones
+  en la nube» junto a las ajenas.
+- Una vez guardadas en la nube, «Descargar marcador PNG» y «Generar enlace
+  de prueba AR» quedan disponibles para cada obra.
+- «Cargar obras recibidas para editar» es **opcional**: si aún no hay aportes,
+  el editor igualmente permite crear la primera obra del coordinador.
+- Cambiar a Individual no elimina el proyecto compartido ni lo despublica.
+  «Cerrar acceso de coordinación» también devuelve el editor al modo Individual.
+
+**Mover una obra local a un colectivo:** al entrar por primera vez en un
+proyecto diferente, Estudio ofrece **copiar** las obras individuales que ya
+tengan imagen o GLB. La copia recibe el identificador del recorrido compartido;
+el borrador individual original se conserva. Se solicita confirmación y se
+evita sobrescribir aportaciones ya presentes en el colectivo. Después de
+copiar, guardar la aportación en la nube para que aparezca y pueda probarse.
+
+**Diferencia entre guardados:**
+- «Guardar recorrido» / «Guardar mi borrador»: solo IndexedDB, este navegador.
+- «Guardar esta obra en la nube» / «Guardar cambios en la nube»: Supabase.
+- «Publicar recorrido»: después de guardar todo en la nube, activa la versión
+  pública para visitantes.
+
+Para la primera publicación individual totalmente automática todavía se
+requiere un flujo adicional; el recorrido individual conserva la prueba local
+y la exportación a GitHub que ya tenía antes.
+
 ## Crear un recorrido colectivo (procedimiento principal)
 
 **Un recorrido colectivo se crea únicamente en la parte superior del Estudio:**

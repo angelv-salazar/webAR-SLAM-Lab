@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=10">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=11">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -177,7 +177,17 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 <p>Un espacio para crear experiencias de realidad aumentada con objetos 3D.</p>
 </div></div>
 <div class="lab-index" aria-hidden="true">[ <span>OBJETOS 3D</span> &nbsp; / &nbsp; MARCADORES &nbsp; / &nbsp; SLAM ]</div>
+
 </header>
+
+<section id="editorModeStrip" class="slam-editor-modes" aria-label="Tipo de recorrido">
+  <div class="slam-mode-group">
+    <span class="slam-modes-heading">¿Cómo querés trabajar?</span>
+    <button id="modeIndividual" class="slam-mode-button" type="button" aria-pressed="true">Individual</button>
+    <button id="modeCollective" class="slam-mode-button" type="button" aria-pressed="false">Colectivo</button>
+  </div>
+  <p id="modeHelp" class="slam-mode-description" role="status">Individual: creá, guardá y probá recorridos en este navegador. Para invitar artistas, elegí Colectivo.</p>
+</section>
 
 <section id="slamCollab" class="slam-collab" aria-label="Colaboración de recorridos">
 <details id="collabDetails">
@@ -226,8 +236,8 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
       </div>
       <div id="collabOrganizerEditorTools" class="collab-coordinator-edit" hidden>
         <h3>Editar aportaciones del recorrido</h3>
-        <p class="collab-note">Cargá las obras recibidas en el editor, elegí el marcador de cualquier participante y ajustá su modelo o transformación. Podrás actualizar su aportación original sin duplicarla.</p>
-        <button id="collabSync" type="button" class="secondary">Cargar obras del recorrido para editar</button>
+        <p class="collab-note">Este editor está conectado al recorrido colectivo seleccionado. Podés crear marcadores propios con «+ Agregar marcador» o cargar aportaciones recibidas para editarlas. No hace falta crear otro recorrido en el apartado 1.</p>
+        <button id="collabSync" type="button" class="secondary">Cargar obras recibidas para editar</button>
         <div id="collabDuplicateNotice" class="collab-duplicate-notice" hidden>
           <h3>Copias duplicadas detectadas</h3>
           <p class="collab-note">Estas copias se crearon con el sistema anterior. Podés conservar la obra original del invitado y eliminar exclusivamente la copia hecha desde coordinación, después de revisar si tenía ajustes que querés conservar.</p>
@@ -236,8 +246,8 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
       </div>
       <div class="collab-columns">
         <div class="collab-section">
-          <h3 id="collabEditHeading">Enviar mi obra</h3>
-          <p class="collab-note">Configurá imagen, modelo GLB, posición y animación en el editor. Guardá el borrador local y después sincronizá la obra en la nube.</p>
+          <h3 id="collabEditHeading">Guardar mi obra en el recorrido</h3>
+          <p class="collab-note">Configurá un marcador, imagen, GLB y animación. «Guardar recorrido» conserva el borrador; «Guardar esta obra en la nube» la incorpora a las aportaciones compartidas y habilita la prueba AR individual.</p>
           <label for="collabLocalPicker">Obra del editor a guardar</label>
           <select id="collabLocalPicker"></select>
           <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
@@ -310,7 +320,8 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 
 <main>
 <section class="card" id="markerCard">
-<h2>1. Recorridos · borradores locales</h2>
+<h2 id="editorRouteTitle">1. Recorridos · individuales</h2>
+<p id="activeRouteNotice" class="muted" hidden></p>
 <p id="localDraftExplanation" class="muted">Esta sección administra borradores guardados en este navegador. Para iniciar un recorrido colectivo e invitar artistas, utilizá «Colaboración → Administración de recorridos» arriba.</p>
 <div id="existingSessionChooser" hidden>
   <label for="sessionSelect">Elegir recorrido</label>
@@ -338,11 +349,11 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 <button class="btn secondary" id="exportSession">Respaldo ZIP</button>
 <button class="btn warn" id="deleteSession" title="Borra únicamente el borrador de este navegador, no el recorrido colectivo de Supabase">Eliminar borrador</button>
 </div>
-<!-- Herramientas heredadas: se conservan sin mostrar el panel obsoleto.
-     El coordinador puede generar un ZIP opcional desde Colaboración. -->
-<div id="legacyLocalPublish" hidden>
-  <button id="testSession" type="button">Prueba local heredada</button>
-  <button id="preparePublish" type="button">Preparar ZIP heredado</button>
+<!-- Modo individual: prueba AR local y publicación por ZIP; en modo colectivo este panel se oculta. -->
+<div id="legacyLocalPublish">
+  <p class="muted">Modo individual: probá el recorrido AR en este dispositivo o prepará el ZIP para publicarlo en GitHub. El ZIP no se publica automáticamente.</p>
+  <button id="testSession" type="button">Vista previa AR (este dispositivo)</button>
+  <button id="preparePublish" type="button">Preparar ZIP para publicar en GitHub</button>
 </div>
 <div class="divider"></div>
 <h2>2. Marcadores del recorrido <span class="pill" id="count">0</span></h2>
@@ -927,6 +938,7 @@ $('addEntry').onclick=()=>{
 if(session.entries.length>=20){inform('Para esta primera versión admitimos hasta 20 marcadores por recorrido.',true);return;}
 const e=newEntry(session.entries.length);
 session.entries.push(e);activeId=e.id;markDirty();drawList();populate();void showPreview();
+window.dispatchEvent(new CustomEvent('slam-entry-selected',{detail:{id:activeId}}));
 inform('Marcador agregado. Carga una imagen propia, comprueba su validez y presiona «Generar marcador final». Todos los marcadores compartirán el QR del recorrido.');
 };
 $('duplicateEntry').onclick=()=>{
@@ -1123,6 +1135,7 @@ try{
   isNewSession=false;
   updateSessionFieldsVisibility();
   clean();await refreshSessions();
+  window.dispatchEvent(new CustomEvent('slam-draft-saved',{detail:{id:session.id,entryId:activeId}}));
   inform(
     $('collabWorkspace')&&!$('collabWorkspace').hidden
       ? 'Borrador guardado en este navegador. Para actualizar las pruebas AR y la publicación colaborativa, abrí Colaboración y pulsá «Guardar esta obra en la nube».'
@@ -1185,7 +1198,7 @@ catch(error){inform('No se pudo eliminar: '+error.message,true)}
 $('resetView').onclick=()=>{cam.position.set(1.35,1.2,1.55);controls.target.set(0,.16,0);controls.update()};
 $('playToggle').onclick=()=>{play=!play;$('playToggle').textContent=play?'Pausar animación':'Reproducir animación';if(!play)applyTransform()};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
-(async()=>{
+const editorStartup=(async()=>{
 try{db=await dbOpen();const saved=await listSessions();setSession(saved.sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0]||newSession(),{isNew:saved.length===0});inform('Editor listo. Crea tu recorrido y carga un modelo GLB.');}
 catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();isNewSession=true;activeId=session.entries[0].id;
 $('sessionName').value='';$('sessionDesc').value='';
@@ -1196,6 +1209,100 @@ drawList();populate();void showPreview();}
 /* Puente aislado entre los recorridos locales y la colaboración.
    No modifica el visor móvil ni el motor de reconocimiento. */
 window.SLAM_COLLAB_BRIDGE={
+ // A project in Supabase always has its own local draft with the SAME route_id.
+ // Preserve independent works. If the artist already started working locally
+ // (e.g. "Saleta"), explicitly offer to copy them into a new collective draft.
+ activateCoordinator:async(project)=>{
+   await editorStartup;
+   if(!project?.route_id)throw Error('No se seleccionó un recorrido colectivo.');
+   if(session?.id===project.route_id){
+     document.documentElement.classList.add('slam-collective-active');
+     document.documentElement.classList.remove('slam-individual-active');
+     $('editorRouteTitle').textContent='1. Recorrido colectivo · '+project.title;
+     $('activeRouteNotice').hidden=false;
+     $('activeRouteNotice').textContent='Conectado al colectivo «'+project.title+'». Guardar recorrido conserva tu borrador; Guardar esta obra en la nube lo comparte con participantes.';
+     updateSessionFieldsVisibility();await refreshSessions();
+     return;
+   }
+   const wasCollective=document.documentElement.classList.contains('slam-collective-active');
+   if(session){
+     // Saving a local snapshot protects unsaved art before context switching.
+     session.updatedAt=new Date().toISOString();
+     await sessionSave();
+     if(!wasCollective)localStorage.setItem('slam-last-individual-session',session.id);
+   }
+   const saved=await txn('readonly',s=>s.get(project.route_id));
+   let next=saved,merged=false;
+   // Offer transfer even if this collective already has a local draft.
+   // Keep the individual source untouched; never silently overwrite
+   // the artists' existing contributions.
+   const localArt=!wasCollective && session?.id!==project.route_id
+     ?(session?.entries||[]).filter(e=>e.modelBlob||e.markerImageBlob||e.finalMarkerBlob)
+     :[];
+   if(localArt.length){
+     const transfer=confirm(
+       'Tenés '+localArt.length+' marcador(es) individuales ('+
+       localArt.map(e=>e.name).join(', ')+
+       ').\n\n¿Querés COPIARLOS a «'+project.title+
+       '» para guardarlos en la nube del colectivo?\n\n'+
+       'Sus borradores individuales quedarán intactos.'
+     );
+     if(transfer){
+       const originals=saved?.entries||[];
+       const baseEntries=originals.filter(e=>e.modelBlob||e.markerImageBlob||
+         e.finalMarkerBlob||e.description||e.pattText||
+         (e.name&&e.name!=='Marcador 01'));
+       const existing=new Set(baseEntries.map(e=>e.id));
+       const imported=structuredClone(localArt);
+       for(const entry of imported){
+         // A prior copy must not duplicate an entry with the same identity.
+         if(existing.has(entry.id))continue;
+         existing.add(entry.id);
+         baseEntries.push(entry);
+       }
+       if(baseEntries.length>20)
+         throw Error('El recorrido admite como máximo 20 marcadores. No se copió nada.');
+       next={
+         ...(saved||newSession()),id:project.route_id,name:project.title,
+         description:project.description||'Recorrido colectivo',
+         entries:baseEntries.length?baseEntries:[newEntry(0)],
+         updatedAt:new Date().toISOString()
+       };
+       merged=true;
+     }
+   }
+   if(!next){
+     next={...newSession(),id:project.route_id,name:project.title,
+       description:project.description||'',updatedAt:new Date().toISOString()};
+   }
+   setSession(next,{isNew:false});
+   if(!saved||merged)await sessionSave();
+   document.documentElement.classList.add('slam-collective-active');
+   document.documentElement.classList.remove('slam-individual-active');
+   $('editorRouteTitle').textContent='1. Recorrido colectivo · '+project.title;
+   $('activeRouteNotice').hidden=false;
+   $('activeRouteNotice').textContent='Conectado al colectivo «'+project.title+'». Guardar recorrido conserva tu borrador; Guardar esta obra en la nube lo comparte con participantes.';
+   updateSessionFieldsVisibility();await refreshSessions();
+ },
+ activateIndividual:async()=>{
+   await editorStartup;
+   const wasCollective=document.documentElement.classList.contains('slam-collective-active');
+   if(wasCollective && session){
+     session.updatedAt=new Date().toISOString();
+     await sessionSave();
+   }
+   let saved=null;
+   const id=localStorage.getItem('slam-last-individual-session');
+   if(id && id!==session?.id)saved=await txn('readonly',s=>s.get(id));
+   if(!saved && !wasCollective && session)saved=session;
+   if(!saved)saved=newSession();
+   setSession(saved,{isNew:!saved.name});
+   document.documentElement.classList.remove('slam-collective-active');
+   document.documentElement.classList.add('slam-individual-active');
+   $('editorRouteTitle').textContent='1. Recorridos · individuales';
+   $('activeRouteNotice').hidden=true;
+   updateSessionFieldsVisibility();await refreshSessions();
+ },
  activateGuest:async(project)=>{
    // This local draft uses the already-created shared route ID.
    // It never creates an independent route for the invited participant.
@@ -1228,6 +1335,8 @@ window.SLAM_COLLAB_BRIDGE={
  },
  list:()=>session?.entries.map(e=>({id:e.id,name:e.name,ready:!!(e.modelBlob&&e.markerImageBlob&&e.markerValidation?.ok)}))||[],
  sessionId:()=>session?.id||null,
+ hasLocalChanges:()=>dirty,
+ localEntryNames:()=>session?.entries.map(e=>e.name)||[],
  selectedId:()=>activeId,
  selectEntry:id=>{
    if(!session?.entries.some(e=>e.id===id)||id===activeId)return;
@@ -1267,8 +1376,9 @@ window.SLAM_COLLAB_BRIDGE={
    inform('Importadas '+next.entries.length+' obras colaborativas. Comprobá la vista previa y prepará el ZIP.');
  }
 };
+window.dispatchEvent(new Event('slam-bridge-ready'));
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=8"></script>
+<script type="module" src="./colaboracion-slam.js?v=9"></script>
 </body>
 </html>

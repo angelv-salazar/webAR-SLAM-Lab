@@ -47,7 +47,90 @@ const invitation=new URLSearchParams(location.hash.slice(1)).get('slam-invite')|
 const invited=!!invitation;
 let verifiedCoordinator=false,joinedProjectId=null;
 let currentPreviewUrl='',publishedManifest=null;
+const modeIndividualBtn=$('modeIndividual'),modeCollectiveBtn=$('modeCollective');
+const modeHelp=$('modeHelp');
+let editorMode=invited?'collective':
+  (localStorage.getItem('slam-editor-mode')==='collective'?'collective':'individual');
+let modeChangePending=false;
 const PUBLIC_BUCKET_URL=URL_SUPABASE+'/storage/v1/object/public/slam-publicaciones/';
+
+
+/* Two workflows, one editor:
+ * Individual = IndexedDB local sessions, no Supabase dependency.
+ * Collective = one existing Supabase project, same route_id in IndexedDB
+ * and in cloud for both coordinator and invited contributors.
+ */
+function renderEditorMode(){
+ const collective=editorMode==='collective';
+ const container=$('slamCollab');
+ container.hidden=!collective;
+ modeIndividualBtn.setAttribute('aria-pressed',String(!collective));
+ modeCollectiveBtn.setAttribute('aria-pressed',String(collective));
+ modeIndividualBtn.classList.toggle('is-active',!collective);
+ modeCollectiveBtn.classList.toggle('is-active',collective);
+ modeHelp.textContent=collective
+   ? 'Colectivo: elegí o creá un proyecto en Supabase. Este mismo recorrido reúne tus marcadores y los de los invitados.'
+   : 'Individual: creá y guardá recorridos en este navegador. La prueba AR funciona en este equipo; podés exportar ZIP para publicar en GitHub.';
+ document.documentElement.classList.toggle('slam-individual-active',!collective);
+ if(!collective){
+   document.documentElement.classList.remove('slam-collective-active');
+   $('localDraftExplanation').hidden=false;
+ }else{
+   $('localDraftExplanation').hidden=true;
+ }
+}
+async function useEditorMode(next){
+ if(invited)return;
+ if(modeChangePending)return;
+ if(next!=='individual'&&next!=='collective')return;
+ modeChangePending=true;
+ modeIndividualBtn.disabled=true;modeCollectiveBtn.disabled=true;
+ try{
+   if(next==='collective'){
+     // Do not require a coordinator login until the user actually chooses
+     // a shared workspace. Existing local art remains intact meanwhile.
+     editorMode='collective';
+     localStorage.setItem('slam-editor-mode',editorMode);
+     renderEditorMode();
+     const details=$('collabDetails');
+     details.open=true;
+     await init();
+     if(active?.member?.role==='owner')await connectCoordinatorWorkspace(active);
+     if(verifiedCoordinator&&active)
+       status('Recorrido «'+active.title+'» activo. Podés agregar tu propia obra o editar aportaciones recibidas.');
+   }else{
+     await window.SLAM_COLLAB_BRIDGE?.activateIndividual?.();
+     editorMode='individual';
+     localStorage.setItem('slam-editor-mode',editorMode);
+     renderEditorMode();
+   }
+ }finally{
+   modeChangePending=false;
+   modeIndividualBtn.disabled=false;modeCollectiveBtn.disabled=false;
+ }
+}
+async function connectCoordinatorWorkspace(project){
+ if(invited||!verifiedCoordinator||project?.member?.role!=='owner')return;
+ if(!window.SLAM_COLLAB_BRIDGE?.activateCoordinator){
+   // ESM dependencies for the 3D editor can load after the collaboration
+   // module. Wait for the real editor rather than binding a wrong draft.
+   await new Promise((resolve,reject)=>{
+     const timer=setTimeout(()=>{
+       window.removeEventListener('slam-bridge-ready',readyBridge);
+       reject(Error('No se pudo cargar el editor 3D. Recargá la página.'));
+     },20000);
+     function readyBridge(){clearTimeout(timer);resolve();}
+     window.addEventListener('slam-bridge-ready',readyBridge,{once:true});
+     if(window.SLAM_COLLAB_BRIDGE?.activateCoordinator){
+       window.removeEventListener('slam-bridge-ready',readyBridge);
+       clearTimeout(timer);resolve();
+     }
+   });
+ }
+ await window.SLAM_COLLAB_BRIDGE.activateCoordinator(project);
+ refreshLocal();
+ updatePreviewAvailability();
+}
 
 function status(m,err=false){elements.status.textContent=m;elements.status.dataset.error=err?'true':'false';}
 function checked(result){if(result.error)throw result.error;return result.data;}
@@ -180,6 +263,7 @@ async function requestCoordinatorEmail(){
 }
 async function coordinatorSignOut(){
  if(invited)return;
+ await useEditorMode('individual');
  checked(await client.auth.signOut());
  person=null;verifiedCoordinator=false;active=null;role='';projects=[];contributions=[];
  elements.workspace.hidden=true;
@@ -228,7 +312,9 @@ async function chooseProject(id){
  elements.publishHelp.hidden=role!=='owner';
  elements.deleteZone.hidden=role!=='owner'||!verifiedCoordinator;
  elements.organizerEditorTools.hidden=role!=='owner';
- elements.editHeading.textContent=role==='owner'?'Editar y guardar obras':'Enviar mi obra';
+ elements.editHeading.textContent=role==='owner'?'Agregar o editar obras del colectivo':'Enviar mi obra';
+ if(editorMode==='collective'&&role==='owner')
+   await connectCoordinatorWorkspace(p);
  refreshLocal();
  elements.previewResult.hidden=true;currentPreviewUrl='';
  await reloadContributions();
@@ -397,7 +483,7 @@ function updatePreviewAvailability(){
  if(!active){hint.textContent='Elegí un recorrido compartido.';return;}
  if(!localWorkspaceMatches()){
    hint.textContent=role==='owner'
-     ? 'Primero pulsá «Cargar obras del recorrido para editar». Así evitamos guardar en un proyecto equivocado.'
+     ? 'El borrador todavía no está asociado a este colectivo. Volvé a seleccionar el recorrido en «Mis recorridos como coordinador» para conectarlo.'
      : 'Prepará tu aportación en el editor antes de enviarla.';
    hint.dataset.warning='true';
  }else if(matching.length>1&&!saved){
@@ -413,7 +499,9 @@ function updatePreviewAvailability(){
    hint.textContent='Esta obra pertenece a otra persona. No podés sobreescribirla con tu cuenta de artista.';
    hint.dataset.warning='true';
  }else{
-   hint.textContent='Esta obra se guarda con tu identidad. El guardado local no sincroniza automáticamente con la nube.';
+   hint.textContent=role==='owner'
+     ? 'Marcador nuevo de coordinación: «Guardar esta obra en la nube» lo incorporará a las aportaciones del colectivo y habilitará la prueba AR individual.'
+     : 'Esta obra se guarda con tu identidad. El guardado local no sincroniza automáticamente con la nube.';
    if(!editable){hint.textContent+=' El recorrido está cerrado; pedí a coordinación que lo reabra.';hint.dataset.warning='true';}
  }
 }
@@ -645,7 +733,19 @@ async function getBlob(path){
 }
 async function importProject(){
  if(role!=='owner')throw Error('Solo el organizador puede reunir el recorrido.');
- if(!contributions.length)throw Error('Todavía no hay obras compartidas.');
+ await connectCoordinatorWorkspace(active);
+ if(!contributions.length){
+   status('Este recorrido colectivo todavía no tiene obras en la nube. Ya está conectado al editor: creá tu marcador con «+ Agregar marcador», guardá el borrador y pulsá «Guardar esta obra en la nube».');
+   window.scrollTo({top:0,behavior:'smooth'});
+   return;
+ }
+ const local=window.SLAM_COLLAB_BRIDGE;
+ const unsynced=(local?.sessionId?.()===active.route_id?local?.list?.()||[]:[])
+   .filter(e=>e.ready&&!contributions.some(row=>row.source_entry_id===e.id));
+ if(unsynced.length)
+   throw Error('Antes de cargar obras recibidas, guardá tus marcadores locales ('+
+     unsynced.map(e=>e.name).join(', ')+
+     ') en la nube para no reemplazarlos. Usá «Guardar esta obra en la nube».');
  const canonical=canonicalContributions();
  if(!window.SLAM_COLLAB_BRIDGE?.importAll)throw Error('El editor no está listo.');
  if(!confirm('¿Importar '+canonical.length+' obras originales al editor? '+
@@ -920,6 +1020,14 @@ function busy(btn,fn){
   }
  };
 }
+modeIndividualBtn.onclick=async()=>{
+ try{await useEditorMode('individual');}
+ catch(e){console.error('[Estudio SLAM modo individual]',e);status(friendly(e),true);}
+};
+modeCollectiveBtn.onclick=async()=>{
+ try{await useEditorMode('collective');}
+ catch(e){console.error('[Estudio SLAM modo colectivo]',e);status(friendly(e),true);}
+};
 elements.newBtn.onclick=busy(elements.newBtn,createProject);
 elements.deleteProjectBtn.onclick=busy(elements.deleteProjectBtn,deleteCollectiveProject);
 elements.adminLogin.onclick=busy(elements.adminLogin,requestCoordinatorEmail);
@@ -946,6 +1054,9 @@ elements.localPicker.addEventListener('change',()=>{
   window.SLAM_COLLAB_BRIDGE?.selectEntry?.(elements.localPicker.value);
   updatePreviewAvailability();
 });
+window.addEventListener('slam-draft-saved',()=>{
+ if(editorMode==='collective'&&active)refreshLocal();
+});
 window.addEventListener('slam-entry-selected',event=>{
   const selected=event.detail?.id;
   if(!selected)return;
@@ -959,8 +1070,15 @@ window.addEventListener('slam-entry-selected',event=>{
 elements.projectPicker.onchange=()=>busy(elements.projectPicker,async()=>chooseProject(elements.projectPicker.value))();
 const details=$('collabDetails');
 details.addEventListener('toggle',()=>{
- if(details.open&&!ready)init().catch(e=>status(friendly(e),true));
+ if(details.open&&!ready&&!modeChangePending)
+   init().catch(e=>status(friendly(e),true));
 });
+if(invited){
+ $('editorModeStrip').hidden=true;
+}else if(editorMode==='collective'){
+ details.open=true;
+}
+renderEditorMode();
 const hash=new URLSearchParams(location.hash.slice(1));
 if(hash.has('slam-invite')){
  details.open=true;
