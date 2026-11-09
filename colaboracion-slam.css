@@ -180,3 +180,27 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
     height:clamp(240px,42dvh,385px);
   }
 }
+
+
+/* Individual AR test workflow: same biomechanical palette, no editor changes. */
+.slam-collab .collab-preview{
+  margin-top:15px;padding:14px 12px 13px;
+  background:linear-gradient(135deg,rgba(18,45,28,.84),rgba(7,24,17,.92));
+  border:1px solid rgba(187,234,147,.34);
+  border-radius:21px 15px 24px 15px;
+}
+.slam-collab .collab-preview h3{margin:0 0 8px}
+.slam-collab .collab-preview-result{
+  margin-top:12px;padding:12px;border-top:1px solid rgba(186,219,152,.25);
+}
+.slam-collab #collabPreviewQR{
+  width:min(100%,210px);height:auto;display:block;
+  margin:6px auto 12px;background:#fff;padding:7px;border-radius:8px;
+}
+.slam-collab .collab-preview-actions{
+  display:flex;flex-wrap:wrap;gap:7px;
+}
+.slam-collab .collab-preview-actions button{flex:1;min-width:130px}
+.slam-collab #collabPreviewUrl{
+  font:12px ui-monospace,monospace;color:#c5f9b6!important;
+}

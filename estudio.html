@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=5">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=6">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -228,6 +228,23 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
           <select id="collabLocalPicker"></select>
           <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
           <button id="collabSend" type="button">Guardar esta obra en la nube</button>
+          <div id="collabIndividualPreview" class="collab-preview">
+            <h3>Prueba individual · realidad aumentada</h3>
+            <p class="collab-note">Después de guardar la obra en la nube, descargá su marcador y generá un enlace de prueba. Abrilo con otro celular para ver únicamente este GLB con la cámara, sin publicar todavía el recorrido.</p>
+            <button id="collabMarkerDownload" class="secondary" type="button" disabled>Descargar marcador PNG · 15 × 15 cm</button>
+            <button id="collabPreviewCreate" type="button" disabled>Generar enlace de prueba AR</button>
+            <div id="collabPreviewResult" class="collab-preview-result" hidden>
+              <canvas id="collabPreviewQR" width="210" height="210" aria-label="QR para abrir la prueba AR desde otro dispositivo"></canvas>
+              <label for="collabPreviewUrl">Enlace individual para abrir desde el celular</label>
+              <input id="collabPreviewUrl" type="text" readonly aria-label="Enlace individual de prueba">
+              <div class="collab-preview-actions">
+                <button id="collabPreviewCopy" type="button" class="secondary">Copiar enlace</button>
+                <button id="collabPreviewOpen" type="button" class="secondary">Abrir prueba AR</button>
+              </div>
+              <p class="collab-note" id="collabPreviewExpires"></p>
+              <p class="collab-note">Este QR abre la prueba temporal. El QR incluido en el marcador imprimible abrirá el recorrido público cuando el coordinador lo publique. Para reconocer la imagen, mostrá el marcador en una segunda pantalla o imprimilo.</p>
+            </div>
+          </div>
         </div>
         <div class="collab-section">
           <h3>Aportaciones en la nube</h3>
@@ -1188,6 +1205,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=2"></script>
+<script type="module" src="./colaboracion-slam.js?v=3"></script>
 </body>
 </html>

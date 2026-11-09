@@ -4,7 +4,7 @@
  * Cada contribuyente usa identidad anónima, el organizador prepara el ZIP oficial.
  */
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
-import {composeMarker,routeURL} from './marker-composer.js?v=7';
+import {composeMarker,routeURL,makeQR} from './marker-composer.js?v=7';
 
 const URL_SUPABASE='https://kflgqbqbpzhxmiyovsvg.supabase.co';
 const CLAVE_PUBLICA='sb_publishable_sECvt4oXZdOkZQVFpth6XA_oG3fA5Vh';
@@ -24,12 +24,17 @@ const elements={
   coordinatorBox:$('collabCoordinatorBox'),coordinatorLogin:$('collabCoordinatorLogin'),
   createFields:$('collabCreateFields'),participantBox:$('collabParticipantBox'),
   pickerBox:$('collabProjectSelector'),adminEmail:$('collabAdminEmail'),
-  adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut')
+  adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut'),
+  previewBtn:$('collabPreviewCreate'),printBtn:$('collabMarkerDownload'),
+  previewResult:$('collabPreviewResult'),previewQR:$('collabPreviewQR'),
+  previewUrlInput:$('collabPreviewUrl'),previewCopy:$('collabPreviewCopy'),
+  previewOpen:$('collabPreviewOpen'),previewExpires:$('collabPreviewExpires')
 };
 let client=null,person=null,ready=false,active=null,role='',projects=[],contributions=[];
 const invitation=new URLSearchParams(location.hash.slice(1)).get('slam-invite')||'';
 const invited=!!invitation;
 let verifiedCoordinator=false,joinedProjectId=null;
+let currentPreviewUrl='';
 
 function status(m,err=false){elements.status.textContent=m;elements.status.dataset.error=err?'true':'false';}
 function checked(result){if(result.error)throw result.error;return result.data;}
@@ -64,6 +69,7 @@ function refreshLocal(){
    elements.localPicker.add(option);
  }
  if(Array.from(elements.localPicker.options).some(opt=>opt.value===selected))elements.localPicker.value=selected;
+ updatePreviewAvailability();
 }
 function projectOption(p){
  const opt=document.createElement('option');opt.value=p.id;
@@ -204,6 +210,7 @@ async function chooseProject(id){
  elements.sendBtn.disabled=p.state!=='draft';
  elements.publishHelp.hidden=role!=='owner';
  refreshLocal();
+ elements.previewResult.hidden=true;currentPreviewUrl='';
  await reloadContributions();
 }
 async function reloadContributions(){
@@ -224,8 +231,77 @@ async function reloadContributions(){
      item.append(label,aside);elements.entries.append(item);
    }
  }
+ updatePreviewAvailability();
  status(contributions.length+' obra(s) compartida(s). '+(active.state==='locked'?'Aportaciones cerradas.':'Se pueden agregar o actualizar obras.'));
 }
+
+/* Preview links are capabilities tied to one saved slam_entries row.
+ * The token is generated in the browser, but only its SHA-256 hash is stored.
+ * A server-side Edge Function issues short-lived signed URLs to a single GLB
+ * and its printable marker, keeping other artists' uploads private.
+ */
+function selectedSavedContribution(){
+ if(!active || !person)return null;
+ const selected=elements.localPicker.value;
+ return contributions.find(row=>
+   row.source_entry_id===selected &&
+   (row.user_id===person.id || role==='owner')
+ ) || null;
+}
+function updatePreviewAvailability(){
+ const saved=selectedSavedContribution();
+ elements.previewBtn.disabled=!saved;
+ elements.printBtn.disabled=!saved;
+}
+function printableFilename(name){
+ return (name||'marcador').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+   .replace(/[^a-zA-Z0-9_-]+/g,'-').slice(0,55)||'marcador';
+}
+async function downloadPreviewMarker(){
+ const row=selectedSavedContribution();
+ if(!row)throw Error('Primero guardá este marcador en la nube.');
+ status('Preparando el marcador imprimible…');
+ const blob=await getBlob(row.marker_print_path);
+ const link=document.createElement('a'),object=URL.createObjectURL(blob);
+ link.href=object;link.download=printableFilename(row.title)+'-15x15cm.png';
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(object),12000);
+ status('Descargaste el marcador de «'+row.title+'». Imprimilo a escala 100% y tamaño 15 × 15 cm, o mostralo en otra pantalla.');
+}
+async function createIndividualPreview(){
+ const row=selectedSavedContribution();
+ if(!row)throw Error('Guardá primero la obra seleccionada en la nube.');
+ const token=randomToken();
+ status('Preparando un enlace temporal solo para «'+row.title+'»…');
+ const expiration=checked(await client.rpc('slam_create_preview_link',{
+   p_entry_id:row.id,p_token:token
+ }));
+ const url=new URL('./recorrido.html',location.href);
+ url.searchParams.set('id',active.route_id);
+ url.searchParams.set('prueba',token);
+ const qr=await makeQR(url.href,210);
+ const ctx=elements.previewQR.getContext('2d');
+ ctx.clearRect(0,0,elements.previewQR.width,elements.previewQR.height);
+ ctx.drawImage(qr,0,0,elements.previewQR.width,elements.previewQR.height);
+ currentPreviewUrl=url.href;
+ elements.previewUrlInput.value=currentPreviewUrl;
+ elements.previewResult.hidden=false;
+ elements.previewExpires.textContent='Prueba válida hasta el '+
+   new Date(expiration).toLocaleString('es-AR',{dateStyle:'long',timeStyle:'short'})+
+   '. Si generás otro enlace de esta obra, el anterior queda invalidado.';
+ status('Enlace AR creado para «'+row.title+'». Escaneá el QR con el celular o copiá el enlace; apuntá la cámara al marcador descargado.');
+}
+async function copyIndividualPreview(){
+ if(!currentPreviewUrl)throw Error('Generá primero un enlace de prueba.');
+ await navigator.clipboard.writeText(currentPreviewUrl);
+ status('Enlace de prueba copiado. Abrilo desde el celular para usar la cámara.');
+}
+function openIndividualPreview(){
+ if(!currentPreviewUrl)throw Error('Generá primero un enlace de prueba.');
+ window.open(currentPreviewUrl,'_blank','noopener');
+ status('Se abrió la vista previa AR. Autorizá la cámara y apuntá al marcador.');
+}
+
 async function upload(path,blob,mime){
  fileSizeOk(blob,path.split('/').pop());
  checked(await client.storage.from(BUCKET).upload(path,blob,{
@@ -368,6 +444,14 @@ elements.syncBtn.onclick=busy(elements.syncBtn,importProject);
 elements.lockBtn.onclick=busy(elements.lockBtn,toggleLock);
 elements.refreshBtn.onclick=busy(elements.refreshBtn,reloadContributions);
 elements.listBtn.onclick=()=>refreshLocal();
+elements.previewBtn.onclick=busy(elements.previewBtn,createIndividualPreview);
+elements.printBtn.onclick=busy(elements.printBtn,downloadPreviewMarker);
+elements.previewCopy.onclick=busy(elements.previewCopy,copyIndividualPreview);
+elements.previewOpen.onclick=busy(elements.previewOpen,openIndividualPreview);
+elements.localPicker.addEventListener('change',()=>{
+  currentPreviewUrl='';elements.previewResult.hidden=true;
+  updatePreviewAvailability();
+});
 elements.projectPicker.onchange=()=>busy(elements.projectPicker,async()=>chooseProject(elements.projectPicker.value))();
 const details=$('collabDetails');
 details.addEventListener('toggle',()=>{

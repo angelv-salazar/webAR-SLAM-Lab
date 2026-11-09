@@ -30,6 +30,7 @@ const infoText=$('infoText'),infoAccessible=$('accessibleText');
 const infoToggle=$('infoToggle'),splash=$('splash'),fatalPanel=$('fatal');
 const params=new URLSearchParams(location.search);
 const requestedId=params.get('id')||'',preview=params.get('preview')==='1';
+const individualPreviewToken=params.get('prueba')||'';
 const useUniqueCrop=params.get('target')!=='original';
 const stabilityMode=['legacy','strict'].includes(params.get('stability'))
   ?params.get('stability'):'balanced';
@@ -199,6 +200,53 @@ async function readPublished(){
     addRow(item,new URL(modelPath,url).href,targetData);
   }
 }
+
+async function readIndividualPreview(){
+  source='Prueba individual temporal · Supabase';
+  if(!/^[0-9a-f]{64,128}$/.test(individualPreviewToken))
+    throw Error('El enlace de prueba no es válido.');
+  const response=await fetch(
+    'https://kflgqbqbpzhxmiyovsvg.supabase.co/functions/v1/slam-preview',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':'sb_publishable_sECvt4oXZdOkZQVFpth6XA_oG3fA5Vh'
+    },
+    body:JSON.stringify({token:individualPreviewToken,routeId:requestedId}),
+    cache:'no-store',referrerPolicy:'no-referrer'
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok || !data || data.format!=='estudio-slam-individual-v1')
+    throw Error(data?.error||'No fue posible cargar esta prueba. Generá otro enlace desde Estudio SLAM.');
+  if(data.id!==requestedId||!data.item)
+    throw Error('La prueba no corresponde a este recorrido.');
+  const item=data.item;
+  const modelUrl=new URL(item.modelUrl);
+  const markerUrl=new URL(item.printUrl);
+  const allowedOrigin='https://kflgqbqbpzhxmiyovsvg.supabase.co';
+  if(modelUrl.origin!==allowedOrigin||markerUrl.origin!==allowedOrigin ||
+     !modelUrl.pathname.includes('/storage/v1/object/sign/') ||
+     !markerUrl.pathname.includes('/storage/v1/object/sign/'))
+    throw Error('Los recursos de prueba no tienen una URL válida.');
+  const markerResponse=await fetch(markerUrl.href,{
+    cache:'no-store',referrerPolicy:'no-referrer'
+  });
+  if(!markerResponse.ok)throw Error('No se pudo cargar la imagen del marcador para la prueba.');
+  const targetName='slam-01-'+String(item.id);
+  const marker=await buildTarget(await markerResponse.blob(),targetName,{
+    mode:useUniqueCrop?'unique':'legacy'
+  });
+  manifestName='Prueba · '+String(item.title||data.name||'Obra');
+  addRow({
+    id:item.id,title:item.title,description:item.description,
+    imageTargetName:targetName,
+    xCm:item.xCm,yCm:item.yCm,zCm:item.zCm,
+    sizeCm:item.sizeCm,rotationDeg:item.rotationDeg,
+    verticalRotationDeg:item.verticalRotationDeg,
+    animation:item.animation
+  },modelUrl.href,{...marker.data,imagePath:blobUrl(marker.blob)});
+}
+
 async function readLocal(){
   source='Borrador de Estudio SLAM (IndexedDB)';
   const saved=await storedSession(requestedId);
@@ -788,7 +836,8 @@ requestAnimationFrame(updateFrame);
   try{
     if(!isId(requestedId))throw Error('El enlace no contiene un identificador válido de recorrido.');
     if(!THREE)throw Error('A-Frame no pudo cargar. Comprueba la conexión.');
-    if(preview)await readLocal();else await readPublished();
+    if(individualPreviewToken)await readIndividualPreview();
+    else if(preview)await readLocal();else await readPublished();
     configReady=true;document.title=manifestName+' · Recorrido SLAM';
     note('Recorrido cargado: '+rows.length+' marcadores');
     makeEntities();
