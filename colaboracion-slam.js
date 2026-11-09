@@ -277,9 +277,49 @@ async function downloadPreviewMarker(){
  setTimeout(()=>URL.revokeObjectURL(object),12000);
  status('Descargaste el marcador de «'+row.title+'». Imprimilo a escala 100% y tamaño 15 × 15 cm, o mostralo en otra pantalla.');
 }
+
+/* Prevent testing stale Supabase data when the editor contains newer
+ * local transformations. An individual AR preview ALWAYS reads cloud rows,
+ * never the draft saved with "Guardar recorrido".
+ */
+function localCloudDifference(local,stored){
+ if(!local||!stored)return null;
+ if(String(local.animation||'none')!==String(stored.animation||'none'))
+   return 'La animación local («'+String(local.animation||'none')+
+     '») no coincide con la guardada en la nube («'+String(stored.animation||'none')+'»).';
+ if(String(local.name||'')!==String(stored.title||''))
+   return 'El nombre del marcador todavía es distinto de la versión en la nube.';
+ if(String(local.description||'').slice(0,500)!==String(stored.description||''))
+   return 'La descripción local todavía es distinta de la versión en la nube.';
+ const pairs=[
+   ['posición X',local.x,stored.x_cm],['posición Y',local.y,stored.y_cm],
+   ['posición Z',local.z,stored.z_cm],['tamaño',local.size,stored.size_cm],
+   ['rotación horizontal',local.rotation,stored.rotation_deg],
+   ['rotación vertical',local.rotationVertical||0,stored.rotation_vertical_deg]
+ ];
+ for(const [label,l,r] of pairs){
+   if(Math.abs(Number(l||0)-Number(r||0))>0.001)
+     return 'El ajuste local de '+label+' es diferente del guardado en la nube.';
+ }
+ return null;
+}
+function ensurePreviewSynced(row){
+ const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
+ const difference=localCloudDifference(e,row);
+ if(!difference)return;
+ const nextStep=active?.state==='locked'
+   ? 'Primero pulsá «Reabrir aportaciones» en Colaboración.'
+   : '';
+ throw Error(difference+' '+nextStep+
+   ' Después pulsá «Guardar recorrido» y «Guardar esta obra en la nube». '+
+   'Por último, generá de nuevo el enlace de prueba AR.');
+}
+
 async function createIndividualPreview(){
+ await reloadContributions();
  const row=selectedSavedContribution();
  if(!row)throw Error('Guardá primero la obra seleccionada en la nube.');
+ ensurePreviewSynced(row);
  const token=randomToken();
  status('Preparando un enlace temporal solo para «'+row.title+'»…');
  const expiration=checked(await client.rpc('slam_create_preview_link',{

@@ -228,6 +228,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
           <select id="collabLocalPicker"></select>
           <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
           <button id="collabSend" type="button">Guardar esta obra en la nube</button>
+          <p class="collab-note">«Guardar recorrido» conserva el borrador en tu navegador. Para que la prueba AR cargue los cambios, también debés usar este botón. Si el recorrido ya está publicado y cerrado, el coordinador primero debe pulsar «Reabrir aportaciones».</p>
           <div id="collabIndividualPreview" class="collab-preview">
             <h3>Prueba individual · realidad aumentada</h3>
             <p class="collab-note">Después de guardar la obra en la nube, descargá su marcador y generá un enlace de prueba. Abrilo con otro celular para ver únicamente este GLB con la cámara, sin publicar todavía el recorrido.</p>
@@ -1100,7 +1101,11 @@ try{
   isNewSession=false;
   updateSessionFieldsVisibility();
   clean();await refreshSessions();
-  inform('Recorrido guardado. Puedes seleccionarlo desde la lista de recorridos existentes.');
+  inform(
+    $('collabWorkspace')&&!$('collabWorkspace').hidden
+      ? 'Borrador guardado en este navegador. Para actualizar las pruebas AR y la publicación colaborativa, abrí Colaboración y pulsá «Guardar esta obra en la nube».'
+      : 'Recorrido guardado. Puedes seleccionarlo desde la lista de recorridos existentes.'
+  );
 }catch(error){inform('No se pudo guardar: '+error.message,true)}
 };
 $('newSession').onclick=()=>{
@@ -1227,6 +1232,6 @@ window.SLAM_COLLAB_BRIDGE={
 };
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=4"></script>
+<script type="module" src="./colaboracion-slam.js?v=5"></script>
 </body>
 </html>
