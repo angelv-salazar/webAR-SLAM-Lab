@@ -9,38 +9,60 @@ Este documento describe la integración de **Estudio SLAM** alojada en GitHub Pa
 - Proyecto Supabase: https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg
 - Visor de un recorrido publicado: \`recorrido.html?id=<id-del-recorrido>\`
 
-## Antes de la primera prueba
+## Acceso de coordinación y artistas — v2
 
-En Supabase, desde **Authentication → Providers**, habilitar **Anonymous Sign-Ins**. Esta opción no crea cuentas de GitHub ni exige nombre de usuario/correo al participante. Las identidades se conservan dentro de los datos del navegador. Limpiar esos datos hace que el usuario no pueda recuperar su identidad anterior.
+La interfaz **se separa según el enlace que abra cada persona**.
 
-Para exposiciones públicas se recomienda configurar **CAPTCHA/Turnstile** y definir el método de recuperación de la identidad del organizador antes de convocar participantes externos.
+### Configuración inicial: correo del coordinador
 
-La aplicación usa una **clave pública (publishable)** y las políticas SQL de RLS. No guardar ninguna clave secreta de Supabase ni tokens de GitHub en los HTML o JavaScript.
+1. En Supabase, abrir **Authentication → URL Configuration**:
+   https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg/auth/url-configuration
+2. Configurar **Site URL** y agregar como **Redirect URL**:
+   https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html
+3. Mantener habilitado el proveedor **Email** y **Anonymous Sign-Ins** en:
+   https://supabase.com/dashboard/project/kflgqbqbpzhxmiyovsvg/auth/providers
+4. En el editor normal, abrir **Colaboración → Acceso de coordinación**, escribir el mismo correo verificado que administra este proyecto y elegir **Recibir enlace por correo**.
+5. Abrir el enlace de un solo uso recibido por email. Volver a **Colaboración** si estuviera cerrado.
+6. El backend comprueba la identidad y el correo verificado contra la lista **privada** de coordinadores. Una sesión anónima no puede crear recorridos.
+7. El primer recorrido de prueba, si se creó con la sesión anónima antigua, se recupera automáticamente cuando en este navegador exista todavía el token de invitación guardado.
 
-## Organizador
+No agregar contraseñas, service_role, API keys secretas ni tokens de GitHub al editor.
 
-1. Abrir el editor y desplegar **Colaboración**.
-2. Escribir el nombre del recorrido y elegir **Crear espacio compartido**.
-3. Pulsar **Copiar invitación para artistas** y conservar ese enlace en lugar seguro.
-4. Enviar el enlace a los participantes.
-5. Revisar las aportaciones recibidas (botón **Actualizar aportaciones**).
-6. Cuando estén listas, opcionalmente pulsar **Cerrar aportaciones**.
-7. Pulsar **Reunir todas las obras en el editor**. Esto importa al almacenamiento local una instantánea del proyecto con su identificador estable.
-8. Verificar modelos, tamaños, animaciones e imágenes.
-9. Pulsar **Preparar publicación** y descargar el ZIP de publicación.
-10. Subir el ZIP sin descomprimir a la carpeta \`importar/\` del repositorio desde GitHub → Add file → Upload files. GitHub Actions valida y publica el recorrido. El identificador y los QR se mantienen cuando se actualiza un ZIP del mismo recorrido.
+### Organizador
 
-**Importante:** la publicación directa desde Supabase a GitHub mediante un solo clic todavía NO está implementada. El organizador realiza el paso 10; los participantes no tienen acceso a GitHub.
+1. Abrir el editor normal https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html e identificarse por correo.
+2. Crear el recorrido en el bloque **Administración de recorridos**.
+3. Elegir el recorrido en **Mis recorridos como coordinador**.
+4. Pulsar **Copiar invitación para artistas**, guardar el enlace y compartirlo.
+5. Consultar las aportaciones recibidas con **Actualizar aportaciones**.
+6. Al finalizar, si corresponde, **Cerrar aportaciones**.
+7. **Reunir todas las obras en el editor** para importar los aportes a un borrador local consolidado.
+8. Revisar los GLB, imágenes, textos y marcadores. Elegir **Preparar publicación**.
+9. Subir el ZIP sin descomprimir a \`importar/\` en el repositorio GitHub. La automatización publica los archivos.
 
-## Participante
+### Artista invitado
 
-1. Abrir el enlace de invitación.
-2. Desplegar **Colaboración** (el enlace lo abre automáticamente), escribir un nombre y elegir **Unirme al recorrido**.
-3. En las secciones habituales del editor, configurar un marcador local, añadir una imagen propia, validarla y cargar el GLB.
-4. Volver a la sección Colaboración, elegir el marcador local y pulsar **Guardar esta obra en la nube**.
-5. La herramienta genera de nuevo el marcador imprimible y el QR con el identificador del recorrido compartido, y guarda los recursos en Supabase. Cada persona puede editar y volver a enviar su propia obra sin sobrescribir la de otros usuarios.
+1. Abrir la **URL recibida por invitación**, no el enlace general del editor.
+2. Aparece **Recorrido compartido · invitación para artistas**. No puede crear ni elegir otros recorridos.
+3. Escribir su nombre y pulsar **Unirme y crear mi marcador**. Su identificación en Supabase es anónima; no necesita correo ni cuenta.
+4. Se abre el editor de su **aportación local** vinculado al recorrido del organizador, con el **mismo identificador y URL QR**. Se ocultan los controles de crear otros recorridos y de publicar.
+5. Cargar una imagen, validarla, generar su marcador, añadir el GLB y completar descripción y transformación.
+6. Guardar el borrador local y, en **Colaboración**, elegir el marcador para pulsar **Guardar esta obra en la nube**.
+7. Los otros participantes no pueden sobrescribir su aportación. La organización verá el título y el nombre del autor.
+8. Al abrir el mismo enlace y navegador, podrá seguir trabajando mientras conserve su sesión anónima y datos locales.
 
-Es posible compartir varios marcadores de un mismo participante. El límite actual es **20 obras por recorrido**, con un máximo de **20 MB por archivo** en el almacenamiento compartido.
+El QR de un marcador vinculado al recorrido no cargará la experiencia pública hasta que el organizador publique el paquete completo.
+
+## Aspectos de la primera prueba y limitaciones
+
+- La cuenta de coordinación exige **un correo verificado**; en Supabase Auth es independiente del ingreso a la consola de Supabase.
+- El enlace mágico necesita que GitHub Pages esté autorizado como URL de retorno en Supabase.
+- Una sesión anónima puede perderse al borrar los datos del navegador. No se ha implementado recuperación de aportaciones con cambio de dispositivo.
+- Solo los organizadores autorizados crean recorridos en el servidor; los permisos también se validan en PostgreSQL, no solo en la interfaz.
+- El máximo sigue siendo 20 obras por recorrido y 20 MB por archivo individual.
+- La publicación final sigue pasando por ZIP → \`importar/\` → GitHub Actions. Los artistas no requieren cuenta GitHub.
+- Antes de convocar a una exposición, comprobar en dos navegadores la invitación, el guardado y la recuperación.
+- Revisar las advertencias del asesor de seguridad de Supabase: las invitaciones están aisladas en un esquema privado, pero aún es aconsejable añadir RLS de defensa en profundidad a \`slam_private.invites\`; las dos funciones de acceso protegido SECURITY DEFINER se utilizan intencionalmente para creación e incorporación.
 
 ## Arquitectura y seguridad
 
@@ -65,3 +87,6 @@ Es posible compartir varios marcadores de un mismo participante. El límite actu
 - Supabase JS CDN: versión fija \`2.118.0\`.
 - Aplicación: \`colaboracion-slam.js\` y \`colaboracion-slam.css\`.
 - Esquema: migración de Supabase \`estudio_slam_collaborative_workspace_v1\` (20261108155347).
+
+- Esquema de verificación y recuperación de coordinación: \`estudio_slam_verified_coordinators_v2\`.
+- Roles separados en interfaz: \`colaboracion-slam.js?v=2\` y \`colaboracion-slam.css?v=2\`.
