@@ -18,6 +18,7 @@ const elements={
  invite:$('collabInvite'),newBtn:$('collabCreate'),joinBtn:$('collabJoin'),
  projectPicker:$('collabProjectPicker'),workspace:$('collabWorkspace'),
  projectHeading:$('collabHeading'),role:$('collabRole'),inviteTools:$('collabInviteTools'),
+ projectStateBanner:$('collabProjectStateBanner'),
  localPicker:$('collabLocalPicker'),sendBtn:$('collabSend'),refreshBtn:$('collabRefresh'),
  entries:$('collabEntries'),syncBtn:$('collabSync'),lockBtn:$('collabLock'),
  copyBtn:$('collabCopy'),listBtn:$('collabRefreshLocal'),publishHelp:$('collabPublishHelp'),
@@ -139,6 +140,11 @@ function status(m,err=false){elements.status.textContent=m;elements.status.datas
 function checked(result){if(result.error)throw result.error;return result.data;}
 function friendly(error){
  const s=String(error?.message||error||'Error desconocido');
+ if(/row.level security policy|42501/i.test(s)){
+   if(active?.state==='locked')
+     return 'El recorrido está cerrado a nuevos aportes después de publicar. Pedile al coordinador que pulse «Reabrir aportaciones» y volvé a guardar.';
+   return 'Supabase rechazó esta aportación por permisos. Verificá tu invitación y que el recorrido esté abierto. Actualizá las aportaciones e intentá de nuevo.';
+ }
  if(/anonymous.*disabled|anonymous.*not.*allowed/i.test(s))
    return 'Activá Authentication → Providers → Anonymous Sign-Ins en Supabase. No requiere cuentas de los participantes.';
  return s;
@@ -173,6 +179,44 @@ function refreshLocal(){
  else if(selected&&available(selected))elements.localPicker.value=selected;
  updatePreviewAvailability();
 }
+
+/* Database state is authoritative: if the organizer closes a published
+ * collective while the invitation is open, check BEFORE uploading media.
+ * That avoids confusing Storage / Postgres row-level security errors.
+ */
+function renderProjectState(){
+ const banner=elements.projectStateBanner;
+ if(!active){banner.hidden=true;return;}
+ const locked=active.state!=='draft';
+ banner.hidden=false;
+ banner.dataset.state=locked?'closed':'open';
+ banner.textContent=locked
+  ? (role==='owner'
+    ? 'Recorrido publicado: las aportaciones están cerradas. Pulsá «Reabrir aportaciones» para aceptar nuevos modelos o ajustes. La exposición publicada seguirá disponible.'
+    : 'Este recorrido está publicado y cerrado a nuevas aportaciones. Para agregar o actualizar un modelo, pedile al coordinador que pulse «Reabrir aportaciones». Tus marcadores locales no se borraron.')
+  : 'Recorrido abierto: podés agregar marcadores y guardar tus aportaciones en la nube. Los cambios aparecerán públicamente cuando el coordinador vuelva a publicar.';
+}
+async function refreshCurrentProjectState(){
+ if(!active)return;
+ const projectId=active.id;
+ const record=checked(await client.from('slam_projects')
+   .select('id,state').eq('id',projectId).maybeSingle());
+ if(!record)throw Error('Ya no tenés acceso a este recorrido. Abrí de nuevo la invitación o consultá con coordinación.');
+ if(active?.id!==projectId)return;
+ const changed=active.state!==record.state;
+ active.state=record.state;
+ const cached=projects.find(p=>p.id===projectId);
+ if(cached)cached.state=record.state;
+ const option=Array.from(elements.projectPicker.options).find(o=>o.value===projectId);
+ if(option && cached)option.textContent=projectOption(cached).textContent;
+ if(role==='owner')elements.lockBtn.textContent=record.state==='locked'
+   ? 'Reabrir aportaciones':'Cerrar aportaciones';
+ renderProjectState();
+ updatePreviewAvailability();
+ renderDuplicateNotice();
+ return changed;
+}
+
 function projectOption(p){
  const opt=document.createElement('option');opt.value=p.id;
  opt.textContent=p.title+' · '+(p.state==='locked'?'cerrado':'editable');
@@ -316,6 +360,7 @@ async function chooseProject(id){
  elements.deleteZone.hidden=role!=='owner'||!verifiedCoordinator;
  elements.organizerEditorTools.hidden=role!=='owner';
  elements.editHeading.textContent=role==='owner'?'Agregar o editar obras del colectivo':'Enviar mi obra';
+ renderProjectState();
  if(editorMode==='collective'&&role==='owner')
    await connectCoordinatorWorkspace(p);
  refreshLocal();
@@ -325,6 +370,7 @@ async function chooseProject(id){
 }
 async function reloadContributions(){
  if(!active)return;
+ await refreshCurrentProjectState();
  contributions=checked(await client.from('slam_entries')
    .select('id,project_id,user_id,source_entry_id,author_label,title,description,model_path,marker_image_path,marker_print_path,patt_path,x_cm,y_cm,z_cm,size_cm,rotation_deg,rotation_vertical_deg,animation,updated_at')
    .eq('project_id',active.id).order('updated_at',{ascending:false}))||[];
@@ -617,7 +663,9 @@ async function toPng(blob){
  }finally{URL.revokeObjectURL(url);}
 }
 async function submitContribution(){
- if(!active||active.state!=='draft')throw Error('El recorrido no admite nuevos aportes.');
+ await refreshCurrentProjectState();
+ if(!active||active.state!=='draft')
+   throw Error('Este recorrido está cerrado después de su publicación. Pedile al coordinador que pulse «Reabrir aportaciones»; después podrás guardar este modelo sin volver a crearlo.');
  if(!localWorkspaceMatches())throw Error('El editor local no corresponde al recorrido elegido. Cargá el recorrido correcto antes de guardar.');
  const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
  if(!e)throw Error('Seleccioná un marcador del editor.');
@@ -668,6 +716,7 @@ async function submitContribution(){
  * member's media while the project is open.
  */
 async function saveExistingContributionAsCoordinator(){
+ await refreshCurrentProjectState();
  if(!active || role!=='owner'||!verifiedCoordinator)
    throw Error('Solo coordinación puede editar las aportaciones de invitados.');
  if(active.state!=='draft')
@@ -1016,7 +1065,13 @@ function busy(btn,fn){
   if(btn.disabled)return;
   btn.disabled=true;
   try{await init();await fn();}
-  catch(e){console.error('[Estudio SLAM colaborativo]',e);status(friendly(e),true);}
+  catch(e){
+    console.error('[Estudio SLAM colaborativo]',e);
+    if(/row.level security policy|42501/i.test(String(e?.message||e))){
+      try{await refreshCurrentProjectState();}catch{}
+    }
+    status(friendly(e),true);
+  }
   finally{
     btn.disabled=false;
     if(btn===elements.sendBtn||btn===elements.ownerSaveBtn)updatePreviewAvailability();
@@ -1071,6 +1126,12 @@ window.addEventListener('slam-entry-selected',event=>{
   updatePreviewAvailability();
 });
 elements.projectPicker.onchange=()=>busy(elements.projectPicker,async()=>chooseProject(elements.projectPicker.value))();
+function syncOnReturn(){
+ if(!ready||!active)return;
+ refreshCurrentProjectState().catch(e=>console.warn('[Estudio SLAM estado]',e?.message||e));
+}
+window.addEventListener('focus',syncOnReturn);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncOnReturn();});
 const details=$('collabDetails');
 details.addEventListener('toggle',()=>{
  if(details.open&&!ready&&!modeChangePending)

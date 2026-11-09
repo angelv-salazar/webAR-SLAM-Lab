@@ -162,7 +162,7 @@ main{
 <link rel="stylesheet" href="./theme-biomech-v7.css?v=7">
 <link rel="stylesheet" href="./theme-biomech-v8-overrides.css?v=8">
 <link rel="stylesheet" href="./theme-biomech-v9-header.css?v=9">
-<link rel="stylesheet" href="./colaboracion-slam.css?v=11">
+<link rel="stylesheet" href="./colaboracion-slam.css?v=12">
 <script>
 if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
   document.documentElement.classList.add('slam-invite-pending');
@@ -230,6 +230,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
     </div>
     <div id="collabWorkspace" hidden>
       <strong id="collabHeading"></strong><span id="collabRole"></span>
+      <p id="collabProjectStateBanner" class="collab-project-state" aria-live="polite" hidden></p>
       <div id="collabInviteTools" hidden>
         <button id="collabCopy" type="button">Copiar invitación para artistas</button>
         <p class="collab-note">Guardá el enlace de invitación: quien lo tenga podrá sumarse. La organización queda asociada a este navegador mientras conserve su sesión anónima.</p>
@@ -1393,6 +1394,6 @@ window.SLAM_COLLAB_BRIDGE={
 window.dispatchEvent(new Event('slam-bridge-ready'));
 
 </script>
-<script type="module" src="./colaboracion-slam.js?v=9"></script>
+<script type="module" src="./colaboracion-slam.js?v=10"></script>
 </body>
 </html>

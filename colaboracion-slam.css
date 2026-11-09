@@ -396,3 +396,16 @@ html.slam-individual-active #legacyLocalPublish button{
   .slam-modes-heading{width:100%;margin:0 0 3px}
   .slam-editor-modes .slam-mode-button{flex:1;min-width:110px}
 }
+
+
+/* v12 · Live shared-route status for invited artists and coordinators. */
+.slam-collab .collab-project-state{
+ margin:12px 0 15px;padding:13px 16px;line-height:1.65;font-size:13px;
+ border-radius:14px 11px 18px 10px;
+ border:1px solid rgba(185,234,149,.35);
+ background:rgba(26,63,36,.42);color:#d2eaba;
+}
+.slam-collab .collab-project-state[data-state="closed"]{
+ background:linear-gradient(120deg,rgba(80,50,22,.55),rgba(47,39,24,.58));
+ border-color:rgba(233,182,109,.60);color:#ffe2b4;
+}
