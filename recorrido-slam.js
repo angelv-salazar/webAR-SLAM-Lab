@@ -63,7 +63,7 @@ function fail(m){
 function statusTop(){
   if(!xrReady){instructions.hidden=false;instructions.textContent=configReady?'Activando cámara y seguimiento espacial…':'Cargando recorrido…';return;}
   instructions.hidden=currentId!==null;
-  if(!currentId)instructions.textContent='Apuntá a cualquiera de los marcadores impresos del recorrido.';
+  if(!currentId)instructions.textContent='Apunta a cualquiera de los marcadores impresos del recorrido.';
 }
 function refreshDiagnostic(){
   if(diag.hidden)return;
@@ -282,7 +282,7 @@ async function readIndividualPreview(){
   });
   const data=await response.json().catch(()=>null);
   if(!response.ok || !data || data.format!=='estudio-slam-individual-v1')
-    throw Error(data?.error||'No fue posible cargar esta prueba. Generá otro enlace desde Estudio SLAM.');
+    throw Error(data?.error||'No fue posible cargar esta prueba. Genera otro enlace desde Estudio SLAM.');
   if(data.id!==requestedId||!data.item)
     throw Error('La prueba no corresponde a este recorrido.');
   const item=data.item;
@@ -315,7 +315,7 @@ async function readIndividualPreview(){
 async function readLocal(){
   source='Borrador de Estudio SLAM (IndexedDB)';
   const saved=await storedSession(requestedId);
-  if(!saved)throw Error('No se encontró el recorrido en este navegador. Para verlo en otro teléfono publicá el ZIP.');
+  if(!saved)throw Error('No se encontró el recorrido en este navegador. Para verlo en otro teléfono publica el ZIP.');
   if(!Array.isArray(saved.entries)||!saved.entries.length||saved.entries.length>20)
     throw Error('El recorrido necesita entre 1 y 20 marcadores.');
   manifestName=String(saved.name||'Recorrido local');
@@ -835,7 +835,7 @@ function initEngine(){
     // Especificar también la escala en xrweb evita que su inicialización
     // restablezca la opción global predeterminada "responsive".
     scene.setAttribute('xrweb','allowedDevices: any; scale: absolute');
-    say('Autoriza la cámara. Apuntá a uno de los marcadores impresos.');
+    say('Autoriza la cámara. Apunta a uno de los marcadores impresos.');
     splash.hidden=true;
   }catch(e){fail('No se pudo iniciar 8th Wall: '+e.message);}
 }

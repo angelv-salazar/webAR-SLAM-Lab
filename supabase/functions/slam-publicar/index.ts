@@ -64,7 +64,7 @@ Deno.serve(async req=>{
     return send({error:'Origen no admitido'},403);
 
   const bearer=req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
-  if(!bearer)return send({error:'Ingresá con tu correo de coordinación'},401);
+  if(!bearer)return send({error:'Ingresa con tu correo de coordinación'},401);
   let publicPaths:string[]=[];
   let admin:ReturnType<typeof getAdmin>|null=null;
   try{
@@ -76,7 +76,7 @@ Deno.serve(async req=>{
     // Authentication is checked on every request, never trust frontend role.
     const auth=await admin.auth.getUser(bearer);
     if(auth.error||!auth.data?.user)
-      return send({error:'Sesión de coordinación vencida; ingresá nuevamente'},401);
+      return send({error:'Sesión de coordinación vencida; ingresa nuevamente'},401);
     const user=auth.data.user;
     if(user.is_anonymous || !user.email || !user.email_confirmed_at)
       return send({error:'Solo un coordinador con correo verificado puede publicar'},403);
@@ -127,7 +127,7 @@ Deno.serve(async req=>{
         privateFiles.download(e.marker_print_path)
       ]);
       ensure(!saved[0].error&&!saved[1].error&&saved[0].data&&saved[1].data,
-        'Faltan archivos de '+e.title+'; verificá que estén guardados en la nube');
+        'Faltan archivos de '+e.title+'; verifica que estén guardados en la nube');
       const [glb,png]=[saved[0].data!,saved[1].data!];
       await Promise.all([checkBytes(glb,'glb'),checkBytes(png,'png')]);
       const modelName=version+'/modelos/marcador-'+suffix+'-'+e.source_entry_id+'.glb';
@@ -190,7 +190,7 @@ Deno.serve(async req=>{
       catch{ /* no effect on existing public snapshot */ }
     }
     const safe=/^(Un recurso|El GLB|La imagen|Una obra|Faltan archivos|No se pudieron|Los archivos|No se pudo publicar|No se pudieron cerrar|Identificador)/.test(detail)
-      ?detail:'La publicación no se completó. Revisá las obras e intentá nuevamente.';
+      ?detail:'La publicación no se completó. Revisa las obras e intenta nuevamente.';
     return send({error:safe},500);
   }
 });

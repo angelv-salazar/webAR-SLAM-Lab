@@ -1,7 +1,7 @@
 # Estudio SLAM
 ### Recorridos de realidad aumentada con marcadores, modelos 3D y colaboración
 
-**Estudio SLAM** es una herramienta web para crear experiencias de realidad aumentada (WebAR) sin instalar una aplicación: cada marcador impreso reconoce un modelo **GLB** y permite observarlo mediante la cámara de un teléfono. Podés trabajar por tu cuenta o invitar a otras personas a construir un mismo recorrido.
+**Estudio SLAM** es una herramienta web para crear experiencias de realidad aumentada (WebAR) sin instalar una aplicación: cada marcador impreso reconoce un modelo **GLB** y permite observarlo mediante la cámara de un teléfono. Puedes trabajar por tu cuenta o invitar a otras personas a construir un mismo recorrido.
 
 - **[Abrir la aplicación](https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html)**
 - **[Ver una demostración pública](https://angelv-salazar.github.io/webAR-SLAM-Lab/recorrido.html?id=id-mw9ab4l4-281p2g1x)**
@@ -9,7 +9,7 @@
 - **[Guía para artistas y coordinadores](docs/USO-DEL-ESTUDIO.md)**
 - **[Arquitectura y configuración técnica](docs/ARQUITECTURA.md)**
 
-> **¿Nunca usaste GitHub o Supabase?** Empezá por la [guía paso a paso](docs/INSTALACION-PASO-A-PASO.md). No hace falta conocer comandos para poner en marcha la versión individual.
+> **¿Nunca usaste GitHub o Supabase?** Empieza por la [guía paso a paso](docs/INSTALACION-PASO-A-PASO.md). No hace falta conocer comandos para poner en marcha la versión individual.
 
 ## ¿Qué se puede hacer?
 
@@ -28,20 +28,20 @@ Los marcadores imprimibles están diseñados para **15 × 15 cm**. La aplicació
 
 ### Opción A. Quiero crear un recorrido individual
 
-1. Abrí [Estudio SLAM](https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html).
-2. Seleccioná **Individual**.
-3. Nombrá el recorrido, cargá la imagen y el GLB, y generá el marcador.
-4. Usá **Guardar recorrido** para guardar el borrador en tu navegador.
-5. Si querés publicar en *tu propia web*, hacé un **Fork** del repositorio y activá GitHub Pages. La guía explica cómo subir el ZIP resultante.
+1. Abre [Estudio SLAM](https://angelv-salazar.github.io/webAR-SLAM-Lab/estudio.html).
+2. Selecciona **Individual**.
+3. Nombra el recorrido, carga la imagen y el GLB, y genera el marcador.
+4. Usa **Guardar recorrido** para guardar el borrador en tu navegador.
+5. Si quieres publicar en *tu propia web*, haz un **Fork** del repositorio y activa GitHub Pages. La guía explica cómo subir el ZIP resultante.
 
-**Atención:** el borrador individual se guarda en ese navegador, no en la nube. Si borrás los datos del navegador, podés perderlo.
+**Atención:** el borrador individual se guarda en ese navegador, no en la nube. Si borrás los datos del navegador, puedes perderlo.
 
 ### Opción B. Quiero coordinar un recorrido colectivo
 
-1. Hacé un Fork del repositorio.
-2. Creá **tu propio proyecto Supabase** y seguí la [instalación completa](docs/INSTALACION-PASO-A-PASO.md).
-3. Configurá los dos datos públicos en **[studio-config.js](studio-config.js)**.
-4. Elegí **Colectivo → Administración de recorridos** y creá un recorrido con invitaciones.
+1. Haz un Fork del repositorio.
+2. Crea **tu propio proyecto Supabase** y sigue la [instalación completa](docs/INSTALACION-PASO-A-PASO.md).
+3. Configura los dos datos públicos en **[studio-config.js](studio-config.js)**.
+4. Elige **Colectivo → Administración de recorridos** y crea un recorrido con invitaciones.
 5. Cada artista agrega sus GLB y marcadores. Como coordinador, revisás y publicás.
 6. El QR del recorrido se abre desde cualquier móvil compatible, **sin cuentas de visitante**.
 
@@ -71,7 +71,7 @@ Las páginas de prototipos antiguos fueron retiradas del proyecto principal para
 
 ## Requisitos para visitantes
 
-Un teléfono y navegador con compatibilidad AR/WebGL, cámara autorizada, **HTTPS**, conexión a internet y luz suficiente para reconocer el marcador. El seguimiento SLAM puede presentar deriva si se pierde la referencia: no es un sistema de posicionamiento geográfico absoluto. Probá siempre los modelos y marcadores en las condiciones reales de la exposición.
+Un teléfono y navegador con compatibilidad AR/WebGL, cámara autorizada, **HTTPS**, conexión a internet y luz suficiente para reconocer el marcador. El seguimiento SLAM puede presentar deriva si se pierde la referencia: no es un sistema de posicionamiento geográfico absoluto. Prueba siempre los modelos y marcadores en las condiciones reales de la exposición.
 
 ## Seguridad y privacidad
 
@@ -83,6 +83,6 @@ Un teléfono y navegador con compatibilidad AR/WebGL, cámara autorizada, **HTTP
 
 ## Licencias y créditos
 
-El código original de este repositorio está disponible bajo **MIT**; consultá [LICENSE](LICENSE). **El motor binario de 8th Wall / Niantic Spatial usado para SLAM no está cubierto por MIT** y mantiene su [licencia propia](https://github.com/8thwall/engine/blob/main/LICENSE). Otros paquetes, fuentes y recursos externos conservan sus respectivas licencias. Revisá las condiciones de cada dependencia antes de uso comercial.
+El código original de este repositorio está disponible bajo **MIT**; consulta [LICENSE](LICENSE). **El motor binario de 8th Wall / Niantic Spatial usado para SLAM no está cubierto por MIT** y mantiene su [licencia propia](https://github.com/8thwall/engine/blob/main/LICENSE). Otros paquetes, fuentes y recursos externos conservan sus respectivas licencias. Revisa las condiciones de cada dependencia antes de uso comercial.
 
 Proyecto de arte y tecnología desarrollado en Buenos Aires, Argentina. La interfaz y las herramientas pueden adaptarse para actividades artísticas, educativas y de investigación.

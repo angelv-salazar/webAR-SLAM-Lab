@@ -1,43 +1,43 @@
 # Guía de uso de Estudio SLAM
 
-Esta guía es para quien **ya tiene el Estudio abierto**. Para crear tu propia copia en GitHub, consultá [la instalación para principiantes](INSTALACION-PASO-A-PASO.md).
+Esta guía es para quien **ya tiene el Estudio abierto**. Para crear tu propia copia en GitHub, consulta [la instalación para principiantes](INSTALACION-PASO-A-PASO.md).
 
 ## 1. Artistas que trabajan solos
 
-Elegí **Individual** en la parte superior del editor. En **1. Recorridos**, escribí el nombre y una descripción. Agregá un marcador; cargá una imagen reconocible y un GLB. Generá el marcador imprimible, ajustá tamaño, rotaciones, animación y texto, y pulsá **Guardar recorrido**.
+Elige **Individual** en la parte superior del editor. En **1. Recorridos**, escribe el nombre y una descripción. Agrega un marcador; carga una imagen reconocible y un GLB. Genera el marcador imprimible, ajusta tamaño, rotaciones, animación y texto, y presiona **Guardar recorrido**.
 
-**Importante:** se guarda en **ese navegador**, no en la nube. Si querés mostrarlo desde otros dispositivos, prepará el ZIP y publicalo en tu propia web GitHub Pages, siguiendo [estas instrucciones](../importar/README.md). El modo individual no necesita Supabase.
+**Importante:** se guarda en **ese navegador**, no en la nube. Si quieres mostrarlo desde otros dispositivos, prepara el ZIP y publícalo en tu propia web GitHub Pages, siguiendo [estas instrucciones](../importar/README.md). El modo individual no necesita Supabase.
 
 ## 2. Coordinación de un recorrido colectivo
 
-Elegí **Colectivo**, iniciá sesión con el correo autorizado y abrí **Administración de recorridos**. Escribí un nombre y opcionalmente una descripción. Pulsá **Crear recorrido colectivo e invitación**.
+Elige **Colectivo**, inicia sesión con el correo autorizado y abre **Administración de recorridos**. Escribe un nombre y opcionalmente una descripción. Presiona **Crear recorrido colectivo e invitación**.
 
-En **Mis recorridos como coordinador**, seleccioná el recorrido y pulsá **Copiar invitación para artistas**. Compartí el enlace con quienes participen.
+En **Mis recorridos como coordinador**, selecciona el recorrido y presiona **Copiar invitación para artistas**. Comparte el enlace con quienes participen.
 
-Tu editor ya está conectado a ese colectivo: **no crees otro recorrido en el apartado 1**. Podés agregar tus propias obras como cualquier participante. Para sumar una obra: armá el marcador y el GLB, pulsá **Guardar recorrido** y, después, **Guardar esta obra en la nube**.
+Tu editor ya está conectado a ese colectivo: **no crees otro recorrido en el apartado 1**. Puedes agregar tus propias obras como cualquier participante. Para sumar una obra: arma el marcador y el GLB, presiona **Guardar recorrido** y, después, **Guardar esta obra en la nube**.
 
-Revisá **Aportaciones en la nube**. Si necesitás corregir una obra recibida, usá **Cargar obras recibidas para editar**. Cuando hayas terminado, pulsá **Publicar recorrido**. El sistema mostrará el QR definitivo, un enlace público y los marcadores PNG listos para imprimir.
+Revisa **Aportaciones en la nube**. Si necesitas corregir una obra recibida, usa **Cargar obras recibidas para editar**. Cuando hayas terminado, presiona **Publicar recorrido**. El sistema mostrará el QR definitivo, un enlace público y los marcadores PNG listos para imprimir.
 
 Al publicar, se cierran las aportaciones temporalmente. Para actualizar después: **Reabrir aportaciones → Guardar las correcciones en la nube → Publicar recorrido**.
 
 ## 3. Artistas invitados
 
-Abrí el enlace de invitación que envió el coordinador. Escribí tu nombre y pulsá **Unirme y crear mi marcador**.
+Abre el enlace de invitación que envió el coordinador. Escribe tu nombre y presiona **Unirme y crear mi marcador**.
 
-Prepará una imagen, generá su marcador, cargá un GLB y ajustá el objeto. Guardá en dos pasos:
+Prepara una imagen, genera su marcador, carga un GLB y ajusta el objeto. Guarda en dos pasos:
 
 1. **Guardar mi borrador** protege el trabajo en tu navegador.
 2. **Guardar esta obra en la nube** envía la aportación al colectivo.
 
-Una vez subida, podés **Descargar marcador PNG** y **Generar enlace de prueba AR**. Mostrá el marcador en una computadora o imprimilo; abrí el enlace temporal con un celular y apuntá la cámara al marcador.
+Una vez subida, puedes **Descargar marcador PNG** y **Generar enlace de prueba AR**. Muestra el marcador en una computadora o imprímelo; abre el enlace temporal con un celular y apunta la cámara al marcador.
 
 Los invitados **no publican recorridos** ni necesitan GitHub. Solo el coordinador publica el conjunto. Si el proyecto aparece **cerrado**, el coordinador debe pulsar **Reabrir aportaciones** antes de aceptar nuevas obras.
 
 ## 4. Visitantes de una exposición
 
-Escaneá el **QR definitivo** impreso en un marcador. Abrí el enlace desde el celular, autorizá la cámara y apuntá al marcador. El recorrido puede contener diferentes objetos y textos, uno por marcador. No necesitás instalar una app ni iniciar sesión.
+Escanea el **QR definitivo** impreso en un marcador. Abre el enlace desde el celular, autoriza la cámara y apunta al marcador. El recorrido puede contener diferentes objetos y textos, uno por marcador. No necesitas instalar una app ni iniciar sesión.
 
-Los marcadores deben imprimirse a **15 × 15 cm y escala 100 %**, sin deformar la imagen. Usá buena luz y comprobá que el teléfono soporte el visor AR/WebGL.
+Los marcadores deben imprimirse a **15 × 15 cm y escala 100 %**, sin deformar la imagen. Usa buena luz y comprueba que el teléfono soporte el visor AR/WebGL.
 
 ## ¿Qué hace cada botón?
 

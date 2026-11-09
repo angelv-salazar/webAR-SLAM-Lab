@@ -1,17 +1,17 @@
 /**
  * ESTUDIO SLAM — CONFIGURACIÓN DE TU PROPIA COPIA
  *
- * 1. Hacé Fork del repositorio.
- * 2. Creá un proyecto en Supabase.
- * 3. Reemplazá los dos valores de TU_SUPABASE más abajo.
- * 4. Guardá los cambios en GitHub y activá GitHub Pages.
+ * 1. Haz Fork del repositorio.
+ * 2. Crea un proyecto en Supabase.
+ * 3. Reemplaza los dos valores de TU_SUPABASE más abajo.
+ * 4. Guarda los cambios en GitHub y activa GitHub Pages.
  *
  * El sitio original conserva su Supabase únicamente cuando se abre desde
  * su propia dirección. Una copia de GitHub Pages NO usará los datos del autor.
  * La clave "publishable" es PÚBLICA por diseño; NUNCA pegues aquí service_role
  * ni sb_secret. Los permisos se controlan mediante Auth y RLS en Supabase.
  *
- * Si solo usás modo Individual, podés dejar TU_SUPABASE vacío.
+ * Si solo usas modo Individual, puedes dejar TU_SUPABASE vacío.
  */
 
 const TU_SUPABASE = {

@@ -71,8 +71,8 @@ function renderEditorMode(){
  modeIndividualBtn.classList.toggle('is-active',!collective);
  modeCollectiveBtn.classList.toggle('is-active',collective);
  modeHelp.textContent=collective
-   ? 'Colectivo: elegí o creá un proyecto en Supabase. Este mismo recorrido reúne tus marcadores y los de los invitados.'
-   : 'Individual: creá y guardá recorridos en este navegador. La prueba AR funciona en este equipo; podés exportar ZIP para publicar en GitHub.';
+   ? 'Colectivo: elige o crea un proyecto en Supabase. Este mismo recorrido reúne tus marcadores y los de los invitados.'
+   : 'Individual: crea y guarda recorridos en este navegador. La prueba AR funciona en este equipo; puedes exportar ZIP para publicar en GitHub.';
  document.documentElement.classList.toggle('slam-individual-active',!collective);
  if(!collective){
    document.documentElement.classList.remove('slam-collective-active');
@@ -102,7 +102,7 @@ async function useEditorMode(next){
      await init();
      if(active?.member?.role==='owner')await connectCoordinatorWorkspace(active);
      if(verifiedCoordinator&&active)
-       status('Recorrido «'+active.title+'» activo. Podés agregar tu propia obra o editar aportaciones recibidas.');
+       status('Recorrido «'+active.title+'» activo. Puedes agregar tu propia obra o editar aportaciones recibidas.');
    }else{
      await window.SLAM_COLLAB_BRIDGE?.activateIndividual?.();
      editorMode='individual';
@@ -122,7 +122,7 @@ async function connectCoordinatorWorkspace(project){
    await new Promise((resolve,reject)=>{
      const timer=setTimeout(()=>{
        window.removeEventListener('slam-bridge-ready',readyBridge);
-       reject(Error('No se pudo cargar el editor 3D. Recargá la página.'));
+       reject(Error('No se pudo cargar el editor 3D. Recarga la página.'));
      },20000);
      function readyBridge(){clearTimeout(timer);resolve();}
      window.addEventListener('slam-bridge-ready',readyBridge,{once:true});
@@ -143,11 +143,11 @@ function friendly(error){
  const s=String(error?.message||error||'Error desconocido');
  if(/row.level security policy|42501/i.test(s)){
    if(active?.state==='locked')
-     return 'El recorrido está cerrado a nuevos aportes después de publicar. Pedile al coordinador que pulse «Reabrir aportaciones» y volvé a guardar.';
-   return 'Supabase rechazó esta aportación por permisos. Verificá tu invitación y que el recorrido esté abierto. Actualizá las aportaciones e intentá de nuevo.';
+     return 'El recorrido está cerrado a nuevos aportes después de publicar. Pídele al coordinador que pulse «Reabrir aportaciones» y vuelve a guardar.';
+   return 'Supabase rechazó esta aportación por permisos. Verifica tu invitación y que el recorrido esté abierto. Actualiza las aportaciones e intenta de nuevo.';
  }
  if(/anonymous.*disabled|anonymous.*not.*allowed/i.test(s))
-   return 'Activá Authentication → Providers → Anonymous Sign-Ins en Supabase. No requiere cuentas de los participantes.';
+   return 'Activa Authentication → Providers → Anonymous Sign-Ins en Supabase. No requiere cuentas de los participantes.';
  return s;
 }
 function randomToken(){
@@ -193,16 +193,16 @@ function renderProjectState(){
  banner.dataset.state=locked?'closed':'open';
  banner.textContent=locked
   ? (role==='owner'
-    ? 'Recorrido publicado: las aportaciones están cerradas. Pulsá «Reabrir aportaciones» para aceptar nuevos modelos o ajustes. La exposición publicada seguirá disponible.'
-    : 'Este recorrido está publicado y cerrado a nuevas aportaciones. Para agregar o actualizar un modelo, pedile al coordinador que pulse «Reabrir aportaciones». Tus marcadores locales no se borraron.')
-  : 'Recorrido abierto: podés agregar marcadores y guardar tus aportaciones en la nube. Los cambios aparecerán públicamente cuando el coordinador vuelva a publicar.';
+    ? 'Recorrido publicado: las aportaciones están cerradas. Presiona «Reabrir aportaciones» para aceptar nuevos modelos o ajustes. La exposición publicada seguirá disponible.'
+    : 'Este recorrido está publicado y cerrado a nuevas aportaciones. Para agregar o actualizar un modelo, pídele al coordinador que pulse «Reabrir aportaciones». Tus marcadores locales no se borraron.')
+  : 'Recorrido abierto: puedes agregar marcadores y guardar tus aportaciones en la nube. Los cambios aparecerán públicamente cuando el coordinador vuelva a publicar.';
 }
 async function refreshCurrentProjectState(){
  if(!active)return;
  const projectId=active.id;
  const record=checked(await client.from('slam_projects')
    .select('id,state').eq('id',projectId).maybeSingle());
- if(!record)throw Error('Ya no tenés acceso a este recorrido. Abrí de nuevo la invitación o consultá con coordinación.');
+ if(!record)throw Error('Ya no tienes acceso a este recorrido. Abre de nuevo la invitación o consulta con coordinación.');
  if(active?.id!==projectId)return;
  const changed=active.state!==record.state;
  active.state=record.state;
@@ -233,11 +233,11 @@ function setupScreen(){
  elements.createFields.hidden=invited || !verifiedCoordinator;
  if(invited){
    elements.summary.textContent='Recorrido compartido · invitación para artistas';
-   elements.overview.textContent='Sumate al recorrido de la invitación. No necesitás cuenta, correo ni crear un proyecto.';
+   elements.overview.textContent='Únete al recorrido de la invitación. No necesitas cuenta, correo ni crear un proyecto.';
    elements.invite.value=invitation;
  }else{
    elements.summary.textContent='Colaboración · panel de coordinación';
-   elements.overview.textContent='Creá y administrá recorridos. Cada artista entra por su propio enlace, sin elegir proyectos ni tener acceso a GitHub.';
+   elements.overview.textContent='Crea y administra recorridos. Cada artista entra por su propio enlace, sin elegir proyectos ni tener acceso a GitHub.';
  }
 }
 function keyForInvitation(){
@@ -263,7 +263,7 @@ async function claimPreviousProjects(){
 async function init(){
  if(ready)return;
  if(!STUDIO_CONFIG.supabaseConfigured)
-   throw Error('Para usar Colectivo en tu propia copia, primero configurá studio-config.js con la URL y la clave pública de TU proyecto Supabase. El modo Individual funciona sin esa configuración.');
+   throw Error('Para usar Colectivo en tu propia copia, primero configura studio-config.js con la URL y la clave pública de TU proyecto Supabase. El modo Individual funciona sin esa configuración.');
  status('Conectando con Supabase…');
  client=createClient(URL_SUPABASE,CLAVE_PUBLICA,{
    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
@@ -284,17 +284,17 @@ async function init(){
      await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
      refreshLocal();
      document.documentElement.classList.remove('slam-invite-pending');
-     status('Ya estás dentro de «'+active.title+'». Podés continuar editando tu aporte.');
-   }else status('Invitación detectada. Escribí tu nombre y pulsá «Unirme y crear mi marcador».');
+     status('Ya estás dentro de «'+active.title+'». Puedes continuar editando tu aporte.');
+   }else status('Invitación detectada. Escribe tu nombre y presiona «Unirme y crear mi marcador».');
  }else{
    person=authSession?.user||null;
    if(person?.email){
      verifiedCoordinator=checked(await client.rpc('slam_is_coordinator'))===true;
      if(verifiedCoordinator){
        await claimPreviousProjects();
-       status('Coordinador verificado. Elegí un recorrido o creá uno nuevo.');
-     }else status('Este correo no está autorizado como coordinador. Verificá que uses tu correo de administración.',true);
-   }else status('Acceso de coordinación: solicitá un enlace de verificación a tu correo.');
+       status('Coordinador verificado. Elige un recorrido o crea uno nuevo.');
+     }else status('Este correo no está autorizado como coordinador. Verifica que uses tu correo de administración.',true);
+   }else status('Acceso de coordinación: solicita un enlace de verificación a tu correo.');
    ready=true;
    setupScreen();
    if(verifiedCoordinator)await refreshProjects();
@@ -303,13 +303,13 @@ async function init(){
 async function requestCoordinatorEmail(){
  if(invited)throw Error('Los artistas no necesitan correo ni cuentan con permisos de coordinación.');
  const email=elements.adminEmail.value.trim();
- if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw Error('Escribí un correo electrónico válido.');
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw Error('Escribe un correo electrónico válido.');
  const callback=new URL('./estudio.html',location.href);
  checked(await client.auth.signInWithOtp({
    email,
    options:{emailRedirectTo:callback.href,shouldCreateUser:true}
  }));
- status('Enviamos un enlace de acceso a tu correo. Abrilo en este navegador y luego desplegá «Colaboración». Si el enlace no vuelve al editor, agregá su URL en Supabase → Authentication → URL Configuration.');
+ status('Enviamos un enlace de acceso a tu correo. Ábrelo en este navegador y luego despliega «Colaboración». Si el enlace no vuelve al editor, agrega su URL en Supabase → Authentication → URL Configuration.');
 }
 async function coordinatorSignOut(){
  if(invited)return;
@@ -333,7 +333,7 @@ async function refreshProjects(){
  const old=invited?joinedProjectId:active?.id||elements.projectPicker.value;
  elements.projectPicker.replaceChildren();
  const blank=document.createElement('option');
- blank.value='';blank.textContent='Elegí un recorrido a administrar';
+ blank.value='';blank.textContent='Elige un recorrido a administrar';
  elements.projectPicker.add(blank);
  for(const p of projects.filter(p=>p.member.role==='owner' || invited))elements.projectPicker.add(projectOption(p));
  if(old && projects.some(p=>p.id===old))await chooseProject(old);
@@ -431,7 +431,7 @@ function canonicalContributions(){
  const result=[];
  for(const [sourceId,rows] of rowsGroupedBySource()){
    const original=originalEntryFromGroup(rows);
-   if(!original)throw Error('Hay varias obras incompatibles con el mismo marcador «'+sourceId+'». Revisá las aportaciones.');
+   if(!original)throw Error('Hay varias obras incompatibles con el mismo marcador «'+sourceId+'». Revisa las aportaciones.');
    result.push(original);
  }
  return result;
@@ -466,7 +466,7 @@ function renderDuplicateNotice(){
    button.textContent='Eliminar solo la copia';
    button.disabled=active?.state!=='draft';
    button.title=button.disabled
-     ? 'Reabrí aportaciones antes de eliminar la copia'
+     ? 'Reabre aportaciones antes de eliminar la copia'
      : 'Conservar el original del artista y eliminar exclusivamente la segunda fila';
    button.onclick=busy(button,()=>removeDuplicateCoordinatorCopy(original,copy));
    item.append(label,button);root.append(item);
@@ -476,7 +476,7 @@ async function removeDuplicateCoordinatorCopy(original,copy){
  if(role!=='owner'||!verifiedCoordinator||active?.state!=='draft')
    throw Error('Solo coordinación puede retirar una copia con aportaciones abiertas.');
  const live=duplicatePairs().find(pair=>pair.original.id===original.id&&pair.copy.id===copy.id);
- if(!live)throw Error('La copia ya no coincide con el recorrido actual. Actualizá aportaciones.');
+ if(!live)throw Error('La copia ya no coincide con el recorrido actual. Actualiza aportaciones.');
  const yes=confirm('¿Eliminar la copia duplicada de «'+original.title+'» creada por coordinación? '+
    'Se conservará INTACTA la obra original de «'+original.author_label+'». '+
    'Si habías hecho cambios en la copia, primero reproducilos en la obra original '+
@@ -497,7 +497,7 @@ async function removeDuplicateCoordinatorCopy(original,copy){
  await reloadContributions();
  status('Se eliminó la copia creada por coordinación de «'+original.title+
    '». La aportación original de «'+original.author_label+
-   '» permanece intacta. Volvé a publicar para retirar la copia del recorrido público.'+
+   '» permanece intacta. Vuelve a publicar para retirar la copia del recorrido público.'+
    storageWarning);
 }
 
@@ -532,29 +532,29 @@ function updatePreviewAvailability(){
    matching.length>1||(matching.length===1&&!sameAuthor);
  const hint=elements.editHint;
  hint.dataset.warning='false';
- if(!active){hint.textContent='Elegí un recorrido compartido.';return;}
+ if(!active){hint.textContent='Elige un recorrido compartido.';return;}
  if(!localWorkspaceMatches()){
    hint.textContent=role==='owner'
-     ? 'El borrador todavía no está asociado a este colectivo. Volvé a seleccionar el recorrido en «Mis recorridos como coordinador» para conectarlo.'
-     : 'Prepará tu aportación en el editor antes de enviarla.';
+     ? 'El borrador todavía no está asociado a este colectivo. Vuelve a seleccionar el recorrido en «Mis recorridos como coordinador» para conectarlo.'
+     : 'Prepara tu aportación en el editor antes de enviarla.';
    hint.dataset.warning='true';
  }else if(matching.length>1&&!saved){
-   hint.textContent='Se encontraron varias aportaciones incompatibles con el mismo identificador. Revisá las copias antes de seguir.';
+   hint.textContent='Se encontraron varias aportaciones incompatibles con el mismo identificador. Revisa las copias antes de seguir.';
    hint.dataset.warning='true';
  }else if(coordinatorEditing){
    const row=saved;
    hint.textContent='Obra original de «'+row.author_label+'». «Guardar cambios en la nube» actualizará ESTA MISMA aportación y conservará su autoría y su QR.';
    if(matching.length>1)hint.textContent+=' También hay una copia duplicada: revisala en «Copias duplicadas detectadas» antes de publicar.';
-   if(!ready)hint.textContent+=' Primero cargá un GLB válido y una imagen de marcador validada.';
-   if(!editable){hint.textContent+=' Reabrí las aportaciones antes de guardar.';hint.dataset.warning='true';}
+   if(!ready)hint.textContent+=' Primero carga un GLB válido y una imagen de marcador validada.';
+   if(!editable){hint.textContent+=' Reabre las aportaciones antes de guardar.';hint.dataset.warning='true';}
  }else if(matching.length===1&&!sameAuthor){
-   hint.textContent='Esta obra pertenece a otra persona. No podés sobreescribirla con tu cuenta de artista.';
+   hint.textContent='Esta obra pertenece a otra persona. No puedes sobreescribirla con tu cuenta de artista.';
    hint.dataset.warning='true';
  }else{
    hint.textContent=role==='owner'
      ? 'Marcador nuevo de coordinación: «Guardar esta obra en la nube» lo incorporará a las aportaciones del colectivo y habilitará la prueba AR individual.'
      : 'Esta obra se guarda con tu identidad. El guardado local no sincroniza automáticamente con la nube.';
-   if(!editable){hint.textContent+=' El recorrido está cerrado; pedí a coordinación que lo reabra.';hint.dataset.warning='true';}
+   if(!editable){hint.textContent+=' El recorrido está cerrado; pide a coordinación que lo reabra.';hint.dataset.warning='true';}
  }
 }
 function printableFilename(name){
@@ -563,14 +563,14 @@ function printableFilename(name){
 }
 async function downloadPreviewMarker(){
  const row=selectedSavedContribution();
- if(!row)throw Error('Primero guardá este marcador en la nube.');
+ if(!row)throw Error('Primero guarda este marcador en la nube.');
  status('Preparando el marcador imprimible…');
  const blob=await getBlob(row.marker_print_path);
  const link=document.createElement('a'),object=URL.createObjectURL(blob);
  link.href=object;link.download=printableFilename(row.title)+'-15x15cm.png';
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(object),12000);
- status('Descargaste el marcador de «'+row.title+'». Imprimilo a escala 100% y tamaño 15 × 15 cm, o mostralo en otra pantalla.');
+ status('Descargaste el marcador de «'+row.title+'». Imprímelo a escala 100% y tamaño 15 × 15 cm, o mostralo en otra pantalla.');
 }
 
 /* Prevent testing stale Supabase data when the editor contains newer
@@ -603,17 +603,17 @@ function ensurePreviewSynced(row){
  const difference=localCloudDifference(e,row);
  if(!difference)return;
  const nextStep=active?.state==='locked'
-   ? 'Primero pulsá «Reabrir aportaciones» en Colaboración.'
+   ? 'Primero presiona «Reabrir aportaciones» en Colaboración.'
    : '';
  throw Error(difference+' '+nextStep+
-   ' Después pulsá «Guardar recorrido» y «Guardar esta obra en la nube». '+
-   'Por último, generá de nuevo el enlace de prueba AR.');
+   ' Después presiona «Guardar recorrido» y «Guardar esta obra en la nube». '+
+   'Por último, genera de nuevo el enlace de prueba AR.');
 }
 
 async function createIndividualPreview(){
  await reloadContributions();
  const row=selectedSavedContribution();
- if(!row)throw Error('Guardá primero la obra seleccionada en la nube.');
+ if(!row)throw Error('Guarda primero la obra seleccionada en la nube.');
  ensurePreviewSynced(row);
  const token=randomToken();
  status('Preparando un enlace temporal solo para «'+row.title+'»…');
@@ -633,17 +633,17 @@ async function createIndividualPreview(){
  elements.previewExpires.textContent='Prueba válida hasta el '+
    new Date(expiration).toLocaleString('es-AR',{dateStyle:'long',timeStyle:'short'})+
    '. Si generás otro enlace de esta obra, el anterior queda invalidado.';
- status('Enlace AR creado para «'+row.title+'». Escaneá el QR con el celular o copiá el enlace; apuntá la cámara al marcador descargado.');
+ status('Enlace AR creado para «'+row.title+'». Escanea el QR con el celular o copia el enlace; apunta la cámara al marcador descargado.');
 }
 async function copyIndividualPreview(){
- if(!currentPreviewUrl)throw Error('Generá primero un enlace de prueba.');
+ if(!currentPreviewUrl)throw Error('Genera primero un enlace de prueba.');
  await navigator.clipboard.writeText(currentPreviewUrl);
- status('Enlace de prueba copiado. Abrilo desde el celular para usar la cámara.');
+ status('Enlace de prueba copiado. Ábrelo desde el celular para usar la cámara.');
 }
 function openIndividualPreview(){
- if(!currentPreviewUrl)throw Error('Generá primero un enlace de prueba.');
+ if(!currentPreviewUrl)throw Error('Genera primero un enlace de prueba.');
  window.open(currentPreviewUrl,'_blank','noopener');
- status('Se abrió la vista previa AR. Autorizá la cámara y apuntá al marcador.');
+ status('Se abrió la vista previa AR. Autoriza la cámara y apunta al marcador.');
 }
 
 async function upload(path,blob,mime){
@@ -668,15 +668,15 @@ async function toPng(blob){
 async function submitContribution(){
  await refreshCurrentProjectState();
  if(!active||active.state!=='draft')
-   throw Error('Este recorrido está cerrado después de su publicación. Pedile al coordinador que pulse «Reabrir aportaciones»; después podrás guardar este modelo sin volver a crearlo.');
- if(!localWorkspaceMatches())throw Error('El editor local no corresponde al recorrido elegido. Cargá el recorrido correcto antes de guardar.');
+   throw Error('Este recorrido está cerrado después de su publicación. Pídele al coordinador que pulse «Reabrir aportaciones»; después podrás guardar este modelo sin volver a crearlo.');
+ if(!localWorkspaceMatches())throw Error('El editor local no corresponde al recorrido elegido. Carga el recorrido correcto antes de guardar.');
  const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
- if(!e)throw Error('Seleccioná un marcador del editor.');
+ if(!e)throw Error('Selecciona un marcador del editor.');
  const matching=cloudMatchesForSelection();
  if(matching.length>1)throw Error('Hay varias aportaciones con este identificador. No crearé otra copia.');
  if(matching.some(row=>row.user_id!==person.id))
-   throw Error('Esta obra pertenece a un invitado. Usá «Guardar cambios en la nube» como coordinador para evitar duplicarla.');
- if(!e.modelBlob||!e.markerImageBlob||!e.markerValidation?.ok)throw Error('Primero cargá un GLB, una imagen admitida y completá la validación del marcador en el editor.');
+   throw Error('Esta obra pertenece a un invitado. Usa «Guardar cambios en la nube» como coordinador para evitar duplicarla.');
+ if(!e.modelBlob||!e.markerImageBlob||!e.markerValidation?.ok)throw Error('Primero carga un GLB, una imagen admitida y completa la validación del marcador en el editor.');
  if(!/^id-[a-z0-9-]{8,60}$/i.test(e.id))throw Error('Identificador de marcador no admitido.');
  fileSizeOk(e.modelBlob,'Modelo GLB');
  const head=new Uint8Array(await e.modelBlob.slice(0,4).arrayBuffer());
@@ -723,11 +723,11 @@ async function saveExistingContributionAsCoordinator(){
  if(!active || role!=='owner'||!verifiedCoordinator)
    throw Error('Solo coordinación puede editar las aportaciones de invitados.');
  if(active.state!=='draft')
-   throw Error('Primero pulsá «Reabrir aportaciones» en este recorrido publicado.');
+   throw Error('Primero presiona «Reabrir aportaciones» en este recorrido publicado.');
  if(!localWorkspaceMatches())
-   throw Error('Primero cargá el recorrido compartido en el editor.');
+   throw Error('Primero carga el recorrido compartido en el editor.');
  const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
- if(!e)throw Error('Elegí un marcador para actualizar.');
+ if(!e)throw Error('Elige un marcador para actualizar.');
  const original=selectedSavedContribution();
  if(!original)throw Error('No se identificó una única obra original para actualizar. No se creó ninguna copia.');
  if(original.project_id!==active.id || original.source_entry_id!==e.id)
@@ -775,10 +775,10 @@ async function saveExistingContributionAsCoordinator(){
    .select('id,user_id,source_entry_id,author_label').single());
  if(saved.user_id!==original.user_id ||
     saved.source_entry_id!==original.source_entry_id)
-   throw Error('La identidad de la obra cambió inesperadamente; revisá los permisos.');
+   throw Error('La identidad de la obra cambió inesperadamente; revisa los permisos.');
  await reloadContributions();
  status('Cambios de «'+e.name+'» guardados en la nube sin duplicar el marcador. Autor original: '+
-   original.author_label+'. La prueba AR ya puede cargar la versión corregida. Para actualizar el recorrido público, pulsá «Publicar recorrido».');
+   original.author_label+'. La prueba AR ya puede cargar la versión corregida. Para actualizar el recorrido público, presiona «Publicar recorrido».');
 }
 
 async function getBlob(path){
@@ -790,7 +790,7 @@ async function importProject(){
  if(role!=='owner')throw Error('Solo el organizador puede reunir el recorrido.');
  await connectCoordinatorWorkspace(active);
  if(!contributions.length){
-   status('Este recorrido colectivo todavía no tiene obras en la nube. Ya está conectado al editor: creá tu marcador con «+ Agregar marcador», guardá el borrador y pulsá «Guardar esta obra en la nube».');
+   status('Este recorrido colectivo todavía no tiene obras en la nube. Ya está conectado al editor: crea tu marcador con «+ Agregar marcador», guarda el borrador y presiona «Guardar esta obra en la nube».');
    window.scrollTo({top:0,behavior:'smooth'});
    return;
  }
@@ -798,9 +798,9 @@ async function importProject(){
  const unsynced=(local?.sessionId?.()===active.route_id?local?.list?.()||[]:[])
    .filter(e=>e.ready&&!contributions.some(row=>row.source_entry_id===e.id));
  if(unsynced.length)
-   throw Error('Antes de cargar obras recibidas, guardá tus marcadores locales ('+
+   throw Error('Antes de cargar obras recibidas, guarda tus marcadores locales ('+
      unsynced.map(e=>e.name).join(', ')+
-     ') en la nube para no reemplazarlos. Usá «Guardar esta obra en la nube».');
+     ') en la nube para no reemplazarlos. Usa «Guardar esta obra en la nube».');
  const canonical=canonicalContributions();
  if(!window.SLAM_COLLAB_BRIDGE?.importAll)throw Error('El editor no está listo.');
  if(!confirm('¿Importar '+canonical.length+' obras originales al editor? '+
@@ -817,14 +817,14 @@ async function importProject(){
  }
  await window.SLAM_COLLAB_BRIDGE.importAll(active,files);
  refreshLocal();
- status('Cargadas '+files.length+' obras en el editor. Elegí la que querés modificar y pulsá «Guardar cambios en la nube» cuando termines. No se crearán copias.');
+ status('Cargadas '+files.length+' obras en el editor. Elige la que quieres modificar y presiona «Guardar cambios en la nube» cuando termines. No se crearán copias.');
  window.scrollTo({top:0,behavior:'smooth'});
 }
 async function createProject(){
  const title=elements.projectName.value.trim();
  const description=elements.projectDescription.value.trim();
  if(!verifiedCoordinator||invited)throw Error('Solo el coordinador verificado puede crear recorridos.');
- if(!title)throw Error('Escribí el título del recorrido compartido.');
+ if(!title)throw Error('Escribe el título del recorrido compartido.');
  if(description.length>500)throw Error('La descripción puede tener hasta 500 caracteres.');
  const token=randomToken(),routeId=newRouteId();
  const id=checked(await client.rpc('slam_create_project',{p_title:title,p_route_id:routeId,p_invite_token:token}));
@@ -837,13 +837,13 @@ async function createProject(){
  }
  elements.projectName.value='';elements.projectDescription.value='';
  await refreshProjects();await chooseProject(id);
- status('Recorrido colectivo creado. Copiá el enlace de invitación para los artistas.'+descriptionWarning);
+ status('Recorrido colectivo creado. Copia el enlace de invitación para los artistas.'+descriptionWarning);
 }
 async function joinProject(){
  const token=elements.invite.value.trim();
  const displayName=nameOrDefault();
- if(!displayName)throw Error('Indicá tu nombre para identificar la aportación.');
- if(!token)throw Error('Pegá el enlace de invitación o entrá desde el enlace compartido.');
+ if(!displayName)throw Error('Indica tu nombre para identificar la aportación.');
+ if(!token)throw Error('Pega el enlace de invitación o entra desde el enlace compartido.');
  const match=token.match(/(?:#|[?&])slam-invite=([0-9a-f]+)/i);
  const clean=match?match[1]:token;
  const id=checked(await client.rpc('slam_join_project',{p_invite_token:clean,p_display_name:displayName}));
@@ -855,7 +855,7 @@ async function joinProject(){
  await window.SLAM_COLLAB_BRIDGE?.activateGuest(active);
  refreshLocal();
  document.documentElement.classList.remove('slam-invite-pending');
- status('Te sumaste al recorrido «'+active.title+'». Creá un marcador en el editor y enviá tu aporte.');
+ status('Te sumaste al recorrido «'+active.title+'». Crea un marcador en el editor y envía tu aporte.');
 }
 async function copyInvite(){
  if(!active||role!=='owner')return;
@@ -872,7 +872,7 @@ async function copyInvite(){
  * todos los GLB y PNG están copiados en el bucket público.
  */
 function publishedTourURL(){
- if(!active)throw Error('Elegí un recorrido.');
+ if(!active)throw Error('Elige un recorrido.');
  return routeURL(active.route_id);
 }
 function publicFileURL(path){
@@ -922,7 +922,7 @@ async function refreshPublishedInfo(){
    await renderPublished(await resp.json());
  }catch(e){
    console.warn('No se pudo consultar la publicación:',e);
-   elements.publishedState.textContent='No se pudo comprobar la publicación; actualizá el panel.';
+   elements.publishedState.textContent='No se pudo comprobar la publicación; actualiza el panel.';
  }
 }
 async function publishNow(){
@@ -931,14 +931,14 @@ async function publishNow(){
  await reloadContributions();
  if(!contributions.length)throw Error('No hay obras guardadas en la nube.');
  if(hasDuplicateMarkers())
-   throw Error('Hay copias duplicadas en el recorrido. Revisá «Copias duplicadas detectadas» y retiralas antes de volver a publicar, para que no haya dos objetos con el mismo marcador.');
+   throw Error('Hay copias duplicadas en el recorrido. Revisa «Copias duplicadas detectadas» y retíralas antes de volver a publicar, para que no haya dos objetos con el mismo marcador.');
  if(!confirm('¿Publicar '+contributions.length+' obra(s) del recorrido «'+active.title+
    '»? Se harán públicas las versiones guardadas en la nube, se cerrarán las aportaciones y podrás reabrirlas para corregir y volver a publicar.'))return;
  status('Publicando '+contributions.length+' obras… Se conservará el mismo enlace QR.');
  elements.publishBtn.textContent='Publicando recorrido…';
  try{
    const session=checked(await client.auth.getSession())?.session;
-   if(!session?.access_token)throw Error('Ingresá nuevamente con tu correo de coordinación.');
+   if(!session?.access_token)throw Error('Ingresa nuevamente con tu correo de coordinación.');
    const resp=await fetch(URL_SUPABASE+'/functions/v1/slam-publicar',{
      method:'POST',cache:'no-store',referrerPolicy:'no-referrer',
      headers:{
@@ -948,12 +948,12 @@ async function publishNow(){
      body:JSON.stringify({projectId:active.id})
    });
    const data=await resp.json().catch(()=>null);
-   if(!resp.ok||!data?.ok)throw Error(data?.error||'Error al publicar; intentá nuevamente.');
+   if(!resp.ok||!data?.ok)throw Error(data?.error||'Error al publicar; intenta nuevamente.');
    await refreshProjects();
    if(!active||active.route_id!==data.routeId)
      throw Error('Se publicó, pero no se pudo actualizar la vista del recorrido.');
    await renderPublished(data.manifest);
-   status('Recorrido publicado: '+data.count+' obras. El enlace y todos los QR están activos. Descargá los marcadores PNG e imprimilos a 15 × 15 cm.');
+   status('Recorrido publicado: '+data.count+' obras. El enlace y todos los QR están activos. Descarga los marcadores PNG e imprimilos a 15 × 15 cm.');
  }finally{elements.publishBtn.textContent='Publicar recorrido';}
 }
 function downloadFileBlob(blob,filename){
@@ -972,10 +972,10 @@ async function downloadPublishedMarker(item,i){
  status('Descargando marcador de «'+item.title+'»…');
  downloadFileBlob(await fetchPublishedMarker(item),
    'marcador-'+String(i+1).padStart(2,'0')+'-'+printableFilename(item.title)+'-15x15cm.png');
- status('Marcador descargado. Imprimilo a 15 × 15 cm, tamaño real, escala 100%.');
+ status('Marcador descargado. Imprímelo a 15 × 15 cm, tamaño real, escala 100%.');
 }
 async function downloadAllPublishedMarkers(){
- if(!publishedManifest)throw Error('Primero publicá el recorrido.');
+ if(!publishedManifest)throw Error('Primero publica el recorrido.');
  if(typeof JSZip==='undefined')throw Error('No se cargó el generador ZIP.');
  status('Preparando '+publishedManifest.items.length+' marcadores para imprimir…');
  const zip=new JSZip();
@@ -995,7 +995,7 @@ async function downloadAllPublishedMarkers(){
 async function copyPublishedURL(){
  if(!publishedManifest)throw Error('Todavía no está publicado.');
  await navigator.clipboard.writeText(publishedTourURL());
- status('Enlace público copiado. Ya podés compartirlo con visitantes.');
+ status('Enlace público copiado. Ya puedes compartirlo con visitantes.');
 }
 function openPublishedTour(){
  if(!publishedManifest)throw Error('Todavía no está publicado.');
@@ -1008,7 +1008,7 @@ async function toggleLock(){
  const next=active.state==='locked'?'draft':'locked';
  checked(await client.from('slam_projects').update({state:next}).eq('id',active.id).select('id').single());
  await refreshProjects();await chooseProject(active.id);
- status(next==='locked'?'Aportaciones cerradas. Ya podés preparar la publicación.':'Aportaciones reabiertas.');
+ status(next==='locked'?'Aportaciones cerradas. Ya puedes preparar la publicación.':'Aportaciones reabiertas.');
 }
 
 /*
@@ -1023,14 +1023,14 @@ async function deleteCollectiveProject(){
  const target={id:active.id,title:active.title,routeId:active.route_id};
  const typed=prompt('ELIMINAR RECORRIDO COLECTIVO\n\n'+
    'Se borrarán las obras, las invitaciones, los archivos privados y la publicación pública. Sus QR dejarán de funcionar.\n\n'+
-   'Para continuar, escribí el nombre exacto:\n'+target.title);
+   'Para continuar, escribe el nombre exacto:\n'+target.title);
  if(typed===null)return;
  if(typed!==target.title)
-   throw Error('El nombre no coincide. No se eliminó nada. Escribí exactamente «'+target.title+'».');
+   throw Error('El nombre no coincide. No se eliminó nada. Escribe exactamente «'+target.title+'».');
  if(!confirm('Última confirmación:\n\n¿Eliminar DEFINITIVAMENTE «'+target.title+
    '» y todas sus obras y archivos de Supabase?\n\nLa acción no se puede deshacer.'))return;
  const access=checked(await client.auth.getSession())?.session?.access_token;
- if(!access)throw Error('Ingresá nuevamente con el correo verificado de coordinación.');
+ if(!access)throw Error('Ingresa nuevamente con el correo verificado de coordinación.');
  status('Eliminando el recorrido colectivo «'+target.title+'»…');
  const response=await fetch(URL_SUPABASE+'/functions/v1/slam-borrar-recorrido',{
    method:'POST',cache:'no-store',referrerPolicy:'no-referrer',
@@ -1150,6 +1150,6 @@ const hash=new URLSearchParams(location.hash.slice(1));
 if(hash.has('slam-invite')){
  details.open=true;
  elements.invite.value=hash.get('slam-invite');
- status('Invitación detectada. Escribí tu nombre y pulsá «Unirme y crear mi marcador».');
+ status('Invitación detectada. Escribe tu nombre y presiona «Unirme y crear mi marcador».');
 }
 

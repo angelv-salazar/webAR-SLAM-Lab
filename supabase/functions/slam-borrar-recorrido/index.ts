@@ -78,7 +78,7 @@ Deno.serve(async req=>{
   if(req.headers.get('origin')!==ORIGIN)
     return reply({error:'Origen no permitido'},403);
   const bearer=req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
-  if(!bearer)return reply({error:'Iniciá sesión como coordinador'},401);
+  if(!bearer)return reply({error:'Inicia sesión como coordinador'},401);
 
   try{
     const body=await req.json();
@@ -136,7 +136,7 @@ Deno.serve(async req=>{
     console.error('slam-borrar-recorrido',message);
     const safe=/^(No se pudieron|Hay demasiados|Nombre de archivo|La carpeta|Identificador del recorrido|Archivos eliminados)/.test(message)
       ?message
-      :'No se completó la eliminación. Revisá el estado del recorrido e intentá de nuevo.';
+      :'No se completó la eliminación. Revisa el estado del recorrido e intenta de nuevo.';
     return reply({error:safe},500);
   }
 });

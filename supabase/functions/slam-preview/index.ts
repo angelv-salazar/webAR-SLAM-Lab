@@ -39,7 +39,7 @@ Deno.serve(async req=>{
     const {data,error}=await admin.rpc('slam_resolve_preview_link',{p_token:token});
     if(error)throw Error('Preview resolution failed');
     if(!data || data.routeId!==routeId)
-      return response({error:'Este enlace de prueba venció o fue reemplazado. Generá otro desde Estudio SLAM.'},404);
+      return response({error:'Este enlace de prueba venció o fue reemplazado. Genera otro desde Estudio SLAM.'},404);
 
     const validBase=String(data.projectId||'');
     const entry=String(data.sourceEntryId||'');
@@ -75,6 +75,6 @@ Deno.serve(async req=>{
   }catch(error){
     // Avoid logging or returning tokens, file paths, and admin details.
     console.error('slam-preview failed',error instanceof Error?error.message:'request failed');
-    return response({error:'No se pudo preparar la prueba AR. Volvé a intentar o generá otro enlace.'},500);
+    return response({error:'No se pudo preparar la prueba AR. Vuelve a intentar o genera otro enlace.'},500);
   }
 });

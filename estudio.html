@@ -182,11 +182,11 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 
 <section id="editorModeStrip" class="slam-editor-modes" aria-label="Tipo de recorrido">
   <div class="slam-mode-group">
-    <span class="slam-modes-heading">¿Cómo querés trabajar?</span>
+    <span class="slam-modes-heading">¿Cómo quieres trabajar?</span>
     <button id="modeIndividual" class="slam-mode-button" type="button" aria-pressed="true">Individual</button>
     <button id="modeCollective" class="slam-mode-button" type="button" aria-pressed="false">Colectivo</button>
   </div>
-  <p id="modeHelp" class="slam-mode-description" role="status">Individual: creá, guardá y probá recorridos en este navegador. Para invitar artistas, elegí Colectivo.</p>
+  <p id="modeHelp" class="slam-mode-description" role="status">Individual: crea, guarda y prueba recorridos en este navegador. Para invitar artistas, elige Colectivo.</p>
 </section>
 
 <section id="slamCollab" class="slam-collab" aria-label="Colaboración de recorridos">
@@ -197,11 +197,11 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
     <div id="collabCoordinatorBox" class="collab-section">
       <div id="collabCoordinatorLogin">
         <h3>Acceso de coordinación</h3>
-        <p class="collab-note">Solo la persona organizadora puede crear recorridos y publicar las aportaciones. Verificá tu correo mediante un enlace de acceso.</p>
+        <p class="collab-note">Solo la persona organizadora puede crear recorridos y publicar las aportaciones. Verifica tu correo mediante un enlace de acceso.</p>
         <label for="collabAdminEmail">Correo de coordinación</label>
         <input id="collabAdminEmail" type="email" autocomplete="email" placeholder="Tu correo de Supabase">
         <button id="collabAdminSignIn" type="button">Recibir enlace por correo</button>
-        <p class="collab-note">El enlace de acceso llega a tu correo. Si es la primera vez, configurá la URL de retorno autorizada en Supabase.</p>
+        <p class="collab-note">El enlace de acceso llega a tu correo. Si es la primera vez, configura la URL de retorno autorizada en Supabase.</p>
       </div>
       <div id="collabCreateFields" hidden>
         <h3>Administración de recorridos</h3>
@@ -209,14 +209,14 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
         <input id="collabProjectName" maxlength="100" placeholder="Ej.: Ensamblajes colectivos">
         <label for="collabProjectDescription">Descripción del recorrido colectivo (opcional)</label>
         <textarea id="collabProjectDescription" rows="2" maxlength="500" placeholder="Ej.: Experiencias de artistas invitados para una exposición WebAR"></textarea>
-        <p class="collab-note">Creá el recorrido colectivo una sola vez aquí. Este botón genera la invitación para artistas. No necesitás crearlo de nuevo en «1. Recorridos».</p>
+        <p class="collab-note">Crea el recorrido colectivo una sola vez aquí. Este botón genera la invitación para artistas. No necesitas crearlo de nuevo en «1. Recorridos».</p>
         <button id="collabCreate" type="button">Crear recorrido colectivo e invitación</button>
         <button id="collabAdminSignOut" class="secondary" type="button">Cerrar acceso de coordinación</button>
       </div>
     </div>
     <div class="collab-section" id="collabParticipantBox" hidden>
       <h3 id="collabGuestHeading">Invitación a un recorrido</h3>
-      <p class="collab-note">Te invitaron a participar en un recorrido. Solo necesitás indicar tu nombre: no hace falta registrarte.</p>
+      <p class="collab-note">Te invitaron a participar en un recorrido. Solo necesitas indicar tu nombre: no hace falta registrarte.</p>
       <label for="collabName">Tu nombre</label>
       <input id="collabName" maxlength="80" placeholder="Nombre para identificar tu obra">
       <label for="collabInvite" id="collabInviteLabel" hidden>Enlace o código recibido</label>
@@ -233,32 +233,32 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
       <p id="collabProjectStateBanner" class="collab-project-state" aria-live="polite" hidden></p>
       <div id="collabInviteTools" hidden>
         <button id="collabCopy" type="button">Copiar invitación para artistas</button>
-        <p class="collab-note">Guardá el enlace de invitación: quien lo tenga podrá sumarse. La organización queda asociada a este navegador mientras conserve su sesión anónima.</p>
+        <p class="collab-note">Guarda el enlace de invitación: quien lo tenga podrá sumarse. La organización queda asociada a este navegador mientras conserve su sesión anónima.</p>
       </div>
       <div id="collabOrganizerEditorTools" class="collab-coordinator-edit" hidden>
         <h3>Editar aportaciones del recorrido</h3>
-        <p class="collab-note">Este editor está conectado al recorrido colectivo seleccionado. Podés crear marcadores propios con «+ Agregar marcador» o cargar aportaciones recibidas para editarlas. No hace falta crear otro recorrido en el apartado 1.</p>
+        <p class="collab-note">Este editor está conectado al recorrido colectivo seleccionado. Puedes crear marcadores propios con «+ Agregar marcador» o cargar aportaciones recibidas para editarlas. No hace falta crear otro recorrido en el apartado 1.</p>
         <button id="collabSync" type="button" class="secondary">Cargar obras recibidas para editar</button>
         <div id="collabDuplicateNotice" class="collab-duplicate-notice" hidden>
           <h3>Copias duplicadas detectadas</h3>
-          <p class="collab-note">Estas copias se crearon con el sistema anterior. Podés conservar la obra original del invitado y eliminar exclusivamente la copia hecha desde coordinación, después de revisar si tenía ajustes que querés conservar.</p>
+          <p class="collab-note">Estas copias se crearon con el sistema anterior. Puedes conservar la obra original del invitado y eliminar exclusivamente la copia hecha desde coordinación, después de revisar si tenía ajustes que quieres conservar.</p>
           <div id="collabDuplicateRows"></div>
         </div>
       </div>
       <div class="collab-columns">
         <div class="collab-section">
           <h3 id="collabEditHeading">Guardar mi obra en el recorrido</h3>
-          <p class="collab-note">Configurá un marcador, imagen, GLB y animación. «Guardar recorrido» conserva el borrador; «Guardar esta obra en la nube» la incorpora a las aportaciones compartidas y habilita la prueba AR individual.</p>
+          <p class="collab-note">Configura un marcador, imagen, GLB y animación. «Guardar recorrido» conserva el borrador; «Guardar esta obra en la nube» la incorpora a las aportaciones compartidas y habilita la prueba AR individual.</p>
           <label for="collabLocalPicker">Obra del editor a guardar</label>
           <select id="collabLocalPicker"></select>
           <button id="collabRefreshLocal" class="secondary" type="button">Actualizar lista</button>
           <p id="collabEditHint" class="collab-note" aria-live="polite"></p>
           <button id="collabSend" type="button">Guardar esta obra en la nube</button>
           <button id="collabOwnerSave" class="collab-owner-save" type="button" hidden>Guardar cambios en la nube</button>
-          <p class="collab-note">«Guardar recorrido» guarda el borrador en este navegador. Para actualizar la prueba AR y una futura publicación, usá el botón de guardado en la nube. Si el recorrido está cerrado, reabrí primero las aportaciones.</p>
+          <p class="collab-note">«Guardar recorrido» guarda el borrador en este navegador. Para actualizar la prueba AR y una futura publicación, usa el botón de guardado en la nube. Si el recorrido está cerrado, reabre primero las aportaciones.</p>
           <div id="collabIndividualPreview" class="collab-preview">
             <h3>Prueba individual · realidad aumentada</h3>
-            <p class="collab-note">Después de guardar la obra en la nube, descargá su marcador y generá un enlace de prueba. Abrilo con otro celular para ver únicamente este GLB con la cámara, sin publicar todavía el recorrido.</p>
+            <p class="collab-note">Después de guardar la obra en la nube, descarga su marcador y genera un enlace de prueba. Ábrelo con otro celular para ver únicamente este GLB con la cámara, sin publicar todavía el recorrido.</p>
             <button id="collabMarkerDownload" class="secondary" type="button" disabled>Descargar marcador PNG · 15 × 15 cm</button>
             <button id="collabPreviewCreate" type="button" disabled>Generar enlace de prueba AR</button>
             <div id="collabPreviewResult" class="collab-preview-result" hidden>
@@ -270,7 +270,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
                 <button id="collabPreviewOpen" type="button" class="secondary">Abrir prueba AR</button>
               </div>
               <p class="collab-note" id="collabPreviewExpires"></p>
-              <p class="collab-note">Este QR abre la prueba temporal. El QR incluido en el marcador imprimible abrirá el recorrido público cuando el coordinador lo publique. Para reconocer la imagen, mostrá el marcador en una segunda pantalla o imprimilo.</p>
+              <p class="collab-note">Este QR abre la prueba temporal. El QR incluido en el marcador imprimible abrirá el recorrido público cuando el coordinador lo publique. Para reconocer la imagen, muestra el marcador en una segunda pantalla o imprímelo.</p>
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
       </div>
       <div id="collabPublishHelp" hidden>
         <h3>Publicación del recorrido colectivo</h3>
-        <p class="collab-note">Cuando todas las obras estén guardadas en la nube, publicá el recorrido completo con un clic. Se activarán automáticamente su URL y los QR de los marcadores, sin subir archivos a GitHub.</p>
+        <p class="collab-note">Cuando todas las obras estén guardadas en la nube, publica el recorrido completo con un clic. Se activarán automáticamente su URL y los QR de los marcadores, sin subir archivos a GitHub.</p>
         <button id="collabPublishNow" type="button" class="collab-publish-button">Publicar recorrido</button>
         <button id="collabLock" class="secondary" type="button">Cerrar aportaciones</button>
         <p id="collabPublishedState" class="collab-note" aria-live="polite">Este recorrido aún no fue publicado automáticamente.</p>
@@ -299,22 +299,22 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
             </div>
           </div>
           <div id="collabPublishedMarkers"></div>
-          <p class="collab-note">Imprimí cada marcador PNG a 15 × 15 cm, escala 100 %. Todos los QR integrados abren este mismo recorrido. Para actualizar modelos o textos, reabrí aportaciones, guardá los cambios y volvé a pulsar «Publicar recorrido».</p>
+          <p class="collab-note">Imprime cada marcador PNG a 15 × 15 cm, escala 100 %. Todos los QR integrados abren este mismo recorrido. Para actualizar modelos o textos, reabre aportaciones, guarda los cambios y vuelve a pulsar «Publicar recorrido».</p>
         </div>
         <details class="collab-legacy">
           <summary>Opcional · revisar obras o preparar copia para GitHub</summary>
-          <p class="collab-note">Podés reunir las obras en el editor y crear un ZIP de respaldo para el repositorio. Este paso ya no es necesario para la publicación automática.</p>
+          <p class="collab-note">Puedes reunir las obras en el editor y crear un ZIP de respaldo para el repositorio. Este paso ya no es necesario para la publicación automática.</p>
           <button id="collabLegacyPublish" class="secondary" type="button">Preparar ZIP para GitHub</button>
           <p class="collab-note">Opcional: después de cargar las obras en el editor, este botón prepara un ZIP para guardar una copia independiente en GitHub.</p>
         </details>
       </div>
       <div id="collabDeleteZone" class="collab-delete-zone" hidden>
         <h3>Administración del recorrido colectivo</h3>
-        <p class="collab-note">Para borrar un proyecto que ya no necesitás, podés eliminarlo de Supabase junto con sus invitaciones, obras y archivos publicados. Es irreversible y no afecta otros recorridos.</p>
+        <p class="collab-note">Para borrar un proyecto que ya no necesitas, puedes eliminarlo de Supabase junto con sus invitaciones, obras y archivos publicados. Es irreversible y no afecta otros recorridos.</p>
         <button id="collabDeleteProject" class="collab-delete-button" type="button">Eliminar recorrido colectivo definitivamente</button>
       </div>
     </div>
-    <p id="collabStatus" class="collab-status" role="status">Abrí esta sección para conectar con Supabase.</p>
+    <p id="collabStatus" class="collab-status" role="status">Abre esta sección para conectar con Supabase.</p>
   </div>
 </details>
 </section>
@@ -323,7 +323,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 <section class="card" id="markerCard">
 <h2 id="editorRouteTitle">1. Recorridos · individuales</h2>
 <p id="activeRouteNotice" class="muted" hidden></p>
-<p id="localDraftExplanation" class="muted">Esta sección administra borradores guardados en este navegador. Para iniciar un recorrido colectivo e invitar artistas, utilizá «Colaboración → Administración de recorridos» arriba.</p>
+<p id="localDraftExplanation" class="muted">Esta sección administra borradores guardados en este navegador. Para iniciar un recorrido colectivo e invitar artistas, utiliza «Colaboración → Administración de recorridos» arriba.</p>
 <div id="existingSessionChooser" hidden>
   <label for="sessionSelect">Elegir recorrido</label>
   <select id="sessionSelect"><option value="">+ Nuevo recorrido</option></select>
@@ -352,7 +352,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 </div>
 <!-- Modo individual: prueba AR local y publicación por ZIP; en modo colectivo este panel se oculta. -->
 <div id="legacyLocalPublish">
-  <p class="muted">Modo individual: probá el recorrido AR en este dispositivo o prepará el ZIP para publicarlo en GitHub. El ZIP no se publica automáticamente.</p>
+  <p class="muted">Modo individual: prueba el recorrido AR en este dispositivo o prepara el ZIP para publicarlo en GitHub. El ZIP no se publica automáticamente.</p>
   <button id="testSession" type="button">Vista previa AR (este dispositivo)</button>
   <button id="preparePublish" type="button">Preparar ZIP para publicar en GitHub</button>
 </div>
@@ -396,7 +396,7 @@ if(new URLSearchParams(location.hash.slice(1)).has('slam-invite')){
 <p id="fileName" class="muted">Sin archivo GLB. El visor muestra una figura de referencia.</p>
 <div class="descriptionEditor">
   <label for="entryDescription">Texto descriptivo (opcional)</label>
-  <textarea id="entryDescription" rows="5" maxlength="500" placeholder="Contá brevemente qué está viendo el visitante, su contexto o el concepto de la obra."></textarea>
+  <textarea id="entryDescription" rows="5" maxlength="500" placeholder="Cuenta brevemente qué está viendo el visitante, su contexto o el concepto de la obra."></textarea>
   <div class="descriptionMeta">
     <span>Se mostrará al reconocer el marcador, después de publicar los cambios. No modifica el QR.</span>
     <output id="descCount" for="entryDescription">0 / 500</output>
@@ -651,7 +651,7 @@ function describeMarkerQuality(e){
     meta.width&&meta.height?'Imagen: '+meta.width+' × '+meta.height+' px · '+Math.round((meta.bytes||0)/1024)+' KB':'',
     ...report.errors||[],
     ...warnings.map(w=>'⚠ '+w),
-    report.ok?'El reconocimiento real y el .patt todavía deben probarse con el QR y la impresión final.':'Corregí la imagen antes de continuar.'
+    report.ok?'El reconocimiento real y el .patt todavía deben probarse con el QR y la impresión final.':'Corrige la imagen antes de continuar.'
  ].filter(Boolean).join('\n');
  setMarkerQuality(text,!report.ok||identical.length?'invalid':warnings.length?'warning':'valid');
 }
@@ -864,8 +864,8 @@ async function preparePublication(){
  zip.file(root+'manifest.json',JSON.stringify(manifest,null,2));
  zip.file('INSTRUCCIONES-PUBLICAR.txt',
   'PAQUETE DE PUBLICACION · ESTUDIO SLAM / 8TH WALL\n\n'+
-  '1. Descomprimí este ZIP conservando la carpeta recorridos/.\n'+
-  '2. Subí el ZIP a la carpeta importar/ del repositorio de tu sitio GitHub Pages, sin descomprimirlo.\n'+
+  '1. Descomprime este ZIP conservando la carpeta recorridos/.\n'+
+  '2. Sube el ZIP a la carpeta importar/ del repositorio de tu sitio GitHub Pages, sin descomprimirlo.\n'+
   '3. Espera GitHub Pages y abre: '+routeURL(session.id)+'\n'+
   '4. Imprime cada PNG de la carpeta imprimir/ a 15x15 cm y escala 100%.\n'+
   '5. Prueba todos los marcadores con la cámara. Usa una buena iluminación.\n\n'+
@@ -977,7 +977,7 @@ async function validateMarkerUpload(file,entry,replace=true){
  if(!report.ok){
    if(selectedEntry()?.id===entry.id){
      setMarkerQuality(['No se admitió esta imagen.',...(report.errors||[])].join('\n'),'invalid');
-     inform('Imagen rechazada. Corregí el formato, tamaño o proporciones antes de seguir.',true);
+     inform('Imagen rechazada. Corrige el formato, tamaño o proporciones antes de seguir.',true);
    }
    return false;
  }
@@ -1064,7 +1064,7 @@ async function showMarkerResult(entry){
 $('buildMarker').onclick=async()=>{
  const entry=selectedEntry(),sessionId=session?.id;
  if(!entry||entry.kind!=='custom'||!entry.markerImageBlob||entry.markerValidation?.ok!==true){
-   inform('Primero carga y validá una imagen personalizada para este marcador.',true);return;
+   inform('Primero carga y valida una imagen personalizada para este marcador.',true);return;
  }
  const button=$('buildMarker');button.disabled=true;
  $('markerBuildInfo').textContent='Preparando QR, composición 15 × 15 cm y archivo de reconocimiento .patt…';
@@ -1139,7 +1139,7 @@ try{
   window.dispatchEvent(new CustomEvent('slam-draft-saved',{detail:{id:session.id,entryId:activeId}}));
   inform(
     $('collabWorkspace')&&!$('collabWorkspace').hidden
-      ? 'Borrador guardado en este navegador. Para actualizar las pruebas AR y la publicación colaborativa, abrí Colaboración y pulsá «Guardar esta obra en la nube».'
+      ? 'Borrador guardado en este navegador. Para actualizar las pruebas AR y la publicación colaborativa, abre Colaboración y presiona «Guardar esta obra en la nube».'
       : 'Recorrido guardado. Puedes seleccionarlo desde la lista de recorridos existentes.'
   );
 }catch(error){inform('No se pudo guardar: '+error.message,true)}
@@ -1172,7 +1172,7 @@ $('testSession').onclick=async()=>{
    const url=new URL(routeURL(session.id));
    url.searchParams.set('preview','1');
    window.open(url.href,'_blank','noopener');
-   inform('Prueba abierta en otra pestaña. Autoriza la cámara y apuntá a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
+   inform('Prueba abierta en otra pestaña. Autoriza la cámara y apunta a los marcadores impresos. El modo local usa los archivos guardados en este navegador.');
  }catch(error){inform('No se pudo iniciar la prueba: '+error.message,true);}
 };
 $('preparePublish').onclick=async()=>{
@@ -1209,7 +1209,7 @@ try{
   const previousSolo=preferredId?saved.find(s=>s.id===preferredId):null;
   const selected=previousSolo||saved[0]||newSession();
   setSession(selected,{isNew:!selected.name});
-  inform('Editor listo. Elegí Individual o Colectivo y continuá con tus marcadores.');
+  inform('Editor listo. Elige Individual o Colectivo y continúa con tus marcadores.');
 }
 catch(error){inform('El almacenamiento local no está disponible: '+error.message,true);session=newSession();isNewSession=true;activeId=session.entries[0].id;
 $('sessionName').value='';$('sessionDesc').value='';
@@ -1252,9 +1252,9 @@ window.SLAM_COLLAB_BRIDGE={
      :[];
    if(localArt.length){
      const transfer=confirm(
-       'Tenés '+localArt.length+' marcador(es) individuales ('+
+       'Tienes '+localArt.length+' marcador(es) individuales ('+
        localArt.map(e=>e.name).join(', ')+
-       ').\n\n¿Querés COPIARLOS a «'+project.title+
+       ').\n\n¿Quieres COPIARLOS a «'+project.title+
        '» para guardarlos en la nube del colectivo?\n\n'+
        'Sus borradores individuales quedarán intactos.'
      );
@@ -1392,7 +1392,7 @@ window.SLAM_COLLAB_BRIDGE={
    setSession(next,{isNew:false});
    await sessionSave();
    await refreshSessions();
-   inform('Importadas '+next.entries.length+' obras colaborativas. Comprobá la vista previa y prepará el ZIP.');
+   inform('Importadas '+next.entries.length+' obras colaborativas. Comprueba la vista previa y prepara el ZIP.');
  }
 };
 window.dispatchEvent(new Event('slam-bridge-ready'));

@@ -134,7 +134,7 @@ begin
     where e.project_id=new.project_id
       and e.source_entry_id=new.source_entry_id
   ) then
-    raise exception 'Este marcador ya existe en el recorrido. Editá la aportación original en vez de crear una copia.';
+    raise exception 'Este marcador ya existe en el recorrido. Edita la aportación original en vez de crear una copia.';
   end if;
   if (select count(*) from public.slam_entries e
       where e.project_id=new.project_id)>=20 then
@@ -220,20 +220,20 @@ declare
   v_author uuid;
   v_expires timestamptz := now() + interval '7 days';
 begin
-  if v_uid is null then raise exception 'Ingresá al recorrido para generar una prueba.'; end if;
+  if v_uid is null then raise exception 'Ingresa al recorrido para generar una prueba.'; end if;
   if p_token is null or p_token !~ '^[0-9a-f]{64,128}$'
     then raise exception 'Código temporal inválido'; end if;
 
   select e.project_id, e.user_id into v_project, v_author
   from public.slam_entries e where e.id=p_entry_id;
 
-  if v_project is null then raise exception 'Guardá primero la obra en la nube'; end if;
+  if v_project is null then raise exception 'Guarda primero la obra en la nube'; end if;
 
   if v_uid <> v_author and not exists (
     select 1 from public.slam_members m
     where m.project_id=v_project and m.user_id=v_uid and m.role='owner'
   ) then
-    raise exception 'No tenés permiso para crear una prueba de esta obra';
+    raise exception 'No tienes permiso para crear una prueba de esta obra';
   end if;
 
   insert into slam_private.preview_links(entry_id, token_hash, created_by, expires_at)

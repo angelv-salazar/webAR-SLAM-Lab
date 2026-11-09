@@ -141,7 +141,7 @@ def import_zip(archive: Path, *, allow_update: bool = False) -> tuple[str, int, 
         # explícitamente --update y el ZIP ya fue validado por completo.
         if dest.exists() and any(dest.iterdir()):
             if not allow_update:
-                abort("Este recorrido ya existe. Para actualizarlo usá --update.")
+                abort("Este recorrido ya existe. Para actualizarlo usa --update.")
             existing_manifest = dest / "manifest.json"
             if not existing_manifest.is_file():
                 abort("La carpeta ya existe pero no tiene manifiesto; no sobrescribir.")
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         allow_update = "--update" in args
         files = [Path(x) for x in args if x != "--update"]
         if not files:
-            abort("Pasá el ZIP como argumento.")
+            abort("Pasa el ZIP como argumento.")
         for path in files:
             route_id, markers, created = import_zip(path, allow_update=allow_update)
             print(f"PUBLICADO: {route_id} | marcadores: {markers} | archivos: {created}")
@@ -176,7 +176,7 @@ if __name__ == "__main__":
                 owner, name = repository.split("/", 1)
                 print(f"URL: https://{owner}.github.io/{name}/recorrido.html?id={route_id}")
             else:
-                print("Abrí recorrido.html?id=" + route_id + " en la web de GitHub Pages de tu copia.")
+                print("Abre recorrido.html?id=" + route_id + " en la web de GitHub Pages de tu copia.")
     except Exception as exc:
         print("Error de importación: " + str(exc), file=sys.stderr)
         raise SystemExit(1)

@@ -1,6 +1,6 @@
 # Arquitectura y mantenimiento de Estudio SLAM
 
-Este documento explica cómo está organizado el código. **Si no programás**, empezá con la [guía de instalación](INSTALACION-PASO-A-PASO.md).
+Este documento explica cómo está organizado el código. **Si no programás**, empieza con la [guía de instalación](INSTALACION-PASO-A-PASO.md).
 
 ## El mismo editor, dos modalidades
 
@@ -29,7 +29,7 @@ Este documento explica cómo está organizado el código. **Si no programás**, 
 
 ## Configuración segura para tu Fork
 
-Editá solamente el objeto `TU_SUPABASE` de `studio-config.js`. La configuración del sitio original solo se usa en la **URL original exacta**, no en los Forks. Sin esos dos campos, se permite Individual, pero se bloquea Colectivo.
+Edita solamente el objeto `TU_SUPABASE` de `studio-config.js`. La configuración del sitio original solo se usa en la **URL original exacta**, no en los Forks. Sin esos dos campos, se permite Individual, pero se bloquea Colectivo.
 
 No incluir claves `service_role`, `sb_secret_` ni contraseñas en JavaScript, GitHub o archivos públicos. Solo la **clave publishable** debe aparecer en `studio-config.js`.
 
@@ -54,7 +54,7 @@ STUDIO_ORIGIN=https://tuusuario.github.io
 STUDIO_VIEWER_URL=https://tuusuario.github.io/turepositorio/recorrido.html
 ```
 
-**STUDIO_ORIGIN** es solo el origen sin ruta, **STUDIO_VIEWER_URL** incluye el camino completo. Si usás claves `sb_publishable_`, las tres funciones tienen **Verify JWT del gateway desactivado**; las funciones verifican internamente token y/o identidad según la operación.
+**STUDIO_ORIGIN** es solo el origen sin ruta, **STUDIO_VIEWER_URL** incluye el camino completo. Si usas claves `sb_publishable_`, las tres funciones tienen **Verify JWT del gateway desactivado**; las funciones verifican internamente token y/o identidad según la operación.
 
 ## Datos y límites
 
@@ -65,7 +65,7 @@ STUDIO_VIEWER_URL=https://tuusuario.github.io/turepositorio/recorrido.html
 - Publicar cierra nuevas aportaciones; reabrir no quita la publicación existente.
 - Los modelos publicados son públicamente descargables desde el bucket de publicación.
 - Un invitado puede perder su identidad si borra los datos del navegador.
-- Los planes y cuotas de almacenamiento/transferencia de Supabase pueden afectar la disponibilidad. Guardá copias de seguridad.
+- Los planes y cuotas de almacenamiento/transferencia de Supabase pueden afectar la disponibilidad. Guarda copias de seguridad.
 
 ## Licencias
 
