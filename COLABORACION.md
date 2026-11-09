@@ -30,6 +30,27 @@ autor ni generar un nuevo identificador.
    Cuando esté listo todo el recorrido, **Publicar recorrido** nuevamente.
    El enlace público y los QR conservan su identidad.
 
+### Copias accidentales del editor anterior
+
+Las versiones antiguas podían crear otra aportación del coordinador con el mismo
+\`source_entry_id\` que una obra invitada. La interfaz ahora:
+
+- Bloquea nuevas duplicaciones en PostgreSQL, aunque se use una versión antigua.
+- Cuando se pulsa **Cargar obras del recorrido para editar**, prioriza la obra
+  **original del invitado** para el editor y no importa su copia adicional.
+- Muestra **Copias duplicadas detectadas** al coordinador; este puede
+  pulsar **Eliminar solo la copia**, confirmando expresamente la operación.
+- La copia solo puede eliminarse mientras el recorrido esté abierto. Se conserva
+  intacta la aportación del artista. **Los ajustes exclusivos de la copia se
+  perderán**, por lo que conviene reproducir antes cualquier corrección deseada
+  usando **Guardar cambios en la nube** sobre la obra original.
+- La publicación automática rechaza los marcadores duplicados hasta que sean
+  revisados. Una vez eliminada la copia, **Publicar recorrido** otra vez
+  actualiza el contenido público conservando su URL y QR.
+
+No se borran copias automáticamente ni se modifican las publicaciones
+existentes al instalar esta actualización.
+
 El botón **Guardar esta obra en la nube** sigue sirviendo para el primer envío
 de una obra propia. El editor evita utilizarlo sobre una obra de otro autor,
 porque eso anteriormente podía generar una copia bajo la cuenta del coordinador.

@@ -26,6 +26,7 @@ const elements={
   pickerBox:$('collabProjectSelector'),adminEmail:$('collabAdminEmail'),
   organizerEditorTools:$('collabOrganizerEditorTools'),
   editHeading:$('collabEditHeading'),editHint:$('collabEditHint'),
+  duplicateNotice:$('collabDuplicateNotice'),duplicateRows:$('collabDuplicateRows'),
   ownerSaveBtn:$('collabOwnerSave'),legacyPublishBtn:$('collabLegacyPublish'),
   adminLogin:$('collabAdminSignIn'),adminSignOut:$('collabAdminSignOut'),
   publishBtn:$('collabPublishNow'),publishedState:$('collabPublishedState'),
@@ -249,8 +250,12 @@ async function reloadContributions(){
    }
  }
  updatePreviewAvailability();
+ renderDuplicateNotice();
  elements.publishBtn.disabled=contributions.length===0;
- status(contributions.length+' obra(s) compartida(s). '+(active.state==='locked'?'Aportaciones cerradas.':'Se pueden agregar o actualizar obras.'));
+ const distinct=rowsGroupedBySource().size;
+ const copied=contributions.length-distinct;
+ status(distinct+' obra(s) compartida(s)'+(copied?' y '+copied+' copia(s) duplicada(s) para revisar':'')+
+   '. '+(active.state==='locked'?'Aportaciones cerradas.':'Se pueden agregar o actualizar obras.'));
 }
 
 /* Preview links are capabilities tied to one saved slam_entries row.
@@ -258,6 +263,103 @@ async function reloadContributions(){
  * A server-side Edge Function issues short-lived signed URLs to a single GLB
  * and its printable marker, keeping other artists' uploads private.
  */
+
+/*
+ * The old uploader allowed the same source_entry_id under a second user.
+ * Prefer the invited artist's original entry and NEVER silently remove
+ * a duplicate. Expose a deliberate organizer-only cleanup control.
+ */
+function rowsGroupedBySource(){
+ const groups=new Map();
+ for(const row of contributions){
+   const group=groups.get(row.source_entry_id)||[];
+   group.push(row);groups.set(row.source_entry_id,group);
+ }
+ return groups;
+}
+function originalEntryFromGroup(rows){
+ if(rows.length===1)return rows[0];
+ if(rows.length===2&&role==='owner'){
+   const invited=rows.filter(r=>r.user_id!==person?.id);
+   const owned=rows.filter(r=>r.user_id===person?.id);
+   if(invited.length===1&&owned.length===1)return invited[0];
+ }
+ return null;
+}
+function canonicalContributions(){
+ const result=[];
+ for(const [sourceId,rows] of rowsGroupedBySource()){
+   const original=originalEntryFromGroup(rows);
+   if(!original)throw Error('Hay varias obras incompatibles con el mismo marcador «'+sourceId+'». Revisá las aportaciones.');
+   result.push(original);
+ }
+ return result;
+}
+function duplicatePairs(){
+ if(role!=='owner')return [];
+ const pairs=[];
+ for(const rows of rowsGroupedBySource().values()){
+   if(rows.length!==2)continue;
+   const original=rows.filter(r=>r.user_id!==person?.id);
+   const copy=rows.filter(r=>r.user_id===person?.id);
+   if(original.length===1&&copy.length===1)
+     pairs.push({original:original[0],copy:copy[0]});
+ }
+ return pairs;
+}
+function hasDuplicateMarkers(){
+ return Array.from(rowsGroupedBySource().values()).some(group=>group.length>1);
+}
+function renderDuplicateNotice(){
+ const root=elements.duplicateRows;
+ root.replaceChildren();
+ const pairs=duplicatePairs();
+ elements.duplicateNotice.hidden=role!=='owner'||pairs.length===0;
+ for(const {original,copy} of pairs){
+   const item=document.createElement('div');item.className='collab-duplicate-row';
+   const label=document.createElement('span');
+   label.textContent='«'+original.title+'» · original de '+original.author_label+
+     ' + copia de coordinación';
+   const button=document.createElement('button');
+   button.type='button';button.className='secondary';
+   button.textContent='Eliminar solo la copia';
+   button.disabled=active?.state!=='draft';
+   button.title=button.disabled
+     ? 'Reabrí aportaciones antes de eliminar la copia'
+     : 'Conservar el original del artista y eliminar exclusivamente la segunda fila';
+   button.onclick=busy(button,()=>removeDuplicateCoordinatorCopy(original,copy));
+   item.append(label,button);root.append(item);
+ }
+}
+async function removeDuplicateCoordinatorCopy(original,copy){
+ if(role!=='owner'||!verifiedCoordinator||active?.state!=='draft')
+   throw Error('Solo coordinación puede retirar una copia con aportaciones abiertas.');
+ const live=duplicatePairs().find(pair=>pair.original.id===original.id&&pair.copy.id===copy.id);
+ if(!live)throw Error('La copia ya no coincide con el recorrido actual. Actualizá aportaciones.');
+ const yes=confirm('¿Eliminar la copia duplicada de «'+original.title+'» creada por coordinación? '+
+   'Se conservará INTACTA la obra original de «'+original.author_label+'». '+
+   'Si habías hecho cambios en la copia, primero reproducilos en la obra original '+
+   'usando «Guardar cambios en la nube». Esta acción no se puede deshacer.');
+ if(!yes)return;
+ checked(await client.from('slam_entries').delete()
+   .eq('id',copy.id).eq('project_id',active.id)
+   .eq('user_id',person.id).select('id').single());
+ const paths=entryPaths(active.id,copy.user_id,copy.source_entry_id);
+ let storageWarning='';
+ try{
+   checked(await client.storage.from(BUCKET).remove([
+     paths.model,paths.art,paths.print,paths.patt
+   ]));
+ }catch(error){
+   storageWarning=' La fila duplicada ya se retiró, aunque quedaron algunos archivos sin usar: '+friendly(error);
+ }
+ await reloadContributions();
+ status('Se eliminó la copia creada por coordinación de «'+original.title+
+   '». La aportación original de «'+original.author_label+
+   '» permanece intacta. Volvé a publicar para retirar la copia del recorrido público.'+
+   storageWarning);
+}
+
 function localWorkspaceMatches(){
  return !!(active && window.SLAM_COLLAB_BRIDGE?.sessionId?.()===active.route_id);
 }
@@ -267,10 +369,10 @@ function cloudMatchesForSelection(){
 }
 function selectedSavedContribution(){
  if(!person)return null;
- const matching=cloudMatchesForSelection().filter(row=>
+ const allowed=cloudMatchesForSelection().filter(row=>
    row.user_id===person.id || role==='owner'
  );
- return matching.length===1?matching[0]:null;
+ return originalEntryFromGroup(allowed);
 }
 function updatePreviewAvailability(){
  const local=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
@@ -278,8 +380,8 @@ function updatePreviewAvailability(){
  const saved=selectedSavedContribution();
  const ready=!!(local?.modelBlob && local?.markerImageBlob && local?.markerValidation?.ok);
  const editable=active?.state==='draft';
- const coordinatorEditing=role==='owner'&&matching.length===1;
- const sameAuthor=matching.length===1&&matching[0].user_id===person?.id;
+ const coordinatorEditing=role==='owner'&&!!saved;
+ const sameAuthor=!!saved&&saved.user_id===person?.id;
  elements.previewBtn.disabled=!saved;
  elements.printBtn.disabled=!saved;
  elements.ownerSaveBtn.hidden=!coordinatorEditing;
@@ -295,12 +397,13 @@ function updatePreviewAvailability(){
      ? 'Primero pulsá «Cargar obras del recorrido para editar». Así evitamos guardar en un proyecto equivocado.'
      : 'Prepará tu aportación en el editor antes de enviarla.';
    hint.dataset.warning='true';
- }else if(matching.length>1){
-   hint.textContent='Se encontraron varias aportaciones con el mismo identificador. No se guardará otra copia; consultá esta incidencia antes de seguir.';
+ }else if(matching.length>1&&!saved){
+   hint.textContent='Se encontraron varias aportaciones incompatibles con el mismo identificador. Revisá las copias antes de seguir.';
    hint.dataset.warning='true';
  }else if(coordinatorEditing){
-   const row=matching[0];
+   const row=saved;
    hint.textContent='Obra original de «'+row.author_label+'». «Guardar cambios en la nube» actualizará ESTA MISMA aportación y conservará su autoría y su QR.';
+   if(matching.length>1)hint.textContent+=' También hay una copia duplicada: revisala en «Copias duplicadas detectadas» antes de publicar.';
    if(!ready)hint.textContent+=' Primero cargá un GLB válido y una imagen de marcador validada.';
    if(!editable){hint.textContent+=' Reabrí las aportaciones antes de guardar.';hint.dataset.warning='true';}
  }else if(matching.length===1&&!sameAuthor){
@@ -479,10 +582,8 @@ async function saveExistingContributionAsCoordinator(){
    throw Error('Primero cargá el recorrido compartido en el editor.');
  const e=window.SLAM_COLLAB_BRIDGE?.get(elements.localPicker.value);
  if(!e)throw Error('Elegí un marcador para actualizar.');
- const matches=cloudMatchesForSelection();
- if(matches.length!==1)
-   throw Error('La obra debe existir una sola vez en la nube. No se creó ninguna copia.');
- const original=matches[0];
+ const original=selectedSavedContribution();
+ if(!original)throw Error('No se identificó una única obra original para actualizar. No se creó ninguna copia.');
  if(original.project_id!==active.id || original.source_entry_id!==e.id)
    throw Error('No coincide la identidad original del marcador.');
  if(!e.modelBlob||!e.markerImageBlob||!e.markerValidation?.ok)
@@ -542,11 +643,14 @@ async function getBlob(path){
 async function importProject(){
  if(role!=='owner')throw Error('Solo el organizador puede reunir el recorrido.');
  if(!contributions.length)throw Error('Todavía no hay obras compartidas.');
+ const canonical=canonicalContributions();
  if(!window.SLAM_COLLAB_BRIDGE?.importAll)throw Error('El editor no está listo.');
- if(!confirm('¿Importar '+contributions.length+' obras al editor? Se reemplazará el recorrido local con el mismo identificador, si existe. Tus demás recorridos locales permanecerán intactos.'))return;
- status('Recuperando obras compartidas y comprobando sus marcadores…');
+ if(!confirm('¿Importar '+canonical.length+' obras originales al editor? '+
+   (hasDuplicateMarkers()?'Se excluirán las copias duplicadas creadas desde coordinación. ':'')+
+   'Se reemplazará el borrador local del recorrido seleccionado. Tus demás recorridos locales permanecerán intactos.'))return;
+ status('Recuperando obras originales y comprobando sus marcadores…');
  const files=[];
- for(const row of contributions){
+ for(const row of canonical){
    const [model,image,print,patt]=await Promise.all([
      getBlob(row.model_path),getBlob(row.marker_image_path),
      getBlob(row.marker_print_path),getBlob(row.patt_path)
@@ -659,6 +763,8 @@ async function publishNow(){
    throw Error('Solo coordinación puede publicar.');
  await reloadContributions();
  if(!contributions.length)throw Error('No hay obras guardadas en la nube.');
+ if(hasDuplicateMarkers())
+   throw Error('Hay copias duplicadas en el recorrido. Revisá «Copias duplicadas detectadas» y retiralas antes de volver a publicar, para que no haya dos objetos con el mismo marcador.');
  if(!confirm('¿Publicar '+contributions.length+' obra(s) del recorrido «'+active.title+
    '»? Se harán públicas las versiones guardadas en la nube, se cerrarán las aportaciones y podrás reabrirlas para corregir y volver a publicar.'))return;
  status('Publicando '+contributions.length+' obras… Se conservará el mismo enlace QR.');

@@ -275,3 +275,21 @@ html.slam-invite-pending #collabCoordinatorBox{display:none!important}
 .slam-collab #collabEditHint[data-warning="true"]{
   color:#ffceaa;
 }
+
+
+/* Legacy duplicate repair: user-confirmed, original guest work stays. */
+.slam-collab .collab-duplicate-notice{
+  border:1px solid rgba(255,192,123,.6);
+  border-radius:14px 10px 16px 12px;
+  padding:12px 14px;margin-top:14px;
+  background:rgba(82,48,19,.25);
+}
+.slam-collab .collab-duplicate-notice h3{color:#ffd5a6}
+.slam-collab .collab-duplicate-row{
+  display:flex;flex-wrap:wrap;gap:10px;
+  align-items:center;justify-content:space-between;
+  padding:9px 0;border-top:1px solid rgba(255,210,158,.19);
+}
+.slam-collab .collab-duplicate-row span{
+  font-size:12px;color:#f0d5b7;overflow-wrap:anywhere;
+}
